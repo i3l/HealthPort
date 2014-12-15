@@ -18,3 +18,5 @@ Condition by Patient: list of conditions for a specific patient<br/>
 (ex: http://taurus.i3l.gatech.edu:8080/CDCWebApp/fhir/Condition?subject:Patient=2)
 </li>
 </ul>
+
+FHIR server is implemented using HAPI-FHIR Restful Server [http://jamesagnew.github.io/hapi-fhir/doc_rest_server.html]
