@@ -15,7 +15,7 @@ Observation by Patient: list of observations for a specific patient<br/>
 </li>
 <li>
 Condition by Patient: list of conditions for a specific patient<br/>
-(ex: http://taurus.i3l.gatech.edu:8080/CDCWebApp/fhir/Condition?subject:Patient=2)
+(ex: http://taurus.i3l.gatech.edu:8080/CDCWebApp/fhir/Condition?subject=2)
 </li>
 </ul>
 
