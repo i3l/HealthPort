@@ -4,12 +4,14 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
 
 import org.eclipse.emf.common.util.EList;
 import org.openhealthtools.mdht.uml.cda.EntryRelationship;
@@ -34,9 +36,6 @@ import ca.uhn.fhir.rest.server.IResourceProvider;
 
 
 public class ConditionResourceProvider implements IResourceProvider {
-	public static final String DRIVER = "org.apache.derby.jdbc.EmbeddedDriver";
-	public static final String JDBC_URL = "jdbc:derby:" + Config.DBPath+"/MyDB;user=adh;password=123";
-	public static final String SQL_STATEMENT = "select name from cdcAppDB.Users";
 
 	@Override
 	public Class<? extends IResource> getResourceType() {
@@ -49,65 +48,53 @@ public class ConditionResourceProvider implements IResourceProvider {
 			@RequiredParam(name=Condition.SP_SUBJECT) ReferenceParam theSubject) {
 
 		Connection connection = null;
+		Context context = null;
+		DataSource datasource = null;
 		Statement statement = null;
 		String name=null;
 		String location=null;
-		String SQL_Statement1=null;
 		String ccd=null;
-		String gwId = null;
-		String pid = theSubject.getIdPart();
+		String rId = null;
+		String pId = null;
+    	int patientNum = Integer.parseInt(theSubject.getIdPart());
 		
-		ArrayList<Condition> retVal = new ArrayList<Condition>();
-		
-    	int patientNum = Integer.parseInt(pid);
-    	
+		ArrayList<Condition> retVal = new ArrayList<Condition>();    	
     	try{
-			Class.forName(DRIVER);
-			connection = DriverManager.getConnection(JDBC_URL);
+    		context = new InitialContext();
+    		datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+    		connection = datasource.getConnection();
 			statement = connection.createStatement();
-			SQL_Statement1 = "select * from cdcAppDB.Users where ID = " + patientNum;
-			ResultSet resultSet = statement.executeQuery(SQL_Statement1);
+			String SQL_STATEMENT = "SELECT U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) WHERE U1.ID="+patientNum;
+			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
 			if (resultSet.next()) {
-				name = resultSet.getString("name");
-				location = resultSet.getString("location");
+				name = resultSet.getString("NAME");
+				location = resultSet.getString("TAG");
+				rId = resultSet.getString("RECORDID");
+				pId = resultSet.getString("PERSONID");
 				System.out.println(patientNum);
 				System.out.println(name+":"+location);
-			}
-			
-			if(location.equals("GW")){
-				SQL_Statement1 = "select personId from cdcAppDB.GWUSERS where name = '" + name+ "'";
-				resultSet = statement.executeQuery(SQL_Statement1);
-				if (resultSet.next()) {
-					gwId = resultSet.getString("personId");
-				}
-			}
+			} else {
+				return retVal;
+			}			
 			connection.close();
 
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}finally{
-			try{
-				if(statement != null) statement.close();
-				if(connection != null) connection.close();
-			}catch (SQLException e){e.printStackTrace();}
 		}
 	
     	//Access Greenway to get CCD for patient
-    		if(location.equals("GW")){
-    			ccd = GreenwayPort.getCCD(gwId);
+    	if(location.equals("GW")){
+    			ccd = GreenwayPort.getCCD(pId);
     			System.out.println(ccd);
-    		     	
-    		}
+    	}
 		
     	// Access Healthvault to get CCD for patient and parse
     		 
     	if(location.equals("HV")){
     		System.out.println("I am in HV");
     			
-    		ccd = HealthVaultPort.getCCD(name);
+    		ccd = HealthVaultPort.getCCD(rId, pId);
     			
     		System.out.println(ccd);
     		
@@ -177,8 +164,8 @@ public class ConditionResourceProvider implements IResourceProvider {
     			//String pid = theSubject.getIdPart();
 
     			Condition cond = new Condition();
-    			cond.setId("pid:"+pid);
-    			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+pid);
+    			cond.setId("pid:"+patientNum);
+    			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+patientNum);
     			cond.setSubject(subj);
     			CodeableConceptDt value = new CodeableConceptDt();
     			// We have to put system and code. This should be obtained from CCD. 

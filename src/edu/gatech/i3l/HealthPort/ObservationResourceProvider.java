@@ -4,12 +4,14 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
 
 import org.openhealthtools.mdht.uml.cda.ccd.CCDPackage;
 import org.openhealthtools.mdht.uml.cda.ccd.ContinuityOfCareDocument;
@@ -35,9 +37,6 @@ import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.exceptions.InvalidRequestException;
 
 public class ObservationResourceProvider implements IResourceProvider {
-	public static final String DRIVER = "org.apache.derby.jdbc.EmbeddedDriver";
-	public static final String JDBC_URL = "jdbc:derby:" + Config.DBPath+"/MyDB;user=adh;password=123";
-	public static final String SQL_STATEMENT = "select name from cdcAppDB.Users";
 
     /**
      * The getResourceType method comes from IResourceProvider, and must
@@ -55,12 +54,11 @@ public class ObservationResourceProvider implements IResourceProvider {
     	
     	Connection connection = null;
 		Statement statement = null;
+		Context context = null;
+		DataSource datasource = null;
 		String name=null;
 		String location=null;
-		String SQL_Statement1=null;
-		String ccd=null;
-		String gwId = null;
-		
+		String ccd=null;		
   
     	ArrayList<Observation> retVal = new ArrayList<Observation>();
     	String PatientID;
@@ -77,46 +75,36 @@ public class ObservationResourceProvider implements IResourceProvider {
     	}
     	
     	int patientNum = Integer.parseInt(PatientID);
-
+    	String rId = null;
+    	String pId = null;
 		
 		try{
-			Class.forName(DRIVER);
-			connection = DriverManager.getConnection(JDBC_URL);
+			context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+			connection = datasource.getConnection();
 			statement = connection.createStatement();
-			SQL_Statement1 = "select * from cdcAppDB.Users where ID = " + patientNum;
-			ResultSet resultSet = statement.executeQuery(SQL_Statement1);
+			String SQL_STATEMENT = "SELECT U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) WHERE U1.ID="+patientNum;
+			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
 			if (resultSet.next()) {
-				name = resultSet.getString("name");
-				location = resultSet.getString("location");
+				name = resultSet.getString("NAME");
+				location = resultSet.getString("TAG");
+				rId = resultSet.getString("RECORDID");
+				pId = resultSet.getString("PERSONID");
 				System.out.println(patientNum);
 				System.out.println(name+":"+location);
+			} else {
+				return retVal;
 			}
 			
-			if(location.equals("GW")){
-				SQL_Statement1 = "select personId from cdcAppDB.GWUSERS where name = '" + name+ "'";
-				resultSet = statement.executeQuery(SQL_Statement1);
-				if (resultSet.next()) {
-					gwId = resultSet.getString("personId");
-				}
-			}
 			connection.close();
 
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}finally{
-			try{
-				if(statement != null) statement.close();
-				if(connection != null) connection.close();
-			}catch (SQLException e){e.printStackTrace();}
 		}
-		
-		
+
 		//Access Greenway and get CCD of patient
 		if(location.equals("GW")){
-			ccd = GreenwayPort.getCCD(gwId);
+			ccd = GreenwayPort.getCCD(pId);
 			System.out.println(ccd);
 	     	
 		}
@@ -126,7 +114,7 @@ public class ObservationResourceProvider implements IResourceProvider {
  
 		if(location.equals("HV")){
 			
-			ccd = HealthVaultPort.getCCD(name);
+			ccd = HealthVaultPort.getCCD(rId, pId);
 			//System.out.println("In HV");
 			
 		//Parsing of CCD

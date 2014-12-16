@@ -4,15 +4,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.Connection;
-import java.sql.DriverManager;
+//import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -33,8 +36,8 @@ public class AuthSuccess extends HttpServlet
 {
 	private static final String TOKEN_NAME = "wctoken";
 	private static final long serialVersionUID = 1L;
-	public static final String DRIVER = "org.apache.derby.jdbc.EmbeddedDriver";
-	public static final String JDBC_URL = "jdbc:derby:" + Config.DBPath+"/MyDB;user=adh;password=123";
+//	public static final String DRIVER = "org.apache.derby.jdbc.EmbeddedDriver";
+//	public static final String JDBC_URL = "jdbc:derby:" + Config.DBPath+"/MyDB;user=adh;password=123";
 	//public static final String SQL_STATEMENT = "select * from cyborg.footable";
 	
 	public AuthSuccess() {
@@ -69,6 +72,11 @@ public class AuthSuccess extends HttpServlet
     private void getUserInfo(String userAuthToken)
 	throws HVException
 	{
+    	Context context = null;
+    	DataSource datasource = null;
+		Connection connection = null;
+		Statement statement = null;
+    			
     	try
     	{
     		Request request = new Request();
@@ -80,12 +88,13 @@ public class AuthSuccess extends HttpServlet
 			InputStream is = accessor.getResponse().getInputStream();
 			XPath xpath = XPathFactory.newInstance().newXPath();
 			
-			Connection connection = null;
-			Statement statement = null;
-			
-			Class.forName(DRIVER);
-			connection = DriverManager.getConnection(JDBC_URL);
+			context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+			connection = datasource.getConnection();
 			statement = connection.createStatement();
+			
+//			Class.forName(DRIVER);
+//			connection = DriverManager.getConnection(JDBC_URL);
 			
 			/*Node personInfo = (Node) xpath.evaluate("//person-info",
 					new InputSource(is), XPathConstants.NODE);
@@ -113,35 +122,24 @@ public class AuthSuccess extends HttpServlet
 			String pname = xpath.evaluate("name", personInfo);
 			String rId = xpath.evaluate("record/@id", personInfo);
 
+			if (pId.isEmpty() || rId.isEmpty() || pname.isEmpty())
+				return;
+			
 			System.out.println ("pId:"+pId+", rId:"+rId+", name:"+pname);
 
-			String SQL_Count = "SELECT COUNT(*) FROM cdcAppDB.Users";
+			String SQL_Count = "SELECT COUNT(*) FROM USER WHERE RECORDID='"+rId+"' AND PERSONID='"+pId+"'";
 			ResultSet check_ret = statement.executeQuery(SQL_Count);
 			check_ret.next();
-			Integer counter = check_ret.getInt(1);
-			counter = counter +1;
 			
-			String SQL_CHECK = "SELECT COUNT(*) FROM cdcAppDB.Users WHERE name='"+pname+"'";
-			check_ret = statement.executeQuery(SQL_CHECK);
-			check_ret.next();
-			String SQL_Statement1;
-			String SQL_Statement2;
+			String SQL_Statement;
 			if (check_ret.getInt(1) == 0) {
-			SQL_Statement1 = "INSERT INTO cdcAppDB.Users (name,location,id) VALUES (\'"+pname + "\','HV',"+counter+")";
-			SQL_Statement2 = "INSERT INTO cdcAppDB.HVUsers (name,recordID,personID) VALUES (\'"+pname +"\',\'"+ rId+"\',\'"+pId+"\')";
+				SQL_Statement = "INSERT INTO USER (NAME, ORGANIZATIONID, RECORDID, PERSONID) VALUES ('"+pname + "', (SELECT ID FROM ORGANIZATION WHERE TAG='HV'), '"+rId+"', '"+pId+"')";
 			} else {
-			SQL_Statement1 = "UPDATE cdcAppDB.Users SET location = 'HV' WHERE name = '"+pname+"'";
-			SQL_Statement2 = "UPDATE cdcAppDB.HVUsers set recordID='"+rId+"', personID='"+pId+"' WHERE name = '"+pname+"'";
+				SQL_Statement = "UPDATE USER SET NAME = '"+pname+"' WHERE RECORDID = '"+rId+"' AND PERSONID='"+pId+"'";
 			}
 
-			statement.executeUpdate(SQL_Statement1);
-			statement.executeUpdate(SQL_Statement2);
-			
-			
-			
-			
+			statement.executeUpdate(SQL_Statement);
 			connection.close();
-    		
     		
     	}
     	catch(HVException he)

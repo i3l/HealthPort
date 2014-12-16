@@ -13,53 +13,8 @@ import com.microsoft.hsg.HVAccessor;
 import com.microsoft.hsg.Request;
 
 public class HealthVaultPort {
-	public static final String DRIVER = "org.apache.derby.jdbc.EmbeddedDriver";
-	public static final String JDBC_URL = "jdbc:derby:" + Config.DBPath+"/MyDB;user=adh;password=123";
 
-	static public String getCCD (String uname) {
-		String Record_id=null;
-		String Person_id=null;
-		Connection connection = null;
-		Statement statement = null;
-		
-		try{
-			Class.forName(DRIVER);
-			connection = DriverManager.getConnection(JDBC_URL);
-			statement = connection.createStatement();
-			
-			String SQL_Statement1 = "select recordID from cdcAppDB.HVUSERS where name = '"+ uname + "'";
-			String SQL_Statement2 = "select personId from cdcAppDB.HVUSERS where name = '" + uname + "'"; 
-			
-			//String SQL_Statement1 = "select recordID from cdcAppDB.HVUSERS where name = "+ uname;
-			//String SQL_Statement2 = "select personId from cdcAppDB.HVUSERS where name = " + uname; 
-			
-			ResultSet resultSet = statement.executeQuery(SQL_Statement1);
-			if (resultSet.next()) {
-				Record_id  = resultSet.getString("recordID");
-			}
-			resultSet = statement.executeQuery(SQL_Statement2);
-			if (resultSet.next()) {
-				Person_id  = resultSet.getString("personID");
-			}
-			
-			connection.close();
-
-		
-		} catch (ClassNotFoundException e){
-			e.printStackTrace();
-			return null;
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return null;
-		}finally{
-			try{
-				if(statement != null) statement.close();
-				if(connection != null) connection.close();
-			}catch (SQLException e) {
-				e.printStackTrace();
-				return null;
-			}
-		}
+	static public String getCCD (String Record_id, String Person_id) {		
 		
 		if (Person_id == null || Record_id == null) {
 			return null;
