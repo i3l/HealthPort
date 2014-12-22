@@ -27,7 +27,6 @@ import org.openhealthtools.mdht.uml.hl7.datatypes.ST;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.resource.Observation;
-//import ca.uhn.fhir.model.dstu.resource.Patient;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
@@ -61,6 +60,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 		String ccd=null;		
   
     	ArrayList<Observation> retVal = new ArrayList<Observation>();
+    	ArrayList<String> retList = new ArrayList<String>();
     	String PatientID;
  
     	if (theSubject.hasResourceType()) {
@@ -109,82 +109,71 @@ public class ObservationResourceProvider implements IResourceProvider {
 	     	
 		}
 			
-		
-		// Access Healthvault to get CCD of patient and parse
+		// Access Healthvault to get Patient information
  
 		if(location.equals("HV")){
+			//retVal = HVCCDParse(rId, pId,PatientID);
 			
-			ccd = HealthVaultPort.getCCD(rId, pId);
-			//System.out.println("In HV");
+			//Get the Weight and create Observations
+			retList = HealthVaultPort.getWeight(rId, pId);
+			for (int i = 0; i < retList.size(); i=i+2) {
+				Observation obs = new Observation();
 			
-		//Parsing of CCD
-		
-		CCDPackage.eINSTANCE.eClass();
-		ContinuityOfCareDocument ccdDocument = null;
-		ArrayList<String> observationList = new ArrayList<String>();
-
-		try {
-		InputStream is = new ByteArrayInputStream(ccd.getBytes());
-		ccdDocument = (ContinuityOfCareDocument) CDAUtil.load(is);
-		} catch (FileNotFoundException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-		} catch (Exception e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-		}
-		
-		
-
-		ResultsSection results = ccdDocument.getResultsSection();
-		if(results!=null){
-		for (ResultOrganizer resultOrganizer : results.getResultOrganizers()) {
-			for (ResultObservation resultObservation : resultOrganizer.getResultObservations()) {
-				observationList.add(resultObservation.getCode().getOriginalText().getText());
-				if (!resultObservation.getValues().isEmpty() && resultObservation.getValues().get(0) instanceof PQ) {
-					PQ value = (PQ) resultObservation.getValues().get(0);
-					observationList.add((value.getValue()).toString());
-					observationList.add(value.getUnit());
-				}
-				if (!resultObservation.getValues().isEmpty() && resultObservation.getValues().get(0) instanceof ST) {
-					ST value = (ST) resultObservation.getValues().get(0);
-					observationList.add(value.getText());
-					observationList.add("N/A");
-				}
+				obs.setId("pid:"+PatientID); // This is object resource ID. 
+				String nameCode = getCode("Body weight");
+				obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+				QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i))).setUnits(retList.get(i+1));
+				obs.setValue(quantity);
+				obs.setComments("Weight");
+				obs.setStatus(ObservationStatusEnum.FINAL);
+				obs.setReliability(ObservationReliabilityEnum.OK);
+				retVal.add(obs);
 			}
-		}
-		}
-		VitalSignsSection vitals = ccdDocument.getVitalSignsSection();
-		if(vitals!=null){
-		for (VitalSignsOrganizer vitalsOrganizer : vitals.getVitalSignsOrganizers()) {
-			for (ResultObservation resultObservation : vitalsOrganizer.getResultObservations()) {
-				observationList.add(resultObservation.getCode().getDisplayName());
-				if (!resultObservation.getValues().isEmpty() && resultObservation.getValues().get(0) instanceof PQ) {
-					PQ value = (PQ) resultObservation.getValues().get(0);
-					observationList.add(value.getValue().toString());
-					observationList.add(value.getUnit());
-				}
-				
+			//Get the Height and create Observations
+			retList.clear();
+			retList=(HealthVaultPort.getHeight(rId, pId));
+			for (int i = 0; i < retList.size(); i=i+2) {
+				Observation obs = new Observation();
+				obs.setId("pid:"+PatientID); // This is object resource ID. 
+				String nameCode = "0000";
+				obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+				QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i))).setUnits(retList.get(i+1));
+				obs.setValue(quantity);
+				obs.setComments("Height");
+				obs.setStatus(ObservationStatusEnum.FINAL);
+				obs.setReliability(ObservationReliabilityEnum.OK);
+				retVal.add(obs);
 			}
-		}
-		}
-		//create Observations
-		
-		for (int i = 0; i < observationList.size(); i=i+3) {
-			Observation obs = new Observation();
-		
-			obs.setId("pid:"+PatientID); // This is object resource ID. 
-			String nameCode = getCode(observationList.get(i));
-			//System.out.println(nameCode);
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
-			QuantityDt quantity = new QuantityDt(Double.parseDouble(observationList.get(i+1))).setUnits(observationList.get(i+2));
-			obs.setValue(quantity);
-			obs.setComments(observationList.get(i));
-			obs.setStatus(ObservationStatusEnum.FINAL);
-			obs.setReliability(ObservationReliabilityEnum.OK);
-
-			retVal.add(obs);
-		}
+			//Get the blood Pressure and create Observations
+			retList.clear();
+			retList = HealthVaultPort.getBloodPressure(rId, pId);
+			for (int i = 0; i < retList.size(); i=i+3) {
+				Observation obs = new Observation();
+				obs.setId("pid:"+PatientID); // This is object resource ID. 
+				String nameCode = "0000";
+				obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+				QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+1))).setUnits(retList.get(i+2));
+				obs.setValue(quantity);
+				obs.setComments(retList.get(i));
+				obs.setStatus(ObservationStatusEnum.FINAL);
+				obs.setReliability(ObservationReliabilityEnum.OK);
+				retVal.add(obs);
+			}
+			//Get the Lab Results and create Observations
+			retList.clear();
+			retList = HealthVaultPort.getLabResults(rId, pId);
+			for (int i = 0; i < retList.size(); i=i+4) {
+				Observation obs = new Observation();
+				obs.setId("pid:"+PatientID); // This is object resource ID. 
+				String nameCode = "0000";
+				obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+				QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
+				obs.setValue(quantity);
+				obs.setComments(retList.get(i+1));
+				obs.setStatus(ObservationStatusEnum.FINAL);
+				obs.setReliability(ObservationReliabilityEnum.OK);
+				retVal.add(obs);
+			}
 		}
 
        return retVal;
@@ -219,20 +208,82 @@ public class ObservationResourceProvider implements IResourceProvider {
     	if (name.equals("Body weight")){
     		lcode = "3141-9";
     	}
-    	
-  	
-    	
+ 
     	return lcode;
 	}
     
-    
-    
-    
-    
-    
-    
-    
-    
+    //Parse a given CCD (using mdht) and create observations
+    public static ArrayList<Observation> HVCCDParse(String rId, String pId,String PatientID){
+    	String ccd=null;
+    	ArrayList<Observation> retVal = new ArrayList<Observation>();
+    	//get CCD from healthVault
+    	ccd = HealthVaultPort.getCCD(rId, pId);
+		
+		//Parsing of CCD
+		CCDPackage.eINSTANCE.eClass();
+		ContinuityOfCareDocument ccdDocument = null;
+		ArrayList<String> observationList = new ArrayList<String>();
+
+		try {
+		InputStream is = new ByteArrayInputStream(ccd.getBytes());
+		ccdDocument = (ContinuityOfCareDocument) CDAUtil.load(is);
+		} catch (FileNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		} catch (Exception e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		}
+		//Retrieve Results from CCD (lab tests)
+		ResultsSection results = ccdDocument.getResultsSection();
+		if(results!=null){
+		for (ResultOrganizer resultOrganizer : results.getResultOrganizers()) {
+			for (ResultObservation resultObservation : resultOrganizer.getResultObservations()) {
+				observationList.add(resultObservation.getCode().getOriginalText().getText());
+				if (!resultObservation.getValues().isEmpty() && resultObservation.getValues().get(0) instanceof PQ) {
+					PQ value = (PQ) resultObservation.getValues().get(0);
+					observationList.add((value.getValue()).toString());
+					observationList.add(value.getUnit());
+				}
+				if (!resultObservation.getValues().isEmpty() && resultObservation.getValues().get(0) instanceof ST) {
+					ST value = (ST) resultObservation.getValues().get(0);
+					observationList.add(value.getText());
+					observationList.add("N/A");
+				}
+			}
+		}
+		}
+		//Retrieve Vitals from CCD 
+		VitalSignsSection vitals = ccdDocument.getVitalSignsSection();
+		if(vitals!=null){
+		for (VitalSignsOrganizer vitalsOrganizer : vitals.getVitalSignsOrganizers()) {
+			for (ResultObservation resultObservation : vitalsOrganizer.getResultObservations()) {
+				observationList.add(resultObservation.getCode().getDisplayName());
+				if (!resultObservation.getValues().isEmpty() && resultObservation.getValues().get(0) instanceof PQ) {
+					PQ value = (PQ) resultObservation.getValues().get(0);
+					observationList.add(value.getValue().toString());
+					observationList.add(value.getUnit());
+				}
+				
+			}
+		}
+		}
+		//create Observations
+		for (int i = 0; i < observationList.size(); i=i+3) {
+			Observation obs = new Observation();
+		
+			obs.setId("pid:"+PatientID); // This is object resource ID. 
+			String nameCode = getCode(observationList.get(i));
+			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			QuantityDt quantity = new QuantityDt(Double.parseDouble(observationList.get(i+1))).setUnits(observationList.get(i+2));
+			obs.setValue(quantity);
+			obs.setComments(observationList.get(i));
+			obs.setStatus(ObservationStatusEnum.FINAL);
+			obs.setReliability(ObservationReliabilityEnum.OK);
+			retVal.add(obs);
+		}
+    	return retVal;
+    }
     
  
 }
