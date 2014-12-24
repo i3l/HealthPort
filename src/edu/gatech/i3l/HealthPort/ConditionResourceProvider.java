@@ -24,11 +24,14 @@ import org.openhealthtools.mdht.uml.cda.util.CDAUtil;
 import org.openhealthtools.mdht.uml.hl7.datatypes.CD;
 import org.openhealthtools.mdht.uml.hl7.datatypes.CE;
 
+import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
+import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;
@@ -56,6 +59,8 @@ public class ConditionResourceProvider implements IResourceProvider {
 		String ccd=null;
 		String rId = null;
 		String pId = null;
+		FhirContext ctx = new FhirContext();
+		String output = null;
     	int patientNum = Integer.parseInt(theSubject.getIdPart());
 		
 		ArrayList<Condition> retVal = new ArrayList<Condition>();    	
@@ -135,6 +140,11 @@ public class ConditionResourceProvider implements IResourceProvider {
 					cond.setStatus(ConditionStatusEnum.CONFIRMED);
 					//System.out.println("Put refuted to FHIR status");
 				} 
+    			
+    			cond.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
+			    cond.getText().setDiv(output);
     			
     			retVal.add(cond);
     		}

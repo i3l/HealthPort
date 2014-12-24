@@ -11,8 +11,11 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
+import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dstu.resource.Patient;
+import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.primitive.UriDt;
+import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 
@@ -40,6 +43,7 @@ public class PatientResourceProvider implements IResourceProvider {
 		Statement statement = null;
 		Context context = null;
 		DataSource datasource = null;
+		FhirContext ctx = new FhirContext();
 				
 		ArrayList<Patient> retVal = new ArrayList<Patient>();
     	try{
@@ -60,15 +64,21 @@ public class PatientResourceProvider implements IResourceProvider {
 				patient.getIdentifier().get(0).setValue(String.valueOf(userId));
 				patient.addName().addFamily(userName[1]);
 				patient.getName().get(0).addGiven(userName[0]);
+				patient.getText().setStatus(NarrativeStatusEnum.GENERATED);
 
 		       retVal.add(patient);
+		       String output;
+		       ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+		       //output = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(patient);
+		       output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
+		       patient.getText().setDiv(output);
 			}
 			connection.close();
 			
 		} catch (Exception e){
 			e.printStackTrace();
 		}
-    	
+    
        return retVal;
 
     }

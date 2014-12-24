@@ -24,11 +24,14 @@ import org.openhealthtools.mdht.uml.cda.util.CDAUtil;
 import org.openhealthtools.mdht.uml.hl7.datatypes.PQ;
 import org.openhealthtools.mdht.uml.hl7.datatypes.ST;
 
+import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.resource.Observation;
+import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
+import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;
@@ -57,11 +60,13 @@ public class ObservationResourceProvider implements IResourceProvider {
 		DataSource datasource = null;
 		String name=null;
 		String location=null;
-		String ccd=null;		
+		String ccd=null;	
+		String output = null;
   
     	ArrayList<Observation> retVal = new ArrayList<Observation>();
     	ArrayList<String> retList = new ArrayList<String>();
     	String PatientID;
+    	FhirContext ctx = new FhirContext();
  
     	if (theSubject.hasResourceType()) {
     		String resourceType = theSubject.getResourceType();
@@ -127,6 +132,12 @@ public class ObservationResourceProvider implements IResourceProvider {
 				obs.setComments("Weight");
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
+				
+				obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			    obs.getText().setDiv(output);
+			    
 				retVal.add(obs);
 			}
 			//Get the Height and create Observations
@@ -142,6 +153,12 @@ public class ObservationResourceProvider implements IResourceProvider {
 				obs.setComments("Height");
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
+				
+				obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			    obs.getText().setDiv(output);
+			    
 				retVal.add(obs);
 			}
 			//Get the blood Pressure and create Observations
@@ -157,6 +174,12 @@ public class ObservationResourceProvider implements IResourceProvider {
 				obs.setComments(retList.get(i));
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
+				
+				obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			    obs.getText().setDiv(output);
+			    
 				retVal.add(obs);
 			}
 			//Get the Lab Results and create Observations
@@ -172,6 +195,52 @@ public class ObservationResourceProvider implements IResourceProvider {
 				obs.setComments(retList.get(i+1));
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
+				
+				obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			    obs.getText().setDiv(output);
+			    
+				retVal.add(obs);
+			}
+			retList.clear();
+			retList = HealthVaultPort.getBloodGlucose(rId, pId);
+			for (int i = 0; i < retList.size(); i=i+3) {
+				Observation obs = new Observation();
+				obs.setId("pid:"+PatientID); // This is object resource ID. 
+				String nameCode = "0000";
+				obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+				QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i))).setUnits(retList.get(i+1));
+				obs.setValue(quantity);
+				obs.setComments("Glucose in " + retList.get(i+2));
+				obs.setStatus(ObservationStatusEnum.FINAL);
+				obs.setReliability(ObservationReliabilityEnum.OK);
+				
+				obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			    obs.getText().setDiv(output);
+			    
+				retVal.add(obs);
+			}
+			retList.clear();
+			retList = HealthVaultPort.getCholesterol(rId, pId);
+			for (int i = 0; i < retList.size(); i=i+2) {
+				Observation obs = new Observation();
+				obs.setId("pid:"+PatientID); // This is object resource ID. 
+				String nameCode = "0000";
+				obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+				QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i))).setUnits(retList.get(i+1));
+				obs.setValue(quantity);
+				obs.setComments("Cholesterol");
+				obs.setStatus(ObservationStatusEnum.FINAL);
+				obs.setReliability(ObservationReliabilityEnum.OK);
+				
+				obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			    obs.getText().setDiv(output);
+			    
 				retVal.add(obs);
 			}
 		}

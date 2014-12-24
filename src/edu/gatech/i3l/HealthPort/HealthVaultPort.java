@@ -224,6 +224,74 @@ public class HealthVaultPort {
 		    }
 		return finalList;	
 	}
+	static public ArrayList<String> getBloodGlucose(String Record_id, String Person_id){
+		String responseStr = null;
+		String value = null;
+		String unit = null;
+		ArrayList<String> finalList = new ArrayList<String>();
+		responseStr= getThings("879e7c04-4e8a-4707-9ad3-b054df467ce4",Record_id,Person_id);
+		try {
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(new InputSource(new StringReader(responseStr)));
+			doc.getDocumentElement().normalize();
+			NodeList nList = doc.getElementsByTagName("blood-glucose");
+			
+			for (int temp = 0; temp < nList.getLength(); temp++) {
+				Node nNode = nList.item(temp);
+				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+					nNode = nNode.getFirstChild().getNextSibling().getFirstChild();
+					value = nNode.getTextContent();
+					finalList.add(value);
+					nNode = nNode.getNextSibling();
+					unit = nNode.getTextContent();
+					if (value.equals(unit)){
+						unit = "mmol/L";
+					}
+					else{
+						unit = "mg/dL";
+					}
+					finalList.add(unit);
+					nNode = nNode.getParentNode().getNextSibling().getFirstChild();
+					finalList.add(nNode.getTextContent());
+				}
+				
+			}
+		    } catch (Exception e) {
+			e.printStackTrace();
+		    }
+		return finalList;	
+	}
+	static public ArrayList<String> getCholesterol(String Record_id, String Person_id){
+		String responseStr = null;
+		String value = null;
+		String unit = null;
+		ArrayList<String> finalList = new ArrayList<String>();
+		responseStr= getThings("98f76958-e34f-459b-a760-83c1699add38",Record_id,Person_id);
+		try {
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(new InputSource(new StringReader(responseStr)));
+			doc.getDocumentElement().normalize();
+			NodeList nList = doc.getElementsByTagName("cholesterol-profile");
+			
+			for (int temp = 0; temp < nList.getLength(); temp++) {
+				Node nNode = nList.item(temp);
+				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+					nNode = nNode.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getFirstChild();
+					value = nNode.getTextContent();
+					finalList.add(value);
+					nNode = nNode.getNextSibling();
+					unit = "mmol/L";
+					finalList.add(unit);
+				}
+				
+			}
+		    } catch (Exception e) {
+			e.printStackTrace();
+		    }
+		return finalList;	
+	}
 	static public ArrayList<String> getLabResults(String Record_id, String Person_id){
 		String responseStr = null;
 		ArrayList<String> finalList = new ArrayList<String>();
@@ -261,12 +329,7 @@ public class HealthVaultPort {
 		
 		return finalList;	
 	}
-	/*
-	static public String getVitals(String Record_id, String Person_id){
-		String responseStr = null;
-		responseStr= getThings("73822612-c15f-4b49-9e65-6af369e55c65",Record_id,Person_id);
-		return responseStr;	
-	}*/
+
 	
 	static public ArrayList<String> getCondition(String Record_id, String Person_id){
 		String responseStr = null;
