@@ -17,6 +17,7 @@ import javax.sql.DataSource;
  *  - Connects to SQL database to obtain patient related parameters.
  */
 public class HealthPortUserInfo {
+	public String userId = null;
 	public String name = null;
 	public String recordId = null;
 	public String personId = null;
@@ -39,6 +40,8 @@ public class HealthPortUserInfo {
 		Context context = null;
 		DataSource datasource = null;
 
+		this.userId = String.valueOf(userId);
+		
 		try{
 			context = new InitialContext();
 			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
