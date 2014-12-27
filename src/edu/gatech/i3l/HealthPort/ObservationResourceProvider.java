@@ -80,43 +80,46 @@ public class ObservationResourceProvider implements IResourceProvider {
     	}
     	
     	int patientNum = Integer.parseInt(PatientID);
-    	String rId = null;
-    	String pId = null;
 		
-		try{
-			context = new InitialContext();
-			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
-			connection = datasource.getConnection();
-			statement = connection.createStatement();
-			String SQL_STATEMENT = "SELECT U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) WHERE U1.ID="+patientNum;
-			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
-			if (resultSet.next()) {
-				name = resultSet.getString("NAME");
-				location = resultSet.getString("TAG");
-				rId = resultSet.getString("RECORDID");
-				pId = resultSet.getString("PERSONID");
-				System.out.println(patientNum);
-				System.out.println(name+":"+location);
-			} else {
-				return retVal;
-			}
-			
-			connection.close();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+    	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(patientNum);
+    	String rId = HealthPortUser.recordId;
+    	String pId = HealthPortUser.personId;
+    	location = HealthPortUser.dataSource;
+    	
+//		try{
+//			context = new InitialContext();
+//			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+//			connection = datasource.getConnection();
+//			statement = connection.createStatement();
+//			String SQL_STATEMENT = "SELECT U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) WHERE U1.ID="+patientNum;
+//			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
+//			if (resultSet.next()) {
+//				name = resultSet.getString("NAME");
+//				location = resultSet.getString("TAG");
+//				rId = resultSet.getString("RECORDID");
+//				pId = resultSet.getString("PERSONID");
+//				System.out.println(patientNum);
+//				System.out.println(name+":"+location);
+//			} else {
+//				return retVal;
+//			}
+//			
+//			connection.close();
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 
 		//Access Greenway and get CCD of patient
-		if(location.equals("GW")){
+		if(location.equals(HealthPortUserInfo.GREENWAY)){
 			ccd = GreenwayPort.getCCD(pId);
 			System.out.println(ccd);
 	     	
-		}
+		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
+			retVal = new SyntheticEHRPort().getObservations(HealthPortUser);
 			
-		// Access Healthvault to get Patient information
- 
-		if(location.equals("HV")){
+		} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
+			// Access Healthvault to get Patient information
 			//retVal = HVCCDParse(rId, pId,PatientID);
 			
 			//Get the Weight and create Observations
