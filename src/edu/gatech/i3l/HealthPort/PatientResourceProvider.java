@@ -13,8 +13,11 @@ import javax.sql.DataSource;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dstu.resource.Patient;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
+import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
+import ca.uhn.fhir.rest.annotation.IdParam;
+import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 
@@ -32,6 +35,23 @@ public class PatientResourceProvider implements IResourceProvider {
     @Override
     public Class<Patient> getResourceType() {
         return Patient.class;
+    }
+    
+    @Read()
+    public Patient getResourceById(@IdParam IdDt theId){
+    	Patient patient = new Patient();
+    	int id = Integer.parseInt(theId.getIdPart());
+    	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(id);
+    	
+		patient.setId(HealthPortUser.userId);
+		patient.addIdentifier();
+		patient.getIdentifier().get(0).setSystem(new UriDt("urn:hapitest:mrns"));
+		patient.getIdentifier().get(0).setValue(HealthPortUser.userId);
+		String[] userName  = HealthPortUser.name.split(" ");
+		patient.addName().addFamily(userName[1]);
+		patient.getName().get(0).addGiven(userName[0]);
+    	
+    	return patient;
     }
      
     
@@ -63,14 +83,14 @@ public class PatientResourceProvider implements IResourceProvider {
 				patient.getIdentifier().get(0).setValue(String.valueOf(userId));
 				patient.addName().addFamily(userName[1]);
 				patient.getName().get(0).addGiven(userName[0]);
-				patient.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				//patient.getText().setStatus(NarrativeStatusEnum.GENERATED);
 
 		       retVal.add(patient);
 		       String output;
-		       ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+		       //ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 		       //output = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(patient);
-		       output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
-		       patient.getText().setDiv(output);
+		       //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
+		       //patient.getText().setDiv(output);
 			}
 			connection.close();
 			

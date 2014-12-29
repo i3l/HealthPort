@@ -1,18 +1,13 @@
 package edu.gatech.i3l.HealthPort;
 
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.sql.DataSource;
-
 import ca.uhn.fhir.model.dstu.resource.Observation;
-
+import ca.uhn.fhir.model.dstu.resource.Patient;
+import ca.uhn.fhir.model.primitive.IdDt;
+import ca.uhn.fhir.rest.annotation.IdParam;
+import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;
@@ -29,17 +24,34 @@ public class ObservationResourceProvider implements IResourceProvider {
     public Class<Observation> getResourceType() {
         return Observation.class;
     }
+    
+    @Read()
+    public Observation getResourceById(@IdParam IdDt theId){
+    	Observation obs = new Observation();
+    	String resourceId = theId.getIdPart();
+    	String[] Ids  = theId.getIdPart().split("\\-",3);
+    	
+    	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
+    	String location = HealthPortUser.dataSource;
+		
+    	if(location.equals(HealthPortUserInfo.GREENWAY)){
+			System.out.println("Greenway");
+	     	
+		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
+			//obs = new SyntheticEHRPort().getObservations(HealthPortUser);
+			
+		} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
+			obs = new HealthVaultPort().getObservation(resourceId);
+		}
+    
+    	return obs; 	
+    }
      
     
     @Search()
     public List<Observation> getObservationsbyPatient(
     		@RequiredParam(name=Observation.SP_SUBJECT) ReferenceParam theSubject){
     	
-    	Connection connection = null;
-		Statement statement = null;
-		Context context = null;
-		DataSource datasource = null;
-		String name=null;
 		String location=null;
 		String ccd=null;	
 		
@@ -98,8 +110,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 			retVal = new SyntheticEHRPort().getObservations(HealthPortUser);
 			
 		} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
-			//retVal = HealthVaultPort.getHVObservationByCCD(rId, pId,PatientID);
-			retVal = HealthVaultPort.getObservation(rId,pId,PatientID);
+			retVal = new HealthVaultPort().getObservations(HealthPortUser);
 		}
 
        return retVal;

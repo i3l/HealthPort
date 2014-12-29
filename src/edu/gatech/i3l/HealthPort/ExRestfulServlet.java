@@ -34,7 +34,8 @@ public class ExRestfulServlet extends RestfulServer {
         resourceProviders.add(new PatientResourceProvider());
         resourceProviders.add(new ObservationResourceProvider());
         resourceProviders.add(new ConditionResourceProvider());
-        resourceProviders.add(new MedicationResourceProvider());
+        //Medication not fully implemented yet
+        //resourceProviders.add(new MedicationPrescrResource());
         setResourceProviders(resourceProviders);
     }
      

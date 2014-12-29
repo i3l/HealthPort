@@ -44,4 +44,22 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.gatech.i3l.HealthPort.HealthPortFHIRIntf#getObservation(java.lang.String)
+	 */
+	@Override
+	public Observation getObservation(String resourceId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.gatech.i3l.HealthPort.HealthPortFHIRIntf#getCondition(java.lang.String)
+	 */
+	@Override
+	public Condition getCondition(String resourceId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
