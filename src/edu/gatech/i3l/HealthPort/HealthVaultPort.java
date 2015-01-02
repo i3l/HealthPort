@@ -372,9 +372,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		if(responseStr.equals("temp response")){
 			responseStr= getThings("3d34d87e-7fc1-4153-800f-f56592cb0d17",Record_id,Person_id);
 		}
-		//String testresponseStr = getThingsById(Record_id, Person_id);
-		//System.out.println(testresponseStr);
-		
+
 		   try {
 				DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -413,9 +411,9 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	}
 	static public ArrayList<Observation> setWeightObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
+		FhirContext ctx = new FhirContext();
 		for (int i = 0; i < retList.size(); i=i+3) {
 		Observation obs = new Observation();
-		//obs.setId("pid:"+userInfo.userId); // This is object resource ID. 
 		obs.setId(userId + "-"+count+"-"+ retList.get(i));
 		String nameCode = getCode("Body weight");
 		obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
@@ -424,12 +422,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		obs.setComments("Body Weight");
 		obs.setStatus(ObservationStatusEnum.FINAL);
 		obs.setReliability(ObservationReliabilityEnum.OK);
-		
-		//obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
-		//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-	    //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-	    //obs.getText().setDiv(output);
-	    //count = count+1;
+		ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+	    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+	    obs.getText().setDiv(output);
+	  
 		retVal.add(obs);
 		}
 		return retVal;
@@ -478,6 +474,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	}
 	static public ArrayList<Observation> setHeightObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
+		FhirContext ctx = new FhirContext();
 		for (int i = 0; i < retList.size(); i=i+3) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
@@ -488,12 +485,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setComments("Height");
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			
-			//obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
-			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-		    //obs.getText().setDiv(output);
-		    //count = count+1;
+			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+		    obs.getText().setDiv(output);
+		  
 			retVal.add(obs);
 		}
 		return retVal;
@@ -538,6 +533,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	}
 	static public ArrayList<Observation> setBloodPressObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
+		FhirContext ctx = new FhirContext();
 		for (int i = 0; i < retList.size(); i=i+5) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
@@ -548,11 +544,9 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setComments(retList.get(i+1) + ", Overall:"+ retList.get(i+4));
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			
-			//obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
-			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-		    //obs.getText().setDiv(output);
+			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+		    obs.getText().setDiv(output);
 			if (retList.get(i+1).equals("Systolic Blood Pressure")){
 				count = count+1;
 			}
@@ -608,6 +602,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	}
 	static public ArrayList<Observation> setBloodGlucoseObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
+		FhirContext ctx = new FhirContext();
 		for (int i = 0; i < retList.size(); i=i+4) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
@@ -618,12 +613,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setComments("Glucose in " + retList.get(i+3));
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			
-			//obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
-			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-		    //obs.getText().setDiv(output);
-		    //count = count+1;
+			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+		    obs.getText().setDiv(output);
+		   
 			retVal.add(obs);
 		}
 		return retVal;
@@ -666,6 +659,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	
 	static public ArrayList<Observation> setCholesterolObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count =0;
+		FhirContext ctx = new FhirContext();
 		for (int i = 0; i < retList.size(); i=i+3) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
@@ -676,12 +670,9 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setComments("Cholesterol");
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			
-			//obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
-			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-		    //obs.getText().setDiv(output);
-		    //count = count+1;
+			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+		    obs.getText().setDiv(output);
 			retVal.add(obs);
 		}
 		return retVal;
@@ -733,6 +724,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	}
 	static public ArrayList<Observation> setLabObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count =0;
+		FhirContext ctx = new FhirContext();
 		for (int i = 0; i < retList.size(); i=i+5) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
@@ -743,11 +735,9 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setComments(retList.get(i+2)+" from: "+retList.get(i+1));
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-					
-			//obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
-			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-			//output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-			//obs.getText().setDiv(output);
+			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			obs.getText().setDiv(output);
 			count = count+1;	    
 			retVal.add(obs);
 		}
@@ -789,6 +779,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	}
 	static public ArrayList<Condition> setConditionObservation(String userId, ArrayList<String> conditionList, ArrayList<Condition> retVal){
 		int count =0;
+		FhirContext ctx = new FhirContext();
 		for (int i = 0; i < conditionList.size(); i=i+3) {
 			Condition cond = new Condition();
 			cond.setId(userId+"-"+count+"-"+conditionList.get(i));
@@ -830,10 +821,9 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				//System.out.println("Put refuted to FHIR status");
 			} 
 			
-			//cond.getText().setStatus(NarrativeStatusEnum.GENERATED);
-			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
-		    //cond.getText().setDiv(output);
+			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
+		    cond.getText().setDiv(output);
 			count = count+1;
 			retVal.add(cond);
 		}
@@ -858,18 +848,41 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				Node nNode = nList.item(temp);
 				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 					finalList.add(nNode.getFirstChild().getTextContent());
+					//System.out.println(nNode.getFirstChild().getTextContent());
 					Element eElement = (Element) nNode;
 					finalList.add(eElement.getElementsByTagName("name").item(0).getTextContent());
+					//System.out.println(eElement.getElementsByTagName("name").item(0).getTextContent());
 					nNode = nNode.getLastChild().getFirstChild().getFirstChild().getNextSibling().getFirstChild();
 					String[] split = (nNode.getTextContent().split("\\s+"));
 					finalList.add(split[0]);
+					//System.out.println(split[0]);
 					finalList.add(split[1]);
+					//System.out.println(split[1]);
 					nNode = nNode.getParentNode().getNextSibling().getFirstChild();
 					split = (nNode.getTextContent().split("\\s+"));
 					finalList.add(split[0]);
+					//System.out.println(split[0]);
 					finalList.add(split[1]);
+					//System.out.println(split[1]);
 					nNode = nNode.getParentNode().getNextSibling().getFirstChild();
 					finalList.add(nNode.getTextContent());
+					//System.out.println(nNode.getTextContent());
+					nNode = nNode.getParentNode().getNextSibling().getFirstChild();
+					finalList.add(nNode.getTextContent());
+					//System.out.println(nNode.getTextContent());
+					nNode = nNode.getParentNode().getNextSibling().getFirstChild();
+					finalList.add(nNode.getTextContent());
+					//System.out.println(nNode.getTextContent());
+					nNode = nNode.getParentNode().getNextSibling().getNextSibling().getNextSibling().getFirstChild();
+					if (nNode.getTextContent().equals("Prescribed")){
+						nNode=nNode.getParentNode().getNextSibling().getFirstChild().getFirstChild();
+						finalList.add(nNode.getTextContent());
+						//System.out.println(nNode.getTextContent());
+					}
+					else{
+						finalList.add("N/A");
+						//System.out.println("N/A");
+					}
 				}
 				
 			}
@@ -877,12 +890,25 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			e.printStackTrace();
 		    }
 		
-		System.out.println(finalList);
+		//System.out.println(finalList);
 		return finalList;
 	}
 	static public ArrayList<MedicationPrescription> setMedications(String userId, ArrayList<String> retList, ArrayList<MedicationPrescription> retVal){
-		MedicationPrescription med = new MedicationPrescription();
-		
+		//MedicationPrescription med = new MedicationPrescription();
+		int count =0;
+		for (int i = 0; i < retList.size(); i=i+10) {
+			MedicationPrescription med = new MedicationPrescription();
+			med.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
+			String nameCode = "0000";
+			
+			
+			//obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+		    //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+		    //obs.getText().setDiv(output);
+		    //count = count+1;
+			retVal.add(med);
+		}
 		
 		
 		

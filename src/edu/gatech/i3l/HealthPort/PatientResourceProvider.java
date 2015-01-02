@@ -40,6 +40,7 @@ public class PatientResourceProvider implements IResourceProvider {
     @Read()
     public Patient getResourceById(@IdParam IdDt theId){
     	Patient patient = new Patient();
+    	FhirContext ctx = new FhirContext();
     	int id = Integer.parseInt(theId.getIdPart());
     	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(id);
     	
@@ -50,6 +51,10 @@ public class PatientResourceProvider implements IResourceProvider {
 		String[] userName  = HealthPortUser.name.split(" ");
 		patient.addName().addFamily(userName[1]);
 		patient.getName().get(0).addGiven(userName[0]);
+		ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+		// Encode the output, including the narrative
+		String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
+		patient.getText().setDiv(output);
     	
     	return patient;
     }
@@ -83,14 +88,11 @@ public class PatientResourceProvider implements IResourceProvider {
 				patient.getIdentifier().get(0).setValue(String.valueOf(userId));
 				patient.addName().addFamily(userName[1]);
 				patient.getName().get(0).addGiven(userName[0]);
-				//patient.getText().setStatus(NarrativeStatusEnum.GENERATED);
-
-		       retVal.add(patient);
-		       String output;
-		       //ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		       //output = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(patient);
-		       //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
-		       //patient.getText().setDiv(output);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+				// Encode the output, including the narrative
+				String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
+				patient.getText().setDiv(output);
+		        retVal.add(patient);
 			}
 			connection.close();
 			
