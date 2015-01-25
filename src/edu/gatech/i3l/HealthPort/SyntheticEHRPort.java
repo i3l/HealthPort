@@ -93,16 +93,10 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			String sql = "SELECT observation_value FROM observation WHERE person_id= " + Ids[0] + " and observation_concept_id= " + Ids[2];
 			ResultSet rs = stmt.executeQuery(sql);
 			while(rs.next()){
-		         //String obsID = rs.getString("observation_concept_id");
 		         String obsVal = rs.getString("observation_value");
 		         retList.add(obsVal);
 		         retVal = setObservation(Ids[0],Ids[2],retList,retVal);
-		         
-		         //Display values
-		         //System.out.println(", ID: " + obsID);
-		         //System.out.println(", Val: " + obsVal);
 			}
-			//retList = finalList;
 		} catch (SQLException se) {
 			// TODO Auto-generated catch block
 			se.printStackTrace();
