@@ -44,12 +44,38 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		// TODO Auto-generated method stub
 		ArrayList<Observation> retVal = new ArrayList<Observation>();
     	ArrayList<String> retList = new ArrayList<String>();
-    	String response = "temp response";
     	
     	//Get all Observations
 		//retList = getObs(response,userInfo.recordId, userInfo.personId);
 		//retVal = setWeightObservation(userInfo.userId,retList,retVal);
-
+    	String serverName = "localhost";
+		String url = "jdbc:mysql://" + serverName;
+		String username = "healthport";
+		String password = "i3lworks";
+		//String driverName = "org.gjt.mm.mysql.Driver";	
+		String dbName = "OMOP";
+	    Connection conn = null;
+	    Statement stmt = null;
+	    
+	    try {
+			//Class.forName(driverName);
+			String URL = url + "/" + dbName;
+			conn = DriverManager.getConnection(URL, username, password);
+			stmt = conn.createStatement();
+			String sql = "SELECT observation_value, observation_concept_id FROM observation WHERE person_id= " + userInfo.personId;
+			ResultSet rs = stmt.executeQuery(sql);
+			while(rs.next()){
+		         String obsVal = rs.getString("observation_value");
+		         String obsConceptId = rs.getString("observation_value");
+		         retList.clear();
+		         retList.add(obsVal);
+		         //retList.add(obsConceptId);
+		         retVal = setObservation(userInfo.personId,null,retList,retVal);
+			}
+		} catch (SQLException se) {
+			// TODO Auto-generated catch block
+			se.printStackTrace();
+			}
 		return retVal;
 	}
 
