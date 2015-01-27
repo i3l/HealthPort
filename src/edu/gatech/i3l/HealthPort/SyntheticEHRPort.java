@@ -23,6 +23,7 @@ import org.xml.sax.InputSource;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
+import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
@@ -53,25 +54,28 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    String obsVal = null;
 	    String obsConceptId = null;
 	    String obsId = null;
+	    String obsDate = null;
 	    int count = 0;
 	    try {
 			//Class.forName(driverName);
 			String URL = url + "/" + dbName;
 			conn = DriverManager.getConnection(URL, username, password);
 			stmt = conn.createStatement();
-			String sql = "SELECT observation_id, observation_value, observation_concept_id FROM observation WHERE person_id= " + userInfo.personId;
+			String sql = "SELECT observation_id, observation_value, observation_date, observation_concept_id FROM observation WHERE person_id= " + userInfo.personId;
 			ResultSet rs = stmt.executeQuery(sql);
 			while(rs.next()){
 				obsVal = rs.getString("observation_value");
 				obsConceptId = rs.getString("observation_concept_id");
 				obsId = rs.getString("observation_id");
+				obsDate = rs.getString("observation_date");
 				FhirContext ctx = new FhirContext();
 				Observation obs = new Observation();
-				obs.setId(userInfo.personId + "-"+count+"-"+ obsId);
+				obs.setId(userInfo.userId + "-"+count+"-"+ obsId);
 				obs.setName(new CodeableConceptDt("http://loinc.org",obsConceptId)); 
 				StringDt val = new StringDt(obsVal);
 				obs.setValue(val);
 				//obs.setComments("Body Weight");// if required, do -> if(Id[2] ==""){ set as ""} else{}
+				obs.setComments(obsDate);
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
 				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
@@ -89,12 +93,51 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	}
 
 	public ArrayList<Condition> getConditions(HealthPortUserInfo userInfo) {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<Condition> retVal = new ArrayList<Condition>();
+		Connection conn = null;
+	    Statement stmt = null;    
+	    String condVal = null;
+	    String condConceptId = null;
+	    String condId = null;
+	    String condDate = null;
+	    String condName = null;
+	    int count = 0;
+	    String userId = null;
+	    try {
+			//Class.forName(driverName);
+			String URL = url + "/" + dbName;
+			conn = DriverManager.getConnection(URL, username, password);
+			stmt = conn.createStatement();
+			String sql = "SELECT condition_occurrence_id, observation_value, condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE person_id= " + userInfo.personId;
+			ResultSet rs = stmt.executeQuery(sql);
+			while(rs.next()){
+				condVal = rs.getString("observation_value");
+				condConceptId = rs.getString("condition_id");
+				condId = rs.getString("condition_occurrence_id");
+				condDate = rs.getString("condition_start_date");
+				condName = rs.getString("condition_name");
+				FhirContext ctx = new FhirContext();
+				Condition cond = new Condition();
+				cond.setId(userId+"-"+count+"-"+condId);
+				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+				cond.setSubject(subj);
+				CodeableConceptDt value = new CodeableConceptDt();
+				value.setText(condName);
+				cond.setCode(value);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
+			    cond.getText().setDiv(output);
+				//count = count+1;
+				retVal.add(cond);
+			}
+		} catch (SQLException se) {
+			// TODO Auto-generated catch block
+			se.printStackTrace();
+			}
+		return retVal;
 	}
 
-	public ArrayList<MedicationPrescription> getMedicationPrescriptions(
-			HealthPortUserInfo userInfo) {
+	public ArrayList<MedicationPrescription> getMedicationPrescriptions(HealthPortUserInfo userInfo) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -109,21 +152,26 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    Statement stmt = null;
 	    String obsVal = null;
 	    String obsConceptId = null;
+	    String personId = null;
 	    try {
-			String URL = url + "/" + dbName;
+	    	String URL = url + "/HealthPort";
 			conn = DriverManager.getConnection(URL, username, password);
 			stmt = conn.createStatement();
-			String sql = "SELECT observation_value, observation_concept_id FROM observation WHERE person_id= " + Ids[0] + " and observation_id= " + Ids[2];
+			String sql = "SELECT person_id FROM user WHERE id= " + Ids[0];
 			ResultSet rs = stmt.executeQuery(sql);
+			while(rs.next()){
+				personId = rs.getString("person_id");
+			}
+			URL = url + "/" + dbName;
+			conn = DriverManager.getConnection(URL, username, password);
+			stmt = conn.createStatement();
+			sql = "SELECT observation_value, observation_concept_id FROM observation WHERE person_id= " + personId + " and observation_id= " + Ids[2];
+			rs = stmt.executeQuery(sql);
 			while(rs.next()){
 				obsVal = rs.getString("observation_value");
 				obsConceptId = rs.getString("observation_concept_id");				
-		         //retList.add(obsVal);
-		         //retVal = setObservation(Ids[0],Ids[2],retList,retVal);
-			}
-			
+			}			
 		} catch (SQLException se) {
-			// TODO Auto-generated catch block
 			se.printStackTrace();
 			}
 
@@ -132,42 +180,15 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		Observation obs = new Observation();
 		obs.setId(Ids[0] + "-"+count+"-"+ Ids[2]);
 		obs.setName(new CodeableConceptDt("http://loinc.org",obsConceptId)); 
-		//String nameCode = getCode("Body weight");
-		//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
-		//QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+1))).setUnits(retList.get(i+2));
 		StringDt val = new StringDt(obsVal);
 		obs.setValue(val);
-		//obs.setComments("Body Weight");// if required, do -> if(Id[2] ==""){ set as ""} else{}
 		obs.setStatus(ObservationStatusEnum.FINAL);
 		obs.setReliability(ObservationReliabilityEnum.OK);
 		ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 	    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
 	    obs.getText().setDiv(output);
-		//finalRetVal.add(obs);
 		return obs;
 	    
-	}
-	
-	static public ArrayList<Observation> setObservation(String userId, String nameCode, ArrayList<String> retList, ArrayList<Observation> retVal){
-		int count = 0;
-		FhirContext ctx = new FhirContext();
-		for (int i = 0; i < retList.size(); i=i+3) {
-		Observation obs = new Observation();
-		obs.setId(userId + "-"+count+"-"+ retList.get(i));
-		//String nameCode = getCode("Body weight");
-		obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
-		QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+1))).setUnits(retList.get(i+2));
-		obs.setValue(quantity);
-		//obs.setComments("Body Weight");
-		obs.setStatus(ObservationStatusEnum.FINAL);
-		obs.setReliability(ObservationReliabilityEnum.OK);
-		ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-	    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-	    obs.getText().setDiv(output);
-	  
-		retVal.add(obs);
-		}
-		return retVal;
 	}
 
 	public Condition getCondition(String resourceId) {
