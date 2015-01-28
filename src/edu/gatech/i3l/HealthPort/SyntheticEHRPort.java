@@ -96,7 +96,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		ArrayList<Condition> retVal = new ArrayList<Condition>();
 		Connection conn = null;
 	    Statement stmt = null;    
-	    String condVal = null;
+	    //String condVal = null;
 	    String condConceptId = null;
 	    String condId = null;
 	    String condDate = null;
@@ -108,10 +108,10 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			String URL = url + "/" + dbName;
 			conn = DriverManager.getConnection(URL, username, password);
 			stmt = conn.createStatement();
-			String sql = "SELECT condition_occurrence_id, observation_value, condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE person_id= " + userInfo.personId;
+			String sql = "SELECT condition_occurrence_id, condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE person_id= " + userInfo.personId;
 			ResultSet rs = stmt.executeQuery(sql);
 			while(rs.next()){
-				condVal = rs.getString("observation_value");
+				//condVal = rs.getString("observation_value");
 				condConceptId = rs.getString("condition_id");
 				condId = rs.getString("condition_occurrence_id");
 				condDate = rs.getString("condition_start_date");
@@ -152,41 +152,47 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    Statement stmt = null;
 	    String obsVal = null;
 	    String obsConceptId = null;
-	    String personId = null;
+	    String obsDate = null;
+	    //String personId = null;
+	    String URL = null;
+	    String sql = null; 
+	    ResultSet rs = null;
+	    Observation obs = new Observation();
 	    try {
-	    	String URL = url + "/HealthPort";
+	    	/*URL = url + "/HealthPort";
 			conn = DriverManager.getConnection(URL, username, password);
 			stmt = conn.createStatement();
-			String sql = "SELECT person_id FROM user WHERE id= " + Ids[0];
-			ResultSet rs = stmt.executeQuery(sql);
+			sql = "SELECT person_id FROM user WHERE id= " + Ids[0];
+			rs = stmt.executeQuery(sql);
 			while(rs.next()){
 				personId = rs.getString("person_id");
-			}
+			}*/
 			URL = url + "/" + dbName;
 			conn = DriverManager.getConnection(URL, username, password);
 			stmt = conn.createStatement();
-			sql = "SELECT observation_value, observation_concept_id FROM observation WHERE person_id= " + personId + " and observation_id= " + Ids[2];
+			sql = "SELECT observation_id, observation_value, observation_date, observation_concept_id FROM observation WHERE observation_id= " + Ids[2];
 			rs = stmt.executeQuery(sql);
 			while(rs.next()){
 				obsVal = rs.getString("observation_value");
-				obsConceptId = rs.getString("observation_concept_id");				
+				obsConceptId = rs.getString("observation_concept_id");		
+				obsDate = rs.getString("observation_date");
+				int count = 0;
+				FhirContext ctx = new FhirContext();	
+				obs.setId(Ids[0] + "-"+count+"-"+ Ids[2]);
+				obs.setName(new CodeableConceptDt("http://loinc.org",obsConceptId)); 
+				StringDt val = new StringDt(obsVal);
+				obs.setValue(val);
+			    obs.setComments(obsDate);
+				obs.setStatus(ObservationStatusEnum.FINAL);
+				obs.setReliability(ObservationReliabilityEnum.OK);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			    obs.getText().setDiv(output);
 			}			
 		} catch (SQLException se) {
 			se.printStackTrace();
 			}
 
-	    int count = 0;
-		FhirContext ctx = new FhirContext();
-		Observation obs = new Observation();
-		obs.setId(Ids[0] + "-"+count+"-"+ Ids[2]);
-		obs.setName(new CodeableConceptDt("http://loinc.org",obsConceptId)); 
-		StringDt val = new StringDt(obsVal);
-		obs.setValue(val);
-		obs.setStatus(ObservationStatusEnum.FINAL);
-		obs.setReliability(ObservationReliabilityEnum.OK);
-		ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-	    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-	    obs.getText().setDiv(output);
 		return obs;
 	    
 	}
