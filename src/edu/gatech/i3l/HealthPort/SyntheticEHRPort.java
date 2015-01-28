@@ -29,6 +29,7 @@ import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
+import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.StringDt;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 
@@ -102,7 +103,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    String condDate = null;
 	    String condName = null;
 	    int count = 0;
-	    String userId = null;
 	    try {
 			//Class.forName(driverName);
 			String URL = url + "/" + dbName;
@@ -118,12 +118,16 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				condName = rs.getString("condition_name");
 				FhirContext ctx = new FhirContext();
 				Condition cond = new Condition();
-				cond.setId(userId+"-"+count+"-"+condId);
-				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+				cond.setId(userInfo.userId+"-"+count+"-"+condId);
+				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userInfo.userId);
 				cond.setSubject(subj);
+				cond.setNotes(condDate);
 				CodeableConceptDt value = new CodeableConceptDt();
 				value.setText(condName);
 				cond.setCode(value);
+				cond.addIdentifier("ICD9", condConceptId);
+				//DateDt date = new DateDt(condDate);
+				//setDateAsserted(date);
 				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 			    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
 			    cond.getText().setDiv(output);
@@ -159,14 +163,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    ResultSet rs = null;
 	    Observation obs = new Observation();
 	    try {
-	    	/*URL = url + "/HealthPort";
-			conn = DriverManager.getConnection(URL, username, password);
-			stmt = conn.createStatement();
-			sql = "SELECT person_id FROM user WHERE id= " + Ids[0];
-			rs = stmt.executeQuery(sql);
-			while(rs.next()){
-				personId = rs.getString("person_id");
-			}*/
 			URL = url + "/" + dbName;
 			conn = DriverManager.getConnection(URL, username, password);
 			stmt = conn.createStatement();
@@ -198,10 +194,52 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	}
 
 	public Condition getCondition(String resourceId) {
-		// TODO Auto-generated method stub
-		String[] data = resourceId.split("-");
-        System.out.println(data[1]);
-		return null;
+		String[] Ids  = resourceId.split("\\-",3);
+    	//Ids[0] -> person id
+		//Ids[1] -> count 
+		//Ids[2] -> concept id -> eg. 8302-2 for height
+	    Connection conn = null;
+	    Statement stmt = null;
+	    String condConceptId = null;
+	    String condId = null;
+	    String condDate = null;
+	    String condName = null;
+	    int count = 0;
+	    String URL = null;
+	    String sql = null; 
+	    ResultSet rs = null;
+	    Condition cond = new Condition();
+	    try {
+	    	URL = url + "/" + dbName;
+			conn = DriverManager.getConnection(URL, username, password);
+			stmt = conn.createStatement();
+			sql = "SELECT condition_occurrence_id, condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE condition_occurrence_id= " + Ids[2];
+			rs = stmt.executeQuery(sql);
+			while(rs.next()){
+				condConceptId = rs.getString("condition_id");
+				condId = rs.getString("condition_occurrence_id");
+				condDate = rs.getString("condition_start_date");
+				condName = rs.getString("condition_name");
+				FhirContext ctx = new FhirContext();
+				cond.setId(Ids[0]+"-"+count+"-"+Ids[2]);
+				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+Ids[0]);
+				cond.setSubject(subj);
+				cond.setNotes(condDate);
+				CodeableConceptDt value = new CodeableConceptDt();
+				value.setText(condName);
+				cond.setCode(value);
+				cond.addIdentifier("ICD9", condConceptId);
+				//DateDt date = new DateDt(condDate);
+				//setDateAsserted(date);
+				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
+			    cond.getText().setDiv(output);
+			}			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			}
+
+		return cond;
 	}
 
 	
