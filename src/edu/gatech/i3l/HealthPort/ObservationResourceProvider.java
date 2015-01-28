@@ -47,7 +47,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 			System.out.println("Greenway");
 	     	
 		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
-			//obs = new SyntheticEHRPort().getObservations(HealthPortUser);
+			obs = new SyntheticEHRPort().getObservation(resourceId);
 			
 		} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
 			obs = new HealthVaultPort().getObservation(resourceId);

@@ -49,7 +49,7 @@ public class ConditionResourceProvider implements IResourceProvider {
 			System.out.println("Greenway");
 	     	
 		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
-			//obs = new SyntheticEHRPort().getObservations(HealthPortUser);
+			cond = new SyntheticEHRPort().getCondition(resourceId);
 			
 		} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
 			cond = new HealthVaultPort().getCondition(resourceId);
