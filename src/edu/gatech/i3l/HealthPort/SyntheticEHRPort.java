@@ -201,7 +201,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    Connection conn = null;
 	    Statement stmt = null;
 	    String condConceptId = null;
-	    String condId = null;
+	    //String condId = null;
 	    String condDate = null;
 	    String condName = null;
 	    int count = 0;
@@ -213,11 +213,11 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    	URL = url + "/" + dbName;
 			conn = DriverManager.getConnection(URL, username, password);
 			stmt = conn.createStatement();
-			sql = "SELECT condition_occurrence_id, condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE condition_occurrence_id= " + Ids[2];
+			sql = "SELECT condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE condition_occurrence_id= " + Ids[2];
 			rs = stmt.executeQuery(sql);
 			while(rs.next()){
 				condConceptId = rs.getString("condition_id");
-				condId = rs.getString("condition_occurrence_id");
+				//condId = rs.getString("condition_occurrence_id");
 				condDate = rs.getString("condition_start_date");
 				condName = rs.getString("condition_name");
 				FhirContext ctx = new FhirContext();
