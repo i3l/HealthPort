@@ -146,44 +146,32 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	}
 
 	public ArrayList<MedicationPrescription> getMedicationPrescriptions(HealthPortUserInfo userInfo) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	public MedicationPrescription getMedicationPrescription(String resourceId){
-		MedicationPrescription med = new MedicationPrescription();
-  		Connection conn = null;
-	    Statement stmt = null;
+		ArrayList<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
+		Connection conn = null;
+	    Statement stmt = null;    
 	    String[] drugDosage = null;
 	    String drugName = null;
 	    String lastFilled = null;
 	    String drugId = null;
-	    String URL = null;
-	    String sql = null; 
-	    ResultSet rs = null;
-  		String type = null;
-  		String[] Ids  = resourceId.split("\\-",3);
-      	
-      	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
-      	String rId = HealthPortUser.recordId;
-      	String pId = HealthPortUser.personId;
+	    String drugConceptId = null;
+	    int count = 0;
 	    try {
-			URL = url + "/" + dbName;
+			//Class.forName(driverName);
+			String URL = url + "/" + dbName;
 			conn = DriverManager.getConnection(URL, username, password);
 			stmt = conn.createStatement();
-			sql = "SELECT drug_id, drug_name, drug_dosage, last_filled_date FROM drug_exposure WHERE drug_exposure_id= " + Ids[2];
-			rs = stmt.executeQuery(sql);
+			String sql = "SELECT drug_exposure_id, drug_id, drug_name, drug_dosage, last_filled_date FROM drug_exposure WHERE person_id= " + userInfo.personId;
+			ResultSet rs = stmt.executeQuery(sql);
 			while(rs.next()){
 				drugDosage = rs.getString("drug_dosage").split("\\s", 2);  
-				
-				drugId = rs.getString("drug_id");
+				drugId = rs.getString("drug_exposure_id");
+				drugConceptId = rs.getString("drug_id");
 				drugName = rs.getString("drug_name");
 				lastFilled = rs.getString("last_filled_date");
-				FhirContext ctx = new FhirContext();	
-				SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-				int count =0;
-				med.setId(Ids[0]+"-"+count+"-"+Ids[2]); // This is object resource ID. 
-				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+Ids[0]);
+				//FhirContext ctx = new FhirContext();
+				MedicationPrescription med = new MedicationPrescription();
+				med.setId(userInfo.userId+"-"+count+"-"+drugId); // This is object resource ID. 
+				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userInfo.userId);
 				med.setPatient(subj);
 				ResourceReferenceDt medicationName = new ResourceReferenceDt();
 				medicationName.setDisplay(drugName);
@@ -197,7 +185,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				//yyyymmdd
 				DateTimeDt date = new DateTimeDt(lastFilled.substring(0,8));
 				med.setDateWritten(date);
-				
+				med.addIdentifier("NDC", drugConceptId);
 				StringBuffer buffer_narrative = new StringBuffer();
 				buffer_narrative.append("<MedicationPrescription xmlns=\"http://hl7.org/fhir>\">\n");
 				buffer_narrative.append("<text>\n");
@@ -219,8 +207,83 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			   // String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
 				String output = buffer_narrative.toString();
 			    med.getText().setDiv(output);
-			    System.out.println(drugDosage[0]);
-			    System.out.println(drugDosage[1]);
+			    retVal.add(med);
+			}
+		} catch (SQLException se) {
+			// TODO Auto-generated catch block
+			se.printStackTrace();
+			}
+		return retVal;
+	}
+	
+	public MedicationPrescription getMedicationPrescription(String resourceId){
+		MedicationPrescription med = new MedicationPrescription();
+  		Connection conn = null;
+	    Statement stmt = null;
+	    String[] drugDosage = null;
+	    String drugName = null;
+	    String lastFilled = null;
+	    String drugId = null;
+	    String URL = null;
+	    String sql = null; 
+	    ResultSet rs = null;
+  		//String type = null;
+  		String[] Ids  = resourceId.split("\\-",3);
+      	
+      	//HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
+      	//String rId = HealthPortUser.recordId;
+      	//String pId = HealthPortUser.personId;
+	    try {
+			URL = url + "/" + dbName;
+			conn = DriverManager.getConnection(URL, username, password);
+			stmt = conn.createStatement();
+			sql = "SELECT drug_id, drug_name, drug_dosage, last_filled_date FROM drug_exposure WHERE drug_exposure_id= " + Ids[2];
+			rs = stmt.executeQuery(sql);
+			while(rs.next()){
+				drugDosage = rs.getString("drug_dosage").split("\\s", 2);  
+				drugId = rs.getString("drug_id");
+				drugName = rs.getString("drug_name");
+				lastFilled = rs.getString("last_filled_date");
+				//FhirContext ctx = new FhirContext();	
+				//SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+				int count =0;
+				med.setId(Ids[0]+"-"+count+"-"+Ids[2]); // This is object resource ID. 
+				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+Ids[0]);
+				med.setPatient(subj);
+				ResourceReferenceDt medicationName = new ResourceReferenceDt();
+				medicationName.setDisplay(drugName);
+				med.setMedication(medicationName);
+				ArrayList<MedicationPrescription.DosageInstruction> dosageList = new ArrayList<MedicationPrescription.DosageInstruction>();
+				MedicationPrescription.DosageInstruction dosage = new MedicationPrescription.DosageInstruction(); 
+				double theValue = Double.parseDouble(drugDosage[0]);
+				dosage.setDoseQuantity(null, theValue, drugDosage[1]);
+				dosageList.add(dosage);
+				med.setDosageInstruction(dosageList);
+				//yyyymmdd
+				DateTimeDt date = new DateTimeDt(lastFilled.substring(0,8));
+				med.setDateWritten(date);
+				med.addIdentifier("NDC", drugId);
+				StringBuffer buffer_narrative = new StringBuffer();
+				buffer_narrative.append("<MedicationPrescription xmlns=\"http://hl7.org/fhir>\">\n");
+				buffer_narrative.append("<text>\n");
+				buffer_narrative.append("<status value=\"generated\"/>\n");
+				buffer_narrative.append("<div>\n");
+				buffer_narrative.append("<div class=\"hapiHeaderText\">" + med.getMedication().getDisplay()+ "</div>\n");
+				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+				buffer_narrative.append("	<tbody>\n");
+				buffer_narrative.append("		<tr>\n");
+				buffer_narrative.append("			<td>Id</td>\n");
+				buffer_narrative.append("			<td>"+ med.getId().getIdPart() + "</td>\n");
+				buffer_narrative.append("		</tr>\n");
+				buffer_narrative.append("	</tbody>\n");
+				buffer_narrative.append("</table>\n");
+				buffer_narrative.append("</div>\n");
+				buffer_narrative.append("</text>\n");
+				buffer_narrative.append("</MedicationPrescription>");
+				//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			   // String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
+				String output = buffer_narrative.toString();
+			    med.getText().setDiv(output);
 			}			
 		} catch (SQLException se) {
 			se.printStackTrace();
