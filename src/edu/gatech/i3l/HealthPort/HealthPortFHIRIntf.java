@@ -19,4 +19,5 @@ public interface HealthPortFHIRIntf {
 	public ArrayList<MedicationPrescription> getMedicationPrescriptions (HealthPortUserInfo userInfo);
 	public Observation getObservation(String resourceId);
 	public Condition getCondition(String resourceId);
+	public MedicationPrescription getMedicationPrescription(String resourceId);
 }
