@@ -49,6 +49,7 @@ public class MedicationPrescrResource implements IResourceProvider {
 	     	
 		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
 			//med = new SyntheticEHRPort().getObservations(HealthPortUser);
+			med = new SyntheticEHRPort().getMedicationPrescription(resourceId);
 			
 		} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
 			med = new HealthVaultPort().getMedicationPrescription(resourceId);
