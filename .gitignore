@@ -9,6 +9,7 @@ tmp/
 *~.nib
 local.properties
 .loadpath
+*.class
 
 # External tool builders
 .externalToolBuilders/
