@@ -297,7 +297,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
     	//Ids[0] -> person id
 		//Ids[1] -> count 
 		//Ids[2] -> concept id -> eg. 8302-2 for height
-
 	    Connection conn = null;
 	    Statement stmt = null;
 	    String obsVal = null;
