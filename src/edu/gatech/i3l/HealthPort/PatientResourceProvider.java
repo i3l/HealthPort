@@ -92,16 +92,6 @@ public class PatientResourceProvider implements IResourceProvider {
 				patient.addIdentifier();
 				patient.getIdentifier().get(0).setSystem(new UriDt("urn:hapitest:mrns"));
 				patient.getIdentifier().get(0).setValue(String.valueOf(userId));
-<<<<<<< HEAD
-				if (userName.length == 2){
-					patient.addName().addFamily(userName[1]);
-					patient.getName().get(0).addGiven(userName[0]);
-				}
-				else{
-					patient.addName().addFamily(userName[2]);
-					patient.getName().get(0).addGiven(userName[0]+ " "+ userName[1]);
-				}
-=======
 		        if (userName.length == 2){
                     patient.addName().addFamily(userName[1]);
                     patient.getName().get(0).addGiven(userName[0]);
@@ -110,7 +100,6 @@ public class PatientResourceProvider implements IResourceProvider {
                     patient.addName().addFamily(userName[2]);
                     patient.getName().get(0).addGiven(userName[0]+ " "+ userName[1]);
 		        }
->>>>>>> origin/FHIR-integrate
 				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 				// Encode the output, including the narrative
 				String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);

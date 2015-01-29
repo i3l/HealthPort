@@ -947,6 +947,14 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	 
 	    	return lcode;
 		}
+	/* (non-Javadoc)
+	 * @see edu.gatech.i3l.HealthPort.HealthPortFHIRIntf#getMedicationPrescription(java.lang.String)
+	 */
+	@Override
+	public MedicationPrescription getMedicationPrescription(String resourceId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	
 	 //Parse a given CCD (using mdht) and create observations
