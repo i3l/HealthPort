@@ -147,8 +147,8 @@ public class ConditionResourceProvider implements IResourceProvider {
 	   String identifier = theId.getValue();
 	   System.out.println(identifierSystem);
 	   System.out.println(identifier);
-	   List<Condition> retVal = new ArrayList<Condition>();
-	   // ...populate...
+	   ArrayList<Condition> retVal = new ArrayList<Condition>(); 
+	   retVal = new SyntheticEHRPort().getConditionsByType(identifier);
 	   return retVal;
 	}
 

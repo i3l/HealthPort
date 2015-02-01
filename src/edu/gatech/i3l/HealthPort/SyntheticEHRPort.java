@@ -48,6 +48,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	String username = "healthport";
 	String password = "i3lworks";
 	String dbName = "OMOP";
+	String dbName2 = "HealthPort";
 
 	public ArrayList<Observation> getObservations(HealthPortUserInfo userInfo) {
 		// TODO Auto-generated method stub
@@ -431,6 +432,87 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			}
 
 		return cond;
+	}
+	
+	public ArrayList<Condition> getConditionsByType(String code) {
+		ArrayList<Condition> retVal = new ArrayList<Condition>();
+		Connection conn = null;
+		Connection conn2 = null;
+	    Statement stmt = null;   
+	    Statement stmt2 = null; 
+	    String condConceptId = null;
+	    String condId = null;
+	    String condDate = null;
+	    String condName = null;
+	    String personId = null;
+	    String id = null;
+	    int count = 0;
+	    try {
+			//Class.forName(driverName);
+			String URL = url + "/" + dbName;
+			String URL2 = url + "/" + dbName2;
+			conn = DriverManager.getConnection(URL, username, password);
+			conn2 = DriverManager.getConnection(URL2, username, password);
+			stmt = conn.createStatement();
+			stmt2 = conn2.createStatement();
+			
+			String sql = "SELECT condition_occurrence_id, person_id,condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE condition_id= " + code;
+			ResultSet rs = stmt.executeQuery(sql);
+			while(rs.next()){
+				//condVal = rs.getString("observation_value");
+				condConceptId = rs.getString("condition_id");
+				condId = rs.getString("condition_occurrence_id");
+				condDate = rs.getString("condition_start_date");
+				condName = rs.getString("condition_name");
+				personId = rs.getString("person_id");
+				sql = "SELECT id FROM USER WHERE PERSONID= " + personId;
+				ResultSet temprs = stmt2.executeQuery(sql);
+				while(temprs.next()){
+					id = temprs.getString("id");
+					System.out.println(id);
+				
+					Condition cond = new Condition();
+					cond.setId(id+"-"+count+"-"+condId);
+					ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+id);
+					cond.setSubject(subj);
+					cond.setNotes(condDate);
+					CodeableConceptDt value = new CodeableConceptDt();
+					value.setText(condName);
+					cond.setCode(value);
+					cond.addIdentifier("ICD9", condConceptId);
+					StringBuffer buffer_narrative = new StringBuffer();
+				buffer_narrative.append("<Condition xmlns=\"http://hl7.org/fhir>\">\n");
+				buffer_narrative.append("<text>\n");
+				buffer_narrative.append("<status value=\"generated\"/>\n");
+				buffer_narrative.append("<div>\n");
+				buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
+				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+				buffer_narrative.append("	<tbody>\n");
+				buffer_narrative.append("		<tr>\n");
+				buffer_narrative.append("			<td>Id</td>\n");
+				buffer_narrative.append("			<td>"+ cond.getId().getIdPart() + "</td>\n");
+				buffer_narrative.append("		</tr>\n");
+				buffer_narrative.append("		<tr>\n");
+				buffer_narrative.append("			<td>Status</td>\n");
+				buffer_narrative.append("			<td>"+ cond.getStatus().getValue() + "</td>\n");
+				buffer_narrative.append("		</tr>\n");
+				buffer_narrative.append("	</tbody>\n");
+				buffer_narrative.append("</table>\n");
+				buffer_narrative.append("</div>\n");
+				buffer_narrative.append("</text>\n");
+				buffer_narrative.append("</Condition>");
+				String output = buffer_narrative.toString();
+			    cond.getText().setDiv(output);
+				retVal.add(cond);
+				}
+			}
+		} catch (SQLException se) {
+			// TODO Auto-generated catch block
+			se.printStackTrace();
+			}
+		
+		return retVal;
+		
 	}
 
 	
