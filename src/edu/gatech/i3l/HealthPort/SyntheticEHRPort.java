@@ -373,8 +373,28 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			    obs.setComments(obsDate);
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
-				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-			    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+				StringBuffer buffer_narrative = new StringBuffer();
+				buffer_narrative.append("<Observation xmlns=\"http://hl7.org/fhir>\">\n");
+				buffer_narrative.append("<text>\n");
+				buffer_narrative.append("<status value=\"generated\"/>\n");
+				buffer_narrative.append("<div>\n");
+				buffer_narrative.append("<div class=\"hapiHeaderText\">Observation</div>\n");
+				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+				buffer_narrative.append("	<tbody>\n");
+				buffer_narrative.append("		<tr>\n");
+				buffer_narrative.append("			<td>Id</td>\n");
+				buffer_narrative.append("			<td>"+ Ids[0] + "-"+count+"-"+ Ids[2] + "</td>\n");
+				buffer_narrative.append("		</tr>\n");
+				buffer_narrative.append("		<tr>\n");
+				buffer_narrative.append("			<td>Value</td>\n");
+				buffer_narrative.append("			<td>"+ val + "</td>\n");
+				buffer_narrative.append("		</tr>\n");
+				buffer_narrative.append("	</tbody>\n");
+				buffer_narrative.append("</table>\n");
+				buffer_narrative.append("</div>\n");
+				buffer_narrative.append("</text>\n");
+				buffer_narrative.append("</Observation>");
+				String output = buffer_narrative.toString();
 			    obs.getText().setDiv(output);
 			}			
 		} catch (SQLException se) {
@@ -423,8 +443,28 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				cond.addIdentifier("ICD9", condConceptId);
 				//DateDt date = new DateDt(condDate);
 				//setDateAsserted(date);
-				ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-			    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
+				StringBuffer buffer_narrative = new StringBuffer();
+				buffer_narrative.append("<Condition xmlns=\"http://hl7.org/fhir>\">\n");
+				buffer_narrative.append("<text>\n");
+				buffer_narrative.append("<status value=\"generated\"/>\n");
+				buffer_narrative.append("<div>\n");
+				buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
+				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+				buffer_narrative.append("	<tbody>\n");
+				buffer_narrative.append("		<tr>\n");
+				buffer_narrative.append("			<td>Id</td>\n");
+				buffer_narrative.append("			<td>"+ cond.getId().getIdPart() + "</td>\n");
+				buffer_narrative.append("		</tr>\n");
+				buffer_narrative.append("		<tr>\n");
+				buffer_narrative.append("			<td>Status</td>\n");
+				buffer_narrative.append("			<td>"+ cond.getStatus().getValue() + "</td>\n");
+				buffer_narrative.append("		</tr>\n");
+				buffer_narrative.append("	</tbody>\n");
+				buffer_narrative.append("</table>\n");
+				buffer_narrative.append("</div>\n");
+				buffer_narrative.append("</text>\n");
+				buffer_narrative.append("</Condition>");
+				String output = buffer_narrative.toString();
 			    cond.getText().setDiv(output);
 			}			
 		} catch (SQLException se) {

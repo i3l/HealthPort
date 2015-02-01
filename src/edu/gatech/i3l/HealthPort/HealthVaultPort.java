@@ -1029,7 +1029,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			value.setText(conditionList.get(i+2));
 			CodingDt code = new CodingDt();
 			code.setCode("0000");
-			code.setSystem("http://loinc.org");
+			code.setSystem("http://snomed.info/sct");
 			code.setDisplay(conditionList.get(i+2));
 			List<CodingDt> theValue = new ArrayList<CodingDt>();
 			theValue.add(code);
