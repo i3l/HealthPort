@@ -87,6 +87,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				obs.setValue(val);
 				//obs.setComments("Body Weight");// if required, do -> if(Id[2] ==""){ set as ""} else{}
 				obs.setComments(obsDate);
+				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userInfo.userId);
+				obs.setSubject(subj);
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
 				StringBuffer buffer_narrative = new StringBuffer();
@@ -498,13 +500,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    String id = null;
 	    int count = 0;
 	    try {
-			//Class.forName(driverName);
-			//String URL = url + "/" + dbName;
-			//String URL2 = url + "/" + dbName2;
-			//conn = DriverManager.getConnection(URL, username, password);
-			//conn2 = DriverManager.getConnection(URL2, username, password);
-			//stmt = conn.createStatement();
-			//stmt2 = conn2.createStatement();
 			
 			context = new InitialContext();
 			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/OMOP");
@@ -572,6 +567,101 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		
 		return retVal;
 		
+	}
+	
+	public ArrayList<Observation> getObservationsByType(String name) {
+		System.out.println("here");
+		// TODO Auto-generated method stub
+		ArrayList<Observation> retVal = new ArrayList<Observation>();
+    	//ArrayList<String> retList = new ArrayList<String>();    	
+    	//Get all Observations
+		Connection conn = null;
+		Connection conn2 = null;
+	    Statement stmt = null;   
+	    Statement stmt2 = null; 
+	    Context context = null;
+		DataSource datasource = null;
+		Context context2 = null;
+		DataSource datasource2 = null;  
+	    String obsVal = null;
+	    String obsConceptId = null;
+	    String obsId = null;
+	    String obsDate = null;
+	    String personId=null;
+	    String id = null;
+	    int count = 0;
+	    try {
+	    	context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/OMOP");
+			conn = datasource.getConnection();
+			stmt = conn.createStatement();
+			context2 = new InitialContext();
+			datasource2 = (DataSource) context2.lookup("java:/comp/env/jdbc/HealthPort");
+			conn2 = datasource2.getConnection();
+			stmt2 = conn2.createStatement();
+			
+			String sql = "SELECT observation_id, person_id, observation_value, observation_date, observation_concept_id FROM observation WHERE observation_concept_id= " + "\'"+ name+"\'";
+			ResultSet rs = stmt.executeQuery(sql);
+			System.out.println(sql);
+			
+			while(rs.next()){
+				obsVal = rs.getString("observation_value");
+				obsConceptId = rs.getString("observation_concept_id");
+				obsId = rs.getString("observation_id");
+				obsDate = rs.getString("observation_date");
+				personId = rs.getString("person_id");
+				
+				sql = "SELECT id FROM USER WHERE PERSONID= " + personId;
+				ResultSet temprs = stmt2.executeQuery(sql);
+				while(temprs.next()){
+					id = temprs.getString("id");
+					Observation obs = new Observation();
+					obs.setId(id + "-"+count+"-"+ obsId);
+					obs.setName(new CodeableConceptDt("http://loinc.org",obsConceptId)); 
+					StringDt val = new StringDt(obsVal);
+					obs.setValue(val);
+					//obs.setComments("Body Weight");// if required, do -> if(Id[2] ==""){ set as ""} else{}
+					obs.setComments(obsDate);
+					ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+id);
+					obs.setSubject(subj);
+					obs.setStatus(ObservationStatusEnum.FINAL);
+					obs.setReliability(ObservationReliabilityEnum.OK);
+					StringBuffer buffer_narrative = new StringBuffer();
+				buffer_narrative.append("<Observation xmlns=\"http://hl7.org/fhir>\">\n");
+				buffer_narrative.append("<text>\n");
+				buffer_narrative.append("<status value=\"generated\"/>\n");
+				buffer_narrative.append("<div>\n");
+				buffer_narrative.append("<div class=\"hapiHeaderText\">Observation</div>\n");
+				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+				buffer_narrative.append("	<tbody>\n");
+				buffer_narrative.append("		<tr>\n");
+				buffer_narrative.append("			<td>Id</td>\n");
+				buffer_narrative.append("			<td>"+ id + "-"+count+"-"+ obsId + "</td>\n");
+				buffer_narrative.append("		</tr>\n");
+				buffer_narrative.append("		<tr>\n");
+				buffer_narrative.append("			<td>Value</td>\n");
+				buffer_narrative.append("			<td>"+ val + "</td>\n");
+				buffer_narrative.append("		</tr>\n");
+				buffer_narrative.append("	</tbody>\n");
+				buffer_narrative.append("</table>\n");
+				buffer_narrative.append("</div>\n");
+				buffer_narrative.append("</text>\n");
+				buffer_narrative.append("</Observation>");
+				String output = buffer_narrative.toString();
+			    obs.getText().setDiv(output);
+				//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+			    //String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			    //obs.getText().setDiv(output);
+				//finalRetVal.add(obs);
+				//return obs;
+				retVal.add(obs);
+				}
+			}
+		} catch (SQLException | NamingException se) {
+			// TODO Auto-generated catch block
+			se.printStackTrace();
+			}
+		return retVal;
 	}
 
 	

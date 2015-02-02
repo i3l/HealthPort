@@ -19,6 +19,7 @@ import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.exceptions.InvalidRequestException;
 
@@ -176,6 +177,17 @@ public class ObservationResourceProvider implements IResourceProvider {
        return retVal;
 
     }
+    
+	@Search()
+	public List<Observation> searchByIdentifier(@RequiredParam(name=Observation.SP_NAME) TokenParam theName) {
+	   String identifierSystem = theName.getSystem();
+	   String name = theName.getValue();
+	   //System.out.println(identifierSystem);
+	   System.out.println(name);
+	   ArrayList<Observation> retVal = new ArrayList<Observation>(); 
+	   retVal = new SyntheticEHRPort().getObservationsByType(name);
+	   return retVal;
+	}
     
  
  
