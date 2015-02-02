@@ -28,6 +28,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.model.api.IDatatype;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
@@ -53,6 +54,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	String password = "i3lworks";
 	String dbName = "OMOP";
 	String dbName2 = "HealthPort";
+	SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
 	public ArrayList<Observation> getObservations(HealthPortUserInfo userInfo) {
 		// TODO Auto-generated method stub
@@ -66,6 +68,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    String obsId = null;
 	    String obsDate = null;
 	    int count = 0;
+	    
 	    try {
 			//Class.forName(driverName);
 			String URL = url + "/" + dbName;
@@ -89,6 +92,14 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				obs.setComments(obsDate);
 				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userInfo.userId);
 				obs.setSubject(subj);
+				Date date = new Date();
+				try {
+					date = formatter.parse(obsDate);
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				obs.setIssuedWithMillisPrecision(date);
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
 				StringBuffer buffer_narrative = new StringBuffer();
@@ -114,11 +125,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				buffer_narrative.append("</Observation>");
 				String output = buffer_narrative.toString();
 			    obs.getText().setDiv(output);
-				//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-			    //String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-			    //obs.getText().setDiv(output);
-				//finalRetVal.add(obs);
-				//return obs;
 				retVal.add(obs);
 			}
 		} catch (SQLException se) {
@@ -378,6 +384,14 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				StringDt val = new StringDt(obsVal);
 				obs.setValue(val);
 			    obs.setComments(obsDate);
+			    Date date = new Date();
+				try {
+					date = formatter.parse(obsDate);
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				obs.setIssuedWithMillisPrecision(date);
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
 				StringBuffer buffer_narrative = new StringBuffer();
