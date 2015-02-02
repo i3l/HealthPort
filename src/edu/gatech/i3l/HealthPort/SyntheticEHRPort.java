@@ -36,6 +36,7 @@ import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
+import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
@@ -94,6 +95,28 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				obs.setComments(obsDate);
 				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userInfo.userId);
 				obs.setSubject(subj);
+				String obsType = null;
+				if (obsConceptId == "3141-9"){
+					obsType = "Body Weight";
+				}
+				else if (obsConceptId.equals("8302-2")){
+					obsType = "Body Height";
+				}
+				else if (obsConceptId.equals("9279-1")){
+					obsType = "Respiration Rate";
+				}
+				else if (obsConceptId.equals("8867-4")){
+					obsType = "Heart Beat";
+				}
+				else if (obsConceptId.equals("8480-6")){
+					obsType = "Systolic BP";
+				}
+				else if (obsConceptId.equals("8462-4")){
+					obsType = "Diastolic BP";
+				}
+				else if (obsConceptId.equals("8310-5")){
+					obsType = "Body Temperature";
+				}
 				Date date = new Date();
 				try {
 					date = formatter.parse(obsDate);
@@ -108,6 +131,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				buffer_narrative.append("<div>\n");
 				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">Observation</div>\n");
+				buffer_narrative.append("<div class=\"hapiHeaderText\">" + obsType + "</div>\n");
 				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 				buffer_narrative.append("	<tbody>\n");
 				buffer_narrative.append("		<tr>\n");
@@ -155,7 +179,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				condId = rs.getString("condition_occurrence_id");
 				condDate = rs.getString("condition_start_date");
 				condName = rs.getString("condition_name");
-
 				Condition cond = new Condition();
 				cond.setId(userInfo.userId+"-"+count+"-"+condId);
 				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userInfo.userId);
@@ -181,7 +204,10 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					e.printStackTrace();
 				}
 				cond.setDateAssertedWithDayPrecision(date);
-				StringBuffer buffer_narrative = new StringBuffer();;		
+				StringBuffer buffer_narrative = new StringBuffer();		
+				cond.setCode(value);
+				cond.addIdentifier("ICD9", condConceptId);
+				cond.setStatus(ConditionStatusEnum.CONFIRMED);
 				buffer_narrative.append("<div>\n");
 				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
@@ -257,22 +283,15 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				med.setDateWritten(date);
 				med.addIdentifier("NDC", drugConceptId);
 				StringBuffer buffer_narrative = new StringBuffer();
-				buffer_narrative.append("<MedicationPrescription xmlns=\"http://hl7.org/fhir>\">\n");
-				buffer_narrative.append("<text>\n");
-				buffer_narrative.append("<status value=\"generated\"/>\n");
+				buffer_narrative.append("</MedicationPrescription>");
 				buffer_narrative.append("<div>\n");
+				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">" + med.getMedication().getDisplay()+ "</div>\n");
 				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 				buffer_narrative.append("	<tbody>\n");
-				buffer_narrative.append("		<tr>\n");
-				buffer_narrative.append("			<td>Id</td>\n");
-				buffer_narrative.append("			<td>"+ med.getId().getIdPart() + "</td>\n");
-				buffer_narrative.append("		</tr>\n");
 				buffer_narrative.append("	</tbody>\n");
 				buffer_narrative.append("</table>\n");
 				buffer_narrative.append("</div>\n");
-				buffer_narrative.append("</text>\n");
-				buffer_narrative.append("</MedicationPrescription>");
 				//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 			   // String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
 				String output = buffer_narrative.toString();
@@ -334,22 +353,14 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				med.setDateWritten(date);
 				med.addIdentifier("NDC", drugId);
 				StringBuffer buffer_narrative = new StringBuffer();
-				buffer_narrative.append("<MedicationPrescription xmlns=\"http://hl7.org/fhir>\">\n");
-				buffer_narrative.append("<text>\n");
-				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div>\n");
+				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">" + med.getMedication().getDisplay()+ "</div>\n");
 				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 				buffer_narrative.append("	<tbody>\n");
-				buffer_narrative.append("		<tr>\n");
-				buffer_narrative.append("			<td>Id</td>\n");
-				buffer_narrative.append("			<td>"+ med.getId().getIdPart() + "</td>\n");
-				buffer_narrative.append("		</tr>\n");
 				buffer_narrative.append("	</tbody>\n");
 				buffer_narrative.append("</table>\n");
 				buffer_narrative.append("</div>\n");
-				buffer_narrative.append("</text>\n");
-				buffer_narrative.append("</MedicationPrescription>");
 				//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 			   // String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
 				String output = buffer_narrative.toString();
@@ -388,7 +399,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				obsConceptId = rs.getString("observation_concept_id");		
 				obsDate = rs.getString("observation_date");
 				int count = 0;
-				FhirContext ctx = new FhirContext();	
+				//FhirContext ctx = new FhirContext();	
 				obs.setId(Ids[0] + "-"+count+"-"+ Ids[2]);
 				obs.setName(new CodeableConceptDt("http://loinc.org",obsConceptId)); 
 				StringDt val = new StringDt(obsVal);
@@ -401,14 +412,38 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				String obsType = null;
+				if (obsConceptId.equals("3141-9")){
+					obsType = "Body Weight";
+				}
+				else if (obsConceptId.equals("8302-2")){
+					obsType = "Body Height";
+				}
+				else if (obsConceptId.equals("9279-1")){
+					obsType = "Respiration Rate";
+				}
+				else if (obsConceptId.equals("8867-4")){
+					obsType = "Heart Beat";
+				}
+				else if (obsConceptId.equals("8480-6")){
+					obsType = "Systolic BP";
+				}
+				else if (obsConceptId.equals("8462-4")){
+					obsType = "Diastolic BP";
+				}
+				else if (obsConceptId.equals("8310-5")){
+					obsType = "Body Temperature";
+				}
 				obs.setIssuedWithMillisPrecision(date);
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
 				StringBuffer buffer_narrative = new StringBuffer();
-				//buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div>\n");
 				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">Observation</div>\n");
+				buffer_narrative.append("<div>\n");
+				buffer_narrative.append("<status value=\"generated\"/>\n");
+				buffer_narrative.append("<div class=\"hapiHeaderText\">" + obsType + "</div>\n");
 				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 				buffer_narrative.append("	<tbody>\n");
 				buffer_narrative.append("		<tr>\n");
@@ -485,7 +520,9 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					e.printStackTrace();
 				}
 				cond.setDateAssertedWithDayPrecision(date);
-				StringBuffer buffer_narrative = new StringBuffer();;		
+				StringBuffer buffer_narrative = new StringBuffer();		
+				cond.setCode(value);
+				cond.addIdentifier("ICD9", condConceptId);
 				buffer_narrative.append("<div>\n");
 				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
@@ -580,7 +617,9 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 						e.printStackTrace();
 					}
 					cond.setDateAssertedWithDayPrecision(date);
-					StringBuffer buffer_narrative = new StringBuffer();;		
+					StringBuffer buffer_narrative = new StringBuffer();		
+					cond.setCode(value);
+					cond.addIdentifier("ICD9", condConceptId);
 					buffer_narrative.append("<div>\n");
 					buffer_narrative.append("<status value=\"generated\"/>\n");
 					buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
@@ -599,7 +638,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					buffer_narrative.append("</div>\n");
 					String output = buffer_narrative.toString();
 				    cond.getText().setDiv(output);
-				retVal.add(cond);
+				    retVal.add(cond);
 				}
 			}
 		} catch (SQLException | NamingException se) {
@@ -676,10 +715,33 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					obs.setIssuedWithMillisPrecision(date);
 					obs.setStatus(ObservationStatusEnum.FINAL);
 					obs.setReliability(ObservationReliabilityEnum.OK);
+					String obsType = null;
+					if (obsConceptId.equals("3141-9")){
+						obsType = "Body Weight";
+					}
+					else if (obsConceptId.equals("8302-2")){
+						obsType = "Body Height";
+					}
+					else if (obsConceptId.equals("9279-1")){
+						obsType = "Respiration Rate";
+					}
+					else if (obsConceptId.equals("8867-4")){
+						obsType = "Heart Beat";
+					}
+					else if (obsConceptId.equals("8480-6")){
+						obsType = "Systolic BP";
+					}
+					else if (obsConceptId.equals("8462-4")){
+						obsType = "Diastolic BP";
+					}
+					else if (obsConceptId.equals("8310-5")){
+						obsType = "Body Temperature";
+					}
 					StringBuffer buffer_narrative = new StringBuffer();
 					buffer_narrative.append("<div>\n");
 					buffer_narrative.append("<status value=\"generated\"/>\n");
 					buffer_narrative.append("<div class=\"hapiHeaderText\">Observation</div>\n");
+					buffer_narrative.append("<div class=\"hapiHeaderText\">" + obsType + "</div>\n");
 					buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 					buffer_narrative.append("	<tbody>\n");
 					buffer_narrative.append("		<tr>\n");
@@ -701,6 +763,13 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				//finalRetVal.add(obs);
 				//return obs;
 				retVal.add(obs);
+					obs.getText().setDiv(output);
+					//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
+				    //String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+				    //obs.getText().setDiv(output);
+					//finalRetVal.add(obs);
+					//return obs;
+					retVal.add(obs);
 				}
 			}
 		} catch (SQLException | NamingException se) {
