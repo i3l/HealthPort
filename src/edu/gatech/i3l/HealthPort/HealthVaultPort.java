@@ -477,17 +477,11 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		obs.setIssuedWithMillisPrecision(date);
 		
 		StringBuffer buffer_narrative = new StringBuffer();
-		buffer_narrative.append("<Observation xmlns=\"http://hl7.org/fhir>\">\n");
-		buffer_narrative.append("<text>\n");
-		buffer_narrative.append("<status value=\"generated\"/>\n");
 		buffer_narrative.append("<div>\n");
+		buffer_narrative.append("<status value=\"generated\"/>\n");
 		buffer_narrative.append("<div class=\"hapiHeaderText\">Body Weight</div>\n");
 		buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 		buffer_narrative.append("	<tbody>\n");
-		buffer_narrative.append("		<tr>\n");
-		buffer_narrative.append("			<td>Id</td>\n");
-		buffer_narrative.append("			<td>"+ obs.getId().getIdPart() + "</td>\n");
-		buffer_narrative.append("		</tr>\n");
 		buffer_narrative.append("		<tr>\n");
 		buffer_narrative.append("			<td>Value</td>\n");
 		buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
@@ -495,8 +489,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		buffer_narrative.append("	</tbody>\n");
 		buffer_narrative.append("</table>\n");
 		buffer_narrative.append("</div>\n");
-		buffer_narrative.append("</text>\n");
-		buffer_narrative.append("</Observation>");
 		String output = buffer_narrative.toString();
 	    obs.getText().setDiv(output);
 	  
@@ -573,17 +565,11 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setIssuedWithMillisPrecision(date);
 			
 			StringBuffer buffer_narrative = new StringBuffer();
-			buffer_narrative.append("<Observation xmlns=\"http://hl7.org/fhir>\">\n");
-			buffer_narrative.append("<text>\n");
-			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Height</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 			buffer_narrative.append("	<tbody>\n");
-			buffer_narrative.append("		<tr>\n");
-			buffer_narrative.append("			<td>Id</td>\n");
-			buffer_narrative.append("			<td>"+ obs.getId().getIdPart() + "</td>\n");
-			buffer_narrative.append("		</tr>\n");
 			buffer_narrative.append("		<tr>\n");
 			buffer_narrative.append("			<td>Value</td>\n");
 			buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
@@ -591,8 +577,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("	</tbody>\n");
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
-			buffer_narrative.append("</text>\n");
-			buffer_narrative.append("</Observation>");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
 		  
@@ -668,17 +652,11 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			}
 			obs.setIssuedWithMillisPrecision(date);
 			StringBuffer buffer_narrative = new StringBuffer();
-			buffer_narrative.append("<Observation xmlns=\"http://hl7.org/fhir>\">\n");
-			buffer_narrative.append("<text>\n");
-			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 			buffer_narrative.append("	<tbody>\n");
-			buffer_narrative.append("		<tr>\n");
-			buffer_narrative.append("			<td>Id</td>\n");
-			buffer_narrative.append("			<td>"+ obs.getId().getIdPart() + "</td>\n");
-			buffer_narrative.append("		</tr>\n");
 			buffer_narrative.append("		<tr>\n");
 			buffer_narrative.append("			<td>Value</td>\n");
 			buffer_narrative.append("			<td>"+ retList.get(i+3)+" "+ retList.get(i+4) + "</td>\n");
@@ -686,8 +664,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("	</tbody>\n");
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
-			buffer_narrative.append("</text>\n");
-			buffer_narrative.append("</Observation>");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
 			if (retList.get(i+2).equals("Systolic Blood Pressure")){
@@ -770,17 +746,11 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			}
 			obs.setIssuedWithMillisPrecision(date);
 			StringBuffer buffer_narrative = new StringBuffer();
-			buffer_narrative.append("<Observation xmlns=\"http://hl7.org/fhir>\">\n");
-			buffer_narrative.append("<text>\n");
-			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Glucose in " + retList.get(i+4)+ "</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 			buffer_narrative.append("	<tbody>\n");
-			buffer_narrative.append("		<tr>\n");
-			buffer_narrative.append("			<td>Id</td>\n");
-			buffer_narrative.append("			<td>"+ obs.getId().getIdPart() + "</td>\n");
-			buffer_narrative.append("		</tr>\n");
 			buffer_narrative.append("		<tr>\n");
 			buffer_narrative.append("			<td>Value</td>\n");
 			buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
@@ -788,8 +758,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("	</tbody>\n");
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
-			buffer_narrative.append("</text>\n");
-			buffer_narrative.append("</Observation>");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
 		   
@@ -863,17 +831,11 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
 			StringBuffer buffer_narrative = new StringBuffer();
-			buffer_narrative.append("<Observation xmlns=\"http://hl7.org/fhir>\">\n");
-			buffer_narrative.append("<text>\n");
-			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Cholesterol</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 			buffer_narrative.append("	<tbody>\n");
-			buffer_narrative.append("		<tr>\n");
-			buffer_narrative.append("			<td>Id</td>\n");
-			buffer_narrative.append("			<td>"+ obs.getId().getIdPart() + "</td>\n");
-			buffer_narrative.append("		</tr>\n");
 			buffer_narrative.append("		<tr>\n");
 			buffer_narrative.append("			<td>Value</td>\n");
 			buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
@@ -881,8 +843,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("	</tbody>\n");
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
-			buffer_narrative.append("</text>\n");
-			buffer_narrative.append("</Observation>");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
 			retVal.add(obs);
@@ -952,17 +912,12 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setReliability(ObservationReliabilityEnum.OK);
 
 			StringBuffer buffer_narrative = new StringBuffer();
-			buffer_narrative.append("<Observation xmlns=\"http://hl7.org/fhir>\">\n");
-			buffer_narrative.append("<text>\n");
-			buffer_narrative.append("<status value=\"generated\"/>\n");
+			//buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 			buffer_narrative.append("	<tbody>\n");
-			buffer_narrative.append("		<tr>\n");
-			buffer_narrative.append("			<td>Id</td>\n");
-			buffer_narrative.append("			<td>"+ obs.getId().getIdPart() + "</td>\n");
-			buffer_narrative.append("		</tr>\n");
 			buffer_narrative.append("		<tr>\n");
 			buffer_narrative.append("			<td>Value</td>\n");
 			buffer_narrative.append("			<td>"+ retList.get(i+3)+" "+ retList.get(i+4) + "</td>\n");
@@ -970,8 +925,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("	</tbody>\n");
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
-			buffer_narrative.append("</text>\n");
-			buffer_narrative.append("</Observation>");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
 			count = count+1;	    
@@ -1071,17 +1024,11 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			cond.setDateAssertedWithDayPrecision(date);
 			
 			StringBuffer buffer_narrative = new StringBuffer();
-			buffer_narrative.append("<Condition xmlns=\"http://hl7.org/fhir>\">\n");
-			buffer_narrative.append("<text>\n");
-			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 			buffer_narrative.append("	<tbody>\n");
-			buffer_narrative.append("		<tr>\n");
-			buffer_narrative.append("			<td>Id</td>\n");
-			buffer_narrative.append("			<td>"+ cond.getId().getIdPart() + "</td>\n");
-			buffer_narrative.append("		</tr>\n");
 			buffer_narrative.append("		<tr>\n");
 			buffer_narrative.append("			<td>Status</td>\n");
 			buffer_narrative.append("			<td>"+ cond.getStatus().getValue() + "</td>\n");
@@ -1089,8 +1036,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("	</tbody>\n");
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
-			buffer_narrative.append("</text>\n");
-			buffer_narrative.append("</Condition>");
 			String output = buffer_narrative.toString();
 		    cond.getText().setDiv(output);
 			retVal.add(cond);
@@ -1174,22 +1119,14 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			med.setDateWrittenWithSecondsPrecision(date);
 			
 			StringBuffer buffer_narrative = new StringBuffer();
-			buffer_narrative.append("<MedicationPrescription xmlns=\"http://hl7.org/fhir>\">\n");
-			buffer_narrative.append("<text>\n");
-			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + med.getMedication().getDisplay()+ "</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 			buffer_narrative.append("	<tbody>\n");
-			buffer_narrative.append("		<tr>\n");
-			buffer_narrative.append("			<td>Id</td>\n");
-			buffer_narrative.append("			<td>"+ med.getId().getIdPart() + "</td>\n");
-			buffer_narrative.append("		</tr>\n");
 			buffer_narrative.append("	</tbody>\n");
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
-			buffer_narrative.append("</text>\n");
-			buffer_narrative.append("</MedicationPrescription>");
 			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 		   // String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
 			String output = buffer_narrative.toString();
