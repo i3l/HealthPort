@@ -37,6 +37,7 @@ import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
@@ -127,10 +128,10 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				obs.setIssuedWithMillisPrecision(date);
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
+				NarrativeStatusEnum narrative = null;
+				obs.getText().setStatus(narrative.GENERATED);
 				StringBuffer buffer_narrative = new StringBuffer();
 				buffer_narrative.append("<div>\n");
-				buffer_narrative.append("<status value=\"generated\"/>\n");
-				buffer_narrative.append("<div class=\"hapiHeaderText\">Observation</div>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">" + obsType + "</div>\n");
 				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 				buffer_narrative.append("	<tbody>\n");
@@ -205,11 +206,10 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				}
 				cond.setDateAssertedWithDayPrecision(date);
 				StringBuffer buffer_narrative = new StringBuffer();		
-				cond.setCode(value);
-				cond.addIdentifier("ICD9", condConceptId);
+				//cond.setCode(value);
+				//cond.addIdentifier("ICD9", condConceptId);
 				cond.setStatus(ConditionStatusEnum.CONFIRMED);
 				buffer_narrative.append("<div>\n");
-				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
 				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 				buffer_narrative.append("	<tbody>\n");
@@ -437,12 +437,10 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				obs.setIssuedWithMillisPrecision(date);
 				obs.setStatus(ObservationStatusEnum.FINAL);
 				obs.setReliability(ObservationReliabilityEnum.OK);
+				NarrativeStatusEnum narrative = null;
+				obs.getText().setStatus(narrative.GENERATED);
 				StringBuffer buffer_narrative = new StringBuffer();
 				buffer_narrative.append("<div>\n");
-				buffer_narrative.append("<status value=\"generated\"/>\n");
-				buffer_narrative.append("<div class=\"hapiHeaderText\">Observation</div>\n");
-				buffer_narrative.append("<div>\n");
-				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">" + obsType + "</div>\n");
 				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 				buffer_narrative.append("	<tbody>\n");
@@ -521,10 +519,13 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				}
 				cond.setDateAssertedWithDayPrecision(date);
 				StringBuffer buffer_narrative = new StringBuffer();		
-				cond.setCode(value);
-				cond.addIdentifier("ICD9", condConceptId);
+				//cond.setCode(value);
+				//cond.addIdentifier("ICD9", condConceptId);
+				cond.setStatus(ConditionStatusEnum.CONFIRMED);
+				NarrativeStatusEnum narrative = null;
+				cond.getText().setStatus(narrative.GENERATED);		
+
 				buffer_narrative.append("<div>\n");
-				buffer_narrative.append("<status value=\"generated\"/>\n");
 				buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
 				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 				buffer_narrative.append("	<tbody>\n");
@@ -617,11 +618,14 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 						e.printStackTrace();
 					}
 					cond.setDateAssertedWithDayPrecision(date);
+					cond.setStatus(ConditionStatusEnum.CONFIRMED);
+					NarrativeStatusEnum narrative = null;
+					cond.getText().setStatus(narrative.GENERATED);
 					StringBuffer buffer_narrative = new StringBuffer();		
-					cond.setCode(value);
-					cond.addIdentifier("ICD9", condConceptId);
+					//cond.setCode(value);
+					//cond.addIdentifier("ICD9", condConceptId);
+
 					buffer_narrative.append("<div>\n");
-					buffer_narrative.append("<status value=\"generated\"/>\n");
 					buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
 					buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 					buffer_narrative.append("	<tbody>\n");
@@ -715,6 +719,9 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					obs.setIssuedWithMillisPrecision(date);
 					obs.setStatus(ObservationStatusEnum.FINAL);
 					obs.setReliability(ObservationReliabilityEnum.OK);
+					NarrativeStatusEnum narrative = null;
+					obs.getText().setStatus(narrative.GENERATED);
+
 					String obsType = null;
 					if (obsConceptId.equals("3141-9")){
 						obsType = "Body Weight";
@@ -739,8 +746,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					}
 					StringBuffer buffer_narrative = new StringBuffer();
 					buffer_narrative.append("<div>\n");
-					buffer_narrative.append("<status value=\"generated\"/>\n");
-					buffer_narrative.append("<div class=\"hapiHeaderText\">Observation</div>\n");
 					buffer_narrative.append("<div class=\"hapiHeaderText\">" + obsType + "</div>\n");
 					buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
 					buffer_narrative.append("	<tbody>\n");
