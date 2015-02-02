@@ -15,6 +15,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -69,6 +73,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			stmt = conn.createStatement();
 			String sql = "SELECT observation_id, observation_value, observation_date, observation_concept_id FROM observation WHERE person_id= " + userInfo.personId;
 			ResultSet rs = stmt.executeQuery(sql);
+			
 			while(rs.next()){
 				obsVal = rs.getString("observation_value");
 				obsConceptId = rs.getString("observation_concept_id");
@@ -480,6 +485,11 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		Connection conn2 = null;
 	    Statement stmt = null;   
 	    Statement stmt2 = null; 
+	    Context context = null;
+		DataSource datasource = null;
+		Context context2 = null;
+		DataSource datasource2 = null;
+	    
 	    String condConceptId = null;
 	    String condId = null;
 	    String condDate = null;
@@ -489,11 +499,20 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	    int count = 0;
 	    try {
 			//Class.forName(driverName);
-			String URL = url + "/" + dbName;
-			String URL2 = url + "/" + dbName2;
-			conn = DriverManager.getConnection(URL, username, password);
-			conn2 = DriverManager.getConnection(URL2, username, password);
+			//String URL = url + "/" + dbName;
+			//String URL2 = url + "/" + dbName2;
+			//conn = DriverManager.getConnection(URL, username, password);
+			//conn2 = DriverManager.getConnection(URL2, username, password);
+			//stmt = conn.createStatement();
+			//stmt2 = conn2.createStatement();
+			
+			context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/OMOP");
+			conn = datasource.getConnection();
 			stmt = conn.createStatement();
+			context2 = new InitialContext();
+			datasource2 = (DataSource) context2.lookup("java:/comp/env/jdbc/HealthPort");
+			conn2 = datasource2.getConnection();
 			stmt2 = conn2.createStatement();
 			
 			String sql = "SELECT condition_occurrence_id, person_id,condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE condition_id= " + code;
@@ -546,7 +565,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				retVal.add(cond);
 				}
 			}
-		} catch (SQLException se) {
+		} catch (SQLException | NamingException se) {
 			// TODO Auto-generated catch block
 			se.printStackTrace();
 			}

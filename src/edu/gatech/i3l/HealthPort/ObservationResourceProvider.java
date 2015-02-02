@@ -84,7 +84,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 		    
 		    	if(location.equals(HealthPortUserInfo.GREENWAY)){
 					ccd = GreenwayPort.getCCD(pId);
-					System.out.println(ccd);
+					//System.out.println(ccd);
 			     	
 				} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
 					retVal = new SyntheticEHRPort().getObservations(HealthPortUser);
@@ -103,7 +103,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 		} catch (Exception e){
 			e.printStackTrace();
 		}
-	
+ 
 		return finalRetVal;
     	
     }
