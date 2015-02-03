@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dstu.resource.Condition;
+import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.primitive.IdDt;
@@ -20,6 +21,7 @@ import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 
 
@@ -135,4 +137,20 @@ public class MedicationPrescrResource implements IResourceProvider {
 		
 		return retVal;
 	}
+	@Search
+	public List<MedicationPrescription> findReportsWithChain(
+	    @RequiredParam(name=MedicationPrescription.SP_MEDICATION, chainWhitelist= {Medication.SP_NAME}) ReferenceParam theSubject
+	    ) {
+	   List<MedicationPrescription> retVal=new ArrayList<MedicationPrescription>();
+	 
+	   String chain = theSubject.getChain();
+	   if (Medication.SP_NAME.equals(chain)) {
+	      String medName = theSubject.getValue();
+	      retVal = new SyntheticEHRPort().getMedicationPrescriptionsByType(medName);
+	   }
+	 
+	 
+	   return retVal;
+	}
+
 }
