@@ -75,5 +75,20 @@ public class ConditionResourceProvider implements IResourceProvider {
 		
 		return retVal;
 	}
+<<<<<<< HEAD
+=======
+	
+	@Search()
+	public List<Condition> searchByIdentifier(@RequiredParam(name=Condition.SP_CODE) TokenParam theId) {
+	   String identifierSystem = theId.getSystem();
+	   String identifier = theId.getValue();
+	   System.out.println(identifierSystem);
+	   System.out.println(identifier);
+	   ArrayList<Condition> retVal = new ArrayList<Condition>(); 
+	   retVal = new SyntheticEHRPort().getConditionsByType(identifier);
+	   return retVal;
+	}
+
+>>>>>>> FHIR-integrate
 
 }

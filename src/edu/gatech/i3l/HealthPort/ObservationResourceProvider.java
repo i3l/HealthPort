@@ -11,6 +11,7 @@ import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.exceptions.InvalidRequestException;
 
@@ -47,6 +48,60 @@ public class ObservationResourceProvider implements IResourceProvider {
     	return obs; 	
     }
      
+<<<<<<< HEAD
+=======
+    @Search
+    public List<Observation> getAllObservations() {
+    	Connection connection = null;
+		Statement statement = null;
+		Context context = null;
+		DataSource datasource = null;
+		String location=null;
+		String ccd=null;
+		
+		ArrayList<Observation> finalRetVal = new ArrayList<Observation>();
+		ArrayList<Observation> retVal = new ArrayList<Observation>();
+    	try{
+			context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+			connection = datasource.getConnection();
+			statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
+			while (resultSet.next()) {
+				//String Name = resultSet.getString("NAME");
+				int userId = resultSet.getInt("ID");
+				
+				HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(userId);
+		    	String rId = HealthPortUser.recordId;
+		    	String pId = HealthPortUser.personId;
+		    	location = HealthPortUser.dataSource;
+		    
+		    	if(location.equals(HealthPortUserInfo.GREENWAY)){
+					ccd = GreenwayPort.getCCD(pId);
+					//System.out.println(ccd);
+			     	
+				} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
+					retVal = new SyntheticEHRPort().getObservations(HealthPortUser);
+					finalRetVal.addAll(retVal);
+					
+				} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
+					retVal = new HealthVaultPort().getObservations(HealthPortUser);
+					finalRetVal.addAll(retVal);
+				}
+		    	
+		    	retVal.clear();
+	
+			}
+			connection.close();
+			
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+ 
+		return finalRetVal;
+    	
+    }
+>>>>>>> FHIR-integrate
     
     @Search()
     public List<Observation> getObservationsbyPatient(
@@ -116,6 +171,17 @@ public class ObservationResourceProvider implements IResourceProvider {
        return retVal;
 
     }
+    
+	@Search()
+	public List<Observation> searchByIdentifier(@RequiredParam(name=Observation.SP_NAME) TokenParam theName) {
+	   String identifierSystem = theName.getSystem();
+	   String name = theName.getValue();
+	   //System.out.println(identifierSystem);
+	   System.out.println(name);
+	   ArrayList<Observation> retVal = new ArrayList<Observation>(); 
+	   retVal = new SyntheticEHRPort().getObservationsByType(name);
+	   return retVal;
+	}
     
  
  

@@ -5,11 +5,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.emf.common.util.EList;
 import org.openhealthtools.mdht.uml.cda.EntryRelationship;
 import org.openhealthtools.mdht.uml.cda.ccd.CCDPackage;
@@ -34,15 +39,20 @@ import org.xml.sax.InputSource;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
+import ca.uhn.fhir.model.dstu.composite.CodingDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
+import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
+import ca.uhn.fhir.model.primitive.BoundCodeDt;
+import ca.uhn.fhir.model.primitive.DateTimeDt;
+import ca.uhn.fhir.narrative.CustomThymeleafNarrativeGenerator;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 
 import com.microsoft.hsg.ConnectionFactory;
@@ -265,7 +275,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
     	ArrayList<Observation> retVal = new ArrayList<Observation>();
     	ArrayList<String> retList = new ArrayList<String>();
     	String response = "temp response";
-    	
     	//Get the Weight and create Observations
 		retList = getWeight(response,userInfo.recordId, userInfo.personId);
 		retVal = setWeightObservation(userInfo.userId,retList,retVal);
@@ -351,16 +360,51 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		
     }
     
+    public MedicationPrescription getMedicationPrescription(String resourceId){
+    	MedicationPrescription med = new MedicationPrescription();
+  		String responseStr = null;
+  		ArrayList<String> retList = new ArrayList<String>();
+  		ArrayList<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
+  		//Condition finalRetVal = new Condition();
+  		String type = null;
+  		String[] Ids  = resourceId.split("\\-",3);
+      	
+      	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
+      	String rId = HealthPortUser.recordId;
+      	String pId = HealthPortUser.personId;
+      	
+      	responseStr = getThingsById(Ids[2],rId, pId);
+      	
+      	try {
+  			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+  			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+  			Document doc = dBuilder.parse(new InputSource(new StringReader(responseStr)));
+  			doc.getDocumentElement().normalize();
+  			
+  			NodeList nList = doc.getElementsByTagName("type-id");
+  			Node nNode = nList.item(0);
+  			if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+  				type = nNode.getTextContent();
+  			}
+  		    } catch (Exception e) {
+  			e.printStackTrace();
+  		    }
+      	if (type.equals("30cafccc-047d-4288-94ef-643571f7919d")){
+    		retList = getMedication(responseStr,rId,pId);
+    		retVal = setMedicationObservation(Ids[0],retList,retVal);
+    	}
+      	med = retVal.get(0);
+    	return med;
+    }
+    
 	public ArrayList<MedicationPrescription> getMedicationPrescriptions(HealthPortUserInfo userInfo) {
 		ArrayList<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
     	ArrayList<String> retList = new ArrayList<String>();
     	String response = "temp response";
     	
     	retList = getMedication(response,userInfo.recordId, userInfo.personId);
-    	
-    	
-    	
-    	
+    	retVal = setMedicationObservation(userInfo.userId,retList,retVal);
+        		
 		return retVal;
 	}
     
@@ -385,7 +429,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 					
 					if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 						finalList.add(nNode.getFirstChild().getTextContent());
-						
+						finalList.add(nNode.getLastChild().getPreviousSibling().getTextContent());
 						Element eElement = (Element) nNode;
 						Value = eElement.getElementsByTagName("weight").item(0).getFirstChild().getNextSibling().getTextContent();
 						finalList.add(Value);
@@ -412,19 +456,63 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setWeightObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
 		FhirContext ctx = new FhirContext();
-		for (int i = 0; i < retList.size(); i=i+3) {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		for (int i = 0; i < retList.size(); i=i+4) {
 		Observation obs = new Observation();
 		obs.setId(userId + "-"+count+"-"+ retList.get(i));
-		String nameCode = getCode("Body weight");
-		obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
-		QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+1))).setUnits(retList.get(i+2));
+		String nameCode = getCode("Body weight");	
+		CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+		nameCoding.setDisplay("Body Weight");
+		
+		ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+        codingList.add(nameCoding);
+        CodeableConceptDt nameDt = new CodeableConceptDt();
+        nameDt.setCoding(codingList);
+
+        obs.setName(nameDt);
+		
+		QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 		obs.setValue(quantity);
-		obs.setComments("Body Weight");
+		//obs.setComments("Body Weight");
+		ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+		obs.setSubject(subj);
 		obs.setStatus(ObservationStatusEnum.FINAL);
 		obs.setReliability(ObservationReliabilityEnum.OK);
-		ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-	    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-	    obs.getText().setDiv(output);
+		Date date = new Date();
+		try {
+			String[] parsedDate = retList.get(i+1).split("T");
+			date = formatter.parse(parsedDate[0]);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		obs.setApplies(new DateTimeDt(date));
+		//obs.setIssuedWithMillisPrecision(date);
+		
+		StringBuffer buffer_narrative = new StringBuffer();
+		
+		NarrativeStatusEnum narrative = null;
+		obs.getText().setStatus(narrative.GENERATED);
+	    String textBody = date.toString()+" "+"Body Weight"+"="+retList.get(i+2)+" "+ retList.get(i+3);         
+        textBody = StringEscapeUtils.escapeHtml4(textBody);
+        //System.out.println(textBody);
+        obs.getText().setDiv(textBody);
+		/*
+		buffer_narrative.append("<div>\n");
+		buffer_narrative.append("<div class=\"hapiHeaderText\">Body Weight</div>\n");
+		buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+		buffer_narrative.append("	<tbody>\n");
+		buffer_narrative.append("		<tr>\n");
+		buffer_narrative.append("			<td>Value</td>\n");
+		buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
+		buffer_narrative.append("		</tr>\n");
+		buffer_narrative.append("	</tbody>\n");
+		buffer_narrative.append("</table>\n");
+		buffer_narrative.append("</div>\n");
+		String output = buffer_narrative.toString();
+		*/
+		//obs.getText().setStatus(output);
+	    //obs.getText().setDiv(output);
 	  
 		retVal.add(obs);
 		}
@@ -449,7 +537,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				Node nNode = nList.item(temp);
 				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 					finalList.add(nNode.getFirstChild().getTextContent());
-					
+					finalList.add(nNode.getLastChild().getPreviousSibling().getTextContent());
 					Element eElement = (Element) nNode;
 					Value = eElement.getElementsByTagName("height").item(0).getFirstChild().getNextSibling().getTextContent();
 					Units = null;
@@ -475,20 +563,58 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setHeightObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
 		FhirContext ctx = new FhirContext();
-		for (int i = 0; i < retList.size(); i=i+3) {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		for (int i = 0; i < retList.size(); i=i+4) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
-			String nameCode = "0000";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
-			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+1))).setUnits(retList.get(i+2));
+			String nameCode = "8302-2";
+			
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay("Height");
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 			obs.setValue(quantity);
-			obs.setComments("Height");
+			//obs.setComments("Height");
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			//obs.setIssuedWithMillisPrecision(date);
+			obs.setApplies(new DateTimeDt(date));
+			
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
+			String textBody = date.toString()+" "+"Height"+"="+retList.get(i+2)+" "+ retList.get(i+3);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">Height</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
-		  
+		  */
 			retVal.add(obs);
 		}
 		return retVal;
@@ -497,6 +623,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		String systolic = null;
 		String diastolic = null;
 		String id = null;
+		String date = null;
 		ArrayList<String> finalList = new ArrayList<String>();
 		if(responseStr.equals("temp response")){
 			responseStr= getThings("ca3c57f4-f4c1-4e15-be67-0a3caf5414ed",Record_id,Person_id);
@@ -511,16 +638,19 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				Node nNode = nList.item(temp);
 				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 					id = nNode.getFirstChild().getTextContent();
+					date = nNode.getLastChild().getPreviousSibling().getTextContent();
 					Element eElement = (Element) nNode;
 					systolic = eElement.getElementsByTagName("systolic").item(0).getTextContent();
 					diastolic= eElement.getElementsByTagName("diastolic").item(0).getTextContent();
 				}
 				finalList.add(id);
+				finalList.add(date);
 				finalList.add("Systolic Blood Pressure");
 				finalList.add(systolic);
 				finalList.add("mm[Hg]");
 				finalList.add(systolic + "/"+diastolic);
 				finalList.add(id);
+				finalList.add(date);
 				finalList.add("Diastolic Blood Pressure");
 				finalList.add(diastolic);
 				finalList.add("mm[Hg]");
@@ -534,20 +664,58 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setBloodPressObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
 		FhirContext ctx = new FhirContext();
-		for (int i = 0; i < retList.size(); i=i+5) {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		for (int i = 0; i < retList.size(); i=i+6) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "0000";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
-			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
+			
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay(retList.get(i+2));
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+3))).setUnits(retList.get(i+4));
 			obs.setValue(quantity);
-			obs.setComments(retList.get(i+1) + ", Overall:"+ retList.get(i+4));
+			obs.setComments(retList.get(i+2) + ", Overall:"+ retList.get(i+5));
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			obs.setApplies(new DateTimeDt(date));
+			//obs.setIssuedWithMillisPrecision(date);
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
+			String textBody = date.toString()+" "+retList.get(i+2)+"="+retList.get(i+3)+" "+ retList.get(i+4);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+3)+" "+ retList.get(i+4) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
-			if (retList.get(i+1).equals("Systolic Blood Pressure")){
+		    */
+			if (retList.get(i+2).equals("Systolic Blood Pressure")){
 				count = count+1;
 			}
 			else{
@@ -577,6 +745,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 					id = nNode.getFirstChild().getTextContent();
 					finalList.add(id);
+					finalList.add(nNode.getLastChild().getPreviousSibling().getTextContent());
 					nNode = nNode.getLastChild().getFirstChild();
 					nNode = nNode.getFirstChild().getNextSibling().getFirstChild();
 					value = nNode.getTextContent();
@@ -603,20 +772,57 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setBloodGlucoseObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
 		FhirContext ctx = new FhirContext();
-		for (int i = 0; i < retList.size(); i=i+4) {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		for (int i = 0; i < retList.size(); i=i+5) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
-			String nameCode = "0000";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
-			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+1))).setUnits(retList.get(i+2));
+			String nameCode = "49134-0";
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay("Glucose in " + retList.get(i+4));
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 			obs.setValue(quantity);
-			obs.setComments("Glucose in " + retList.get(i+3));
+			//obs.setComments("Glucose in " + retList.get(i+4));
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			obs.setApplies(new DateTimeDt(date));
+			//obs.setIssuedWithMillisPrecision(date);
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
+			String textBody = date.toString()+" "+"Glucose in " + retList.get(i+4)+"="+retList.get(i+2)+" "+ retList.get(i+3);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">Glucose in " + retList.get(i+4)+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
-		   
+		   */
+			
 			retVal.add(obs);
 		}
 		return retVal;
@@ -641,7 +847,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 					id = nNode.getFirstChild().getTextContent();
 					finalList.add(id);
-					nNode = nNode.getLastChild().getFirstChild();
+					nNode = nNode.getLastChild().getPreviousSibling();
+					String date = nNode.getTextContent();
+					finalList.add(date);
+					nNode = nNode.getNextSibling().getFirstChild();
 					nNode = nNode.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getFirstChild();
 					value = nNode.getTextContent();
 					finalList.add(value);
@@ -660,19 +869,55 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setCholesterolObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count =0;
 		FhirContext ctx = new FhirContext();
-		for (int i = 0; i < retList.size(); i=i+3) {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		for (int i = 0; i < retList.size(); i=i+4) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
-			String nameCode = "0000";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
-			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+1))).setUnits(retList.get(i+2));
+			String nameCode = "11054-4";
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay("Cholesterol");
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 			obs.setValue(quantity);
-			obs.setComments("Cholesterol");
+			//obs.setComments("Cholesterol");
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+			obs.setSubject(subj);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			obs.setApplies(new DateTimeDt(date));
+			//obs.setIssuedWithMillisPrecision(date);
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-		    obs.getText().setDiv(output);
+			String textBody = date.toString()+" "+"Cholesterol " +"="+retList.get(i+2)+" "+ retList.get(i+3);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">Cholesterol</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
+		    obs.getText().setDiv(output);*/
 			retVal.add(obs);
 		}
 		return retVal;
@@ -684,6 +929,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		if(responseStr.equals("temp response")){
 			responseStr= getThings("5800eab5-a8c2-482a-a4d6-f1db25ae08c3",Record_id,Person_id);
 		}
+		System.out.println(responseStr);
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -700,8 +946,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 					Element eElement = (Element) nNode;
 					finalList.add(id);
 					finalList.add(testSet);
-					//finalList.add(eElement.getElementsByTagName("date").item(0).getTextContent());
-					nNode = nNode.getFirstChild().getNextSibling();
+					nNode = nNode.getLastChild().getPreviousSibling();
 					finalList.add(nNode.getTextContent());
 					nNode = nNode.getNextSibling();
 					eElement = (Element) nNode;
@@ -725,19 +970,47 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setLabObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count =0;
 		FhirContext ctx = new FhirContext();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 		for (int i = 0; i < retList.size(); i=i+5) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "0000";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay(retList.get(i+2));
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+3))).setUnits(retList.get(i+4));
 			obs.setValue(quantity);
 			obs.setComments(retList.get(i+2)+" from: "+retList.get(i+1));
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-			String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-			obs.getText().setDiv(output);
+
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
+			String textBody =retList.get(i+2) +"="+retList.get(i+3)+" "+ retList.get(i+4);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
+			//buffer_narrative.append("<status value=\"generated\"/>\n");
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+3)+" "+ retList.get(i+4) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
+		    obs.getText().setDiv(output);*/
 			count = count+1;	    
 			retVal.add(obs);
 		}
@@ -750,6 +1023,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		if (responseStr.equals("temp response")){
 			responseStr= getThings("7ea7a1f9-880b-4bd4-b593-f5660f20eda8",Record_id,Person_id);
 		}
+		System.out.println(responseStr);
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -762,8 +1036,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 					id = nNode.getFirstChild().getTextContent();
 					finalList.add(id);
+					finalList.add(nNode.getLastChild().getPreviousSibling().getTextContent());
+					System.out.println(nNode.getLastChild().getPreviousSibling().getTextContent());
 					Element eElement = (Element) nNode;
-					finalList.add(eElement.getElementsByTagName("name").item(0).getTextContent());
+					finalList.add(eElement.getElementsByTagName("name").item(0).getFirstChild().getTextContent());
 					nNode = nNode.getLastChild().getFirstChild().getFirstChild().getNextSibling();
 					eElement = (Element) nNode;
 					finalList.add(eElement.getElementsByTagName("value").item(0).getTextContent());
@@ -780,51 +1056,73 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Condition> setConditionObservation(String userId, ArrayList<String> conditionList, ArrayList<Condition> retVal){
 		int count =0;
 		FhirContext ctx = new FhirContext();
-		for (int i = 0; i < conditionList.size(); i=i+3) {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		for (int i = 0; i < conditionList.size(); i=i+4) {
 			Condition cond = new Condition();
 			cond.setId(userId+"-"+count+"-"+conditionList.get(i));
 			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			cond.setSubject(subj);
 			CodeableConceptDt value = new CodeableConceptDt();
-			value.setText(conditionList.get(i+1));
+			value.setText(conditionList.get(i+2));
+			CodingDt code = new CodingDt();
+			code.setCode("0000");
+			code.setSystem("http://snomed.info/sct");
+			code.setDisplay(conditionList.get(i+2));
+			List<CodingDt> theValue = new ArrayList<CodingDt>();
+			theValue.add(code);
+			value.setCoding(theValue);
 			cond.setCode(value );
-			if (conditionList.get(i+2).equals("active")) {
+			if (conditionList.get(i+3).equals("active")) {
 				// Active
 				cond.setStatus(ConditionStatusEnum.CONFIRMED);
-			} else if (conditionList.get(i+2).equals("inactive")) {
+			} else if (conditionList.get(i+3).equals("inactive")) {
 				// Inactive
 				cond.setStatus(ConditionStatusEnum.REFUTED);
-				//System.out.println("Put refuted to FHIR status");
-			} else if (conditionList.get(i+2).equals("chronic")) {
+			} else if (conditionList.get(i+3).equals("chronic")) {
 				// Chronic
 				cond.setStatus(ConditionStatusEnum.CONFIRMED);
-				//System.out.println("Put confirmed to FHIR status");
-			} else if (conditionList.get(i+2).equals("intermittent")) {
+			} else if (conditionList.get(i+3).equals("intermittent")) {
 				// Intermittent
 				cond.setStatus(ConditionStatusEnum.WORKING);
-				//System.out.println("Put working to FHIR status");
-			} else if (conditionList.get(i+2).equals("recurrent")) {
+			} else if (conditionList.get(i+3).equals("recurrent")) {
 				// Recurrent
 				cond.setStatus(ConditionStatusEnum.WORKING);
-				//System.out.println("Put working to FHIR status");
-			} else if (conditionList.get(i+2).equals("rule out")) {
+			} else if (conditionList.get(i+3).equals("rule out")) {
 				// Rule out
 				cond.setStatus(ConditionStatusEnum.REFUTED);
-				//System.out.println("Put refuted to FHIR status");
-			} else if (conditionList.get(i+2).equals("ruled out")) {
+			} else if (conditionList.get(i+3).equals("ruled out")) {
 				// Ruled out
 				cond.setStatus(ConditionStatusEnum.REFUTED);
-				//System.out.println("Put refuted to FHIR status");
-			} else if (conditionList.get(i+2).equals("resolved")) {
+			} else if (conditionList.get(i+3).equals("resolved")) {
 				// Resolved
 				cond.setStatus(ConditionStatusEnum.CONFIRMED);
-				//System.out.println("Put refuted to FHIR status");
 			} 
+			Date date = new Date();
+			try {
+				String[] parsedDate = conditionList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			cond.setDateAssertedWithDayPrecision(date);
 			
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
+			NarrativeStatusEnum narrative = null;
+			cond.getText().setStatus(narrative.GENERATED);
+			StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Status</td>\n");
+			buffer_narrative.append("			<td>"+ cond.getStatus().getValue() + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
 		    cond.getText().setDiv(output);
-			count = count+1;
 			retVal.add(cond);
 		}
 		return retVal;
@@ -836,7 +1134,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		if(responseStr.equals("temp response")){
 			responseStr= getThings("30cafccc-047d-4288-94ef-643571f7919d",Record_id,Person_id);
 		}
-		System.out.println(responseStr);
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -848,65 +1145,77 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				Node nNode = nList.item(temp);
 				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 					finalList.add(nNode.getFirstChild().getTextContent());
-					//System.out.println(nNode.getFirstChild().getTextContent());
+					finalList.add(nNode.getLastChild().getPreviousSibling().getTextContent());
 					Element eElement = (Element) nNode;
 					finalList.add(eElement.getElementsByTagName("name").item(0).getTextContent());
-					//System.out.println(eElement.getElementsByTagName("name").item(0).getTextContent());
-					nNode = nNode.getLastChild().getFirstChild().getFirstChild().getNextSibling().getFirstChild();
+					//Optional Information that may be obtained
+					/*nNode = nNode.getLastChild().getFirstChild().getFirstChild().getNextSibling().getFirstChild();
 					String[] split = (nNode.getTextContent().split("\\s+"));
 					finalList.add(split[0]);
-					//System.out.println(split[0]);
 					finalList.add(split[1]);
-					//System.out.println(split[1]);
 					nNode = nNode.getParentNode().getNextSibling().getFirstChild();
 					split = (nNode.getTextContent().split("\\s+"));
 					finalList.add(split[0]);
-					//System.out.println(split[0]);
 					finalList.add(split[1]);
-					//System.out.println(split[1]);
 					nNode = nNode.getParentNode().getNextSibling().getFirstChild();
 					finalList.add(nNode.getTextContent());
-					//System.out.println(nNode.getTextContent());
 					nNode = nNode.getParentNode().getNextSibling().getFirstChild();
 					finalList.add(nNode.getTextContent());
-					//System.out.println(nNode.getTextContent());
 					nNode = nNode.getParentNode().getNextSibling().getFirstChild();
 					finalList.add(nNode.getTextContent());
-					//System.out.println(nNode.getTextContent());
 					nNode = nNode.getParentNode().getNextSibling().getNextSibling().getNextSibling().getFirstChild();
 					if (nNode.getTextContent().equals("Prescribed")){
 						nNode=nNode.getParentNode().getNextSibling().getFirstChild().getFirstChild();
 						finalList.add(nNode.getTextContent());
-						//System.out.println(nNode.getTextContent());
 					}
 					else{
 						finalList.add("N/A");
-						//System.out.println("N/A");
-					}
+					}*/
 				}
 				
 			}
 		    } catch (Exception e) {
 			e.printStackTrace();
 		    }
-		
-		//System.out.println(finalList);
+
 		return finalList;
 	}
-	static public ArrayList<MedicationPrescription> setMedications(String userId, ArrayList<String> retList, ArrayList<MedicationPrescription> retVal){
-		//MedicationPrescription med = new MedicationPrescription();
+	static public ArrayList<MedicationPrescription> setMedicationObservation(String userId, ArrayList<String> retList, ArrayList<MedicationPrescription> retVal){
+		FhirContext ctx = new FhirContext();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		int count =0;
-		for (int i = 0; i < retList.size(); i=i+10) {
+		for (int i = 0; i < retList.size(); i=i+3) {
 			MedicationPrescription med = new MedicationPrescription();
 			med.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "0000";
-			
-			
-			//obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+			med.setPatient(subj);
+			ResourceReferenceDt medicationName = new ResourceReferenceDt();
+			medicationName.setDisplay(retList.get(i+2));
+			med.setMedication(medicationName);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			med.setDateWrittenWithSecondsPrecision(date);
+			NarrativeStatusEnum narrative = null;
+			med.getText().setStatus(narrative.GENERATED);
+			StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">" + med.getMedication().getDisplay()+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
 			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-		    //obs.getText().setDiv(output);
-		    //count = count+1;
+		   // String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
+			String output = buffer_narrative.toString();
+		    med.getText().setDiv(output);
 			retVal.add(med);
 		}
 		
@@ -947,14 +1256,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	 
 	    	return lcode;
 		}
-	/* (non-Javadoc)
-	 * @see edu.gatech.i3l.HealthPort.HealthPortFHIRIntf#getMedicationPrescription(java.lang.String)
-	 */
-	@Override
-	public MedicationPrescription getMedicationPrescription(String resourceId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	
 	 //Parse a given CCD (using mdht) and create observations
