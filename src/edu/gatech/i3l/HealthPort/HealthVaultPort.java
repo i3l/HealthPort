@@ -14,6 +14,7 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.emf.common.util.EList;
 import org.openhealthtools.mdht.uml.cda.EntryRelationship;
 import org.openhealthtools.mdht.uml.cda.ccd.CCDPackage;
@@ -50,6 +51,7 @@ import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
 import ca.uhn.fhir.model.primitive.BoundCodeDt;
+import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.narrative.CustomThymeleafNarrativeGenerator;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 
@@ -458,11 +460,20 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		for (int i = 0; i < retList.size(); i=i+4) {
 		Observation obs = new Observation();
 		obs.setId(userId + "-"+count+"-"+ retList.get(i));
-		String nameCode = getCode("Body weight");
-		obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+		String nameCode = getCode("Body weight");	
+		CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+		nameCoding.setDisplay("Body Weight");
+		
+		ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+        codingList.add(nameCoding);
+        CodeableConceptDt nameDt = new CodeableConceptDt();
+        nameDt.setCoding(codingList);
+
+        obs.setName(nameDt);
+		
 		QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 		obs.setValue(quantity);
-		obs.setComments("Body Weight");
+		//obs.setComments("Body Weight");
 		ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 		obs.setSubject(subj);
 		obs.setStatus(ObservationStatusEnum.FINAL);
@@ -475,12 +486,18 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		obs.setIssuedWithMillisPrecision(date);
+		obs.setApplies(new DateTimeDt(date));
+		//obs.setIssuedWithMillisPrecision(date);
 		
 		StringBuffer buffer_narrative = new StringBuffer();
 		
 		NarrativeStatusEnum narrative = null;
 		obs.getText().setStatus(narrative.GENERATED);
+	    String textBody = date.toString()+" "+"Body Weight"+"="+retList.get(i+2)+" "+ retList.get(i+3);         
+        textBody = StringEscapeUtils.escapeHtml4(textBody);
+        //System.out.println(textBody);
+        obs.getText().setDiv(textBody);
+		/*
 		buffer_narrative.append("<div>\n");
 		buffer_narrative.append("<div class=\"hapiHeaderText\">Body Weight</div>\n");
 		buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -493,9 +510,9 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		buffer_narrative.append("</table>\n");
 		buffer_narrative.append("</div>\n");
 		String output = buffer_narrative.toString();
-		
+		*/
 		//obs.getText().setStatus(output);
-	    obs.getText().setDiv(output);
+	    //obs.getText().setDiv(output);
 	  
 		retVal.add(obs);
 		}
@@ -551,10 +568,18 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "8302-2";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay("Height");
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 			obs.setValue(quantity);
-			obs.setComments("Height");
+			//obs.setComments("Height");
 			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
@@ -567,11 +592,15 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			obs.setIssuedWithMillisPrecision(date);
+			//obs.setIssuedWithMillisPrecision(date);
+			obs.setApplies(new DateTimeDt(date));
 			
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
-			StringBuffer buffer_narrative = new StringBuffer();
+			String textBody = date.toString()+" "+"Height"+"="+retList.get(i+2)+" "+ retList.get(i+3);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Height</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -585,7 +614,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
-		  
+		  */
 			retVal.add(obs);
 		}
 		return retVal;
@@ -640,7 +669,15 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "0000";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay(retList.get(i+2));
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+3))).setUnits(retList.get(i+4));
 			obs.setValue(quantity);
 			obs.setComments(retList.get(i+2) + ", Overall:"+ retList.get(i+5));
@@ -656,10 +693,14 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			obs.setIssuedWithMillisPrecision(date);
+			obs.setApplies(new DateTimeDt(date));
+			//obs.setIssuedWithMillisPrecision(date);
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
-			StringBuffer buffer_narrative = new StringBuffer();
+			String textBody = date.toString()+" "+retList.get(i+2)+"="+retList.get(i+3)+" "+ retList.get(i+4);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -673,6 +714,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
+		    */
 			if (retList.get(i+2).equals("Systolic Blood Pressure")){
 				count = count+1;
 			}
@@ -735,10 +777,17 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "49134-0";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay("Glucose in " + retList.get(i+4));
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 			obs.setValue(quantity);
-			obs.setComments("Glucose in " + retList.get(i+4));
+			//obs.setComments("Glucose in " + retList.get(i+4));
 			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
@@ -751,10 +800,14 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			obs.setIssuedWithMillisPrecision(date);
+			obs.setApplies(new DateTimeDt(date));
+			//obs.setIssuedWithMillisPrecision(date);
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
-			StringBuffer buffer_narrative = new StringBuffer();
+			String textBody = date.toString()+" "+"Glucose in " + retList.get(i+4)+"="+retList.get(i+2)+" "+ retList.get(i+3);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Glucose in " + retList.get(i+4)+ "</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -768,7 +821,8 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
-		   
+		   */
+			
 			retVal.add(obs);
 		}
 		return retVal;
@@ -820,10 +874,17 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "11054-4";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay("Cholesterol");
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 			obs.setValue(quantity);
-			obs.setComments("Cholesterol");
+			//obs.setComments("Cholesterol");
 			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			obs.setSubject(subj);
 			Date date = new Date();
@@ -834,12 +895,16 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			obs.setIssuedWithMillisPrecision(date);
+			obs.setApplies(new DateTimeDt(date));
+			//obs.setIssuedWithMillisPrecision(date);
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			StringBuffer buffer_narrative = new StringBuffer();
+			String textBody = date.toString()+" "+"Cholesterol " +"="+retList.get(i+2)+" "+ retList.get(i+3);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Cholesterol</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -852,7 +917,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
-		    obs.getText().setDiv(output);
+		    obs.getText().setDiv(output);*/
 			retVal.add(obs);
 		}
 		return retVal;
@@ -910,7 +975,14 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "0000";
-			obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
+			CodingDt nameCoding = new CodingDt("http://loinc.org",nameCode);
+			nameCoding.setDisplay(retList.get(i+2));
+			ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+	        codingList.add(nameCoding);
+	        CodeableConceptDt nameDt = new CodeableConceptDt();
+	        nameDt.setCoding(codingList);
+	        obs.setName(nameDt);
+			//obs.setName(new CodeableConceptDt("http://loinc.org",nameCode)); 
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+3))).setUnits(retList.get(i+4));
 			obs.setValue(quantity);
 			obs.setComments(retList.get(i+2)+" from: "+retList.get(i+1));
@@ -921,7 +993,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
-			StringBuffer buffer_narrative = new StringBuffer();
+			String textBody =retList.get(i+2) +"="+retList.get(i+3)+" "+ retList.get(i+4);         
+	        textBody = StringEscapeUtils.escapeHtml4(textBody);
+	        obs.getText().setDiv(textBody);
+			/*StringBuffer buffer_narrative = new StringBuffer();
 			//buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
@@ -935,7 +1010,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
-		    obs.getText().setDiv(output);
+		    obs.getText().setDiv(output);*/
 			count = count+1;	    
 			retVal.add(obs);
 		}
