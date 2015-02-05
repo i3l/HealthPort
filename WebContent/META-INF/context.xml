@@ -15,4 +15,11 @@
         username="healthport"
         password="i3lworks"
         url="jdbc:mysql://localhost:3306/OMOP"/>
+    <Resource name="jdbc/ExactDataSample"
+        auth="Container"
+        driverClassName="com.mysql.jdbc.Driver"
+        type="javax.sql.DataSource"
+        username="healthport"
+        password="i3lworks"
+        url="jdbc:mysql://localhost:3306/ExactDataSample"/>
 </Context>

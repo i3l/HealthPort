@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -60,100 +61,239 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 	SimpleDateFormat formatter2 = new SimpleDateFormat("yyyyMMdd");
 
+	private Observation createObs(String theId, String nameUri, String nameCode, String nameDisp, String theValue, String theUnit, Date date, String desc) {
+		theId = theId.trim();
+		nameUri = nameUri.trim();
+		nameCode = nameCode.trim();
+		nameDisp = nameDisp.trim();
+		theValue = theValue.trim();
+		theUnit = theUnit.trim();
+		desc = desc.trim();
+		
+		Observation obs = new Observation();
+		obs.setId(theId);
+		
+		// Observation Name
+		CodingDt nameCoding = new CodingDt(nameUri, nameCode);
+		nameCoding.setDisplay(nameDisp);
+		
+		ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+		codingList.add(nameCoding);
+		CodeableConceptDt nameDt = new CodeableConceptDt();
+		nameDt.setCoding(codingList);
+
+		obs.setName(nameDt);
+		
+		// Observation Value[x], x=Quantity, value=double
+		if (!theValue.isEmpty()) {
+			// Remove any commas
+			theValue = theValue.replace(",", "");
+			QuantityDt qDt = new QuantityDt (Double.parseDouble(theValue));
+			if (!theUnit.isEmpty()) {
+				qDt.setUnits(theUnit);
+//				qDt.setSystem(vUri);  These are optional...
+//				qDt.setCode(vCode);
+			}
+		
+			obs.setValue(qDt);
+		}
+		// Observation Status
+		obs.setStatus(ObservationStatusEnum.FINAL);
+		
+		// Reliability
+		obs.setReliability(ObservationReliabilityEnum.OK);
+
+		if (date != null) {
+			obs.setApplies(new DateTimeDt(date));
+		}
+		
+		// Human Readable Section
+		obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+		String textBody = date.toString()+" "+nameDisp+"="+theValue+" "+desc;		
+		textBody = StringEscapeUtils.escapeHtml4(textBody);
+		System.out.println(textBody);
+	    obs.getText().setDiv(textBody);
+
+		return obs;
+	}
+	
+	
 	public ArrayList<Observation> getObservations(HealthPortUserInfo userInfo) {
 		// TODO Auto-generated method stub
 		ArrayList<Observation> retVal = new ArrayList<Observation>();
     	//ArrayList<String> retList = new ArrayList<String>();    	
     	//Get all Observations
 	    Connection conn = null;
-	    Statement stmt = null;    
-	    String obsVal = null;
-	    String obsConceptId = null;
-	    String obsId = null;
-	    String obsDate = null;
-	    int count = 0;
-	    
+	    Statement stmt = null;  
+		Context context = null;
+		DataSource datasource;
+		
 	    try {
-			//Class.forName(driverName);
-			String URL = url + "/" + dbName;
-			conn = DriverManager.getConnection(URL, username, password);
-			stmt = conn.createStatement();
-			String sql = "SELECT observation_id, observation_value, observation_date, observation_concept_id FROM observation WHERE person_id= " + userInfo.personId;
-			ResultSet rs = stmt.executeQuery(sql);
+	    	context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = datasource.getConnection();
 			
+			//Class.forName(driverName);
+//			String URL = url + "/" + dbName;
+//			conn = DriverManager.getConnection(URL, username, password);
+			stmt = conn.createStatement();
+//			String sql = "SELECT observation_id, observation_value, observation_date, observation_concept_id FROM observation WHERE person_id= " + userInfo.personId;
+			
+			// Get Vital Sign for this patient.
+			String sql = "SELECT * FROM vital_sign WHERE Member_ID='"+userInfo.personId+"'";
+			ResultSet rs = stmt.executeQuery(sql);
 			while(rs.next()){
-				obsVal = rs.getString("observation_value");
-				obsConceptId = rs.getString("observation_concept_id");
-				obsId = rs.getString("observation_id");
-				obsDate = rs.getString("observation_date");
-				//FhirContext ctx = new FhirContext();
-				Observation obs = new Observation();
-				obs.setId(userInfo.userId + "-"+count+"-"+ obsId);
-				obs.setName(new CodeableConceptDt("http://loinc.org",obsConceptId)); 
-				StringDt val = new StringDt(obsVal);
-				obs.setValue(val);
-				//obs.setComments("Body Weight");// if required, do -> if(Id[2] ==""){ set as ""} else{}
-				obs.setComments(obsDate);
-				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userInfo.userId);
-				obs.setSubject(subj);
-				String obsType = null;
-				if (obsConceptId == "3141-9"){
-					obsType = "Body Weight";
+				Date dateTime = new java.util.Date(rs.getDate("Encounter_Date").getTime());
+				
+				// Height.
+				String height = rs.getString("Height");				
+				if (!height.isEmpty()) {
+					String heightUnit = rs.getString("Height_Units");
+					Observation obs = createObs(userInfo.userId+"-0-h-"+rs.getString("Encounter_ID"), 
+							"http://loinc.org", 
+							"8302-2", 
+							"Body Height", 
+							height, 
+							heightUnit,
+							dateTime,
+							"");
+
+					// Observation Reference to Patient
+					obs.setSubject(new ResourceReferenceDt("Patient/"+userInfo.userId));
+					retVal.add(obs);
 				}
-				else if (obsConceptId.equals("8302-2")){
-					obsType = "Body Height";
+				
+				// Weight.
+				String weight = rs.getString("Weight");
+				if (!weight.isEmpty()) {
+					String weightUnit = rs.getString("Weight_Units");
+					Observation obs = createObs(userInfo.userId+"-0-w-"+rs.getString("Encounter_ID"), 
+							"http://loinc.org", 
+							"3141-9", 
+							"Body Height", 
+							weight, 
+							weightUnit, 
+							dateTime,
+							"");
+
+					// Observation Reference to Patient
+					obs.setSubject(new ResourceReferenceDt("Patient/"+userInfo.userId));
+					retVal.add(obs);					
 				}
-				else if (obsConceptId.equals("9279-1")){
-					obsType = "Respiration Rate";
+				
+				// Respiration
+				String respiration = rs.getString("Respiration");
+				if (!respiration.isEmpty()) {
+					Observation obs = createObs(userInfo.userId+"-0-r-"+rs.getString("Encounter_ID"), 
+							"http://loinc.org", 
+							"9279-1", 
+							"Respiration Rate", 
+							respiration, 
+							"", 
+							dateTime,
+							"");
+
+					// Observation Reference to Patient
+					obs.setSubject(new ResourceReferenceDt("Patient/"+userInfo.userId));
+					retVal.add(obs);					
 				}
-				else if (obsConceptId.equals("8867-4")){
-					obsType = "Heart Beat";
+
+				// Pulse
+				String pulse = rs.getString("Pulse");
+				if (!pulse.isEmpty()) {
+					Observation obs = createObs(userInfo.userId+"-0-hb-"+rs.getString("Encounter_ID"), 
+							"http://loinc.org", 
+							"8867-4", 
+							"Heart Beat", 
+							pulse, 
+							"",
+							dateTime,
+							"");
+
+					// Observation Reference to Patient
+					obs.setSubject(new ResourceReferenceDt("Patient/"+userInfo.userId));
+					retVal.add(obs);					
 				}
-				else if (obsConceptId.equals("8480-6")){
-					obsType = "Systolic BP";
+				
+				// Systolic BP
+				String systolicBP = rs.getString("SystolicBP");
+				if (!systolicBP.isEmpty()) {
+					Observation obs = createObs(userInfo.userId+"-0-sBP-"+rs.getString("Encounter_ID"), 
+							"http://loinc.org", 
+							"8480-6", 
+							"Systolic BP", 
+							systolicBP, 
+							"mm[Hg]",
+							dateTime,
+							"");
+
+					// Observation Reference to Patient
+					obs.setSubject(new ResourceReferenceDt("Patient/"+userInfo.userId));
+					retVal.add(obs);					
 				}
-				else if (obsConceptId.equals("8462-4")){
-					obsType = "Diastolic BP";
+				
+				// Diastolic BP
+				String diastolicBP = rs.getString("DiastolicBP");
+				if (!diastolicBP.isEmpty()) {
+					Observation obs = createObs(userInfo.userId+"-0-dBP-"+rs.getString("Encounter_ID"), 
+							"http://loinc.org", 
+							"8462-4", 
+							"Diastolic BP", 
+							diastolicBP, 
+							"mm[Hg]",
+							dateTime,
+							"");
+
+					// Observation Reference to Patient
+					obs.setSubject(new ResourceReferenceDt("Patient/"+userInfo.userId));
+					retVal.add(obs);					
 				}
-				else if (obsConceptId.equals("8310-5")){
-					obsType = "Body Temperature";
+				
+				// Temperature
+				String temp = rs.getString("Temperature");
+				if (!temp.isEmpty()) {
+					String tempUnit = rs.getString("Temperature_Units");
+					Observation obs = createObs(userInfo.userId+"-0-t-"+rs.getString("Encounter_ID"), 
+							"http://loinc.org", 
+							"8310-5", 
+							"Body Temperature", 
+							temp, 
+							tempUnit,
+							dateTime,
+							"");
+
+					// Observation Reference to Patient
+					obs.setSubject(new ResourceReferenceDt("Patient/"+userInfo.userId));
+					retVal.add(obs);					
 				}
-				Date date = new Date();
-				try {
-					date = formatter.parse(obsDate);
-				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				obs.setIssuedWithMillisPrecision(date);
-				obs.setStatus(ObservationStatusEnum.FINAL);
-				obs.setReliability(ObservationReliabilityEnum.OK);
-				NarrativeStatusEnum narrative = null;
-				obs.getText().setStatus(narrative.GENERATED);
-				StringBuffer buffer_narrative = new StringBuffer();
-				buffer_narrative.append("<div>\n");
-				buffer_narrative.append("<div class=\"hapiHeaderText\">" + obsType + "</div>\n");
-				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
-				buffer_narrative.append("	<tbody>\n");
-				buffer_narrative.append("		<tr>\n");
-				buffer_narrative.append("			<td>Value</td>\n");
-				buffer_narrative.append("			<td>"+ val + "</td>\n");
-				buffer_narrative.append("		</tr>\n");
-				buffer_narrative.append("		<tr>\n");
-				buffer_narrative.append("			<td>Date</td>\n");
-				buffer_narrative.append("			<td>"+ obsDate + "</td>\n");
-				buffer_narrative.append("		</tr>\n");
-				buffer_narrative.append("	</tbody>\n");
-				buffer_narrative.append("</table>\n");
-				buffer_narrative.append("</div>\n");
-				String output = buffer_narrative.toString();
-			    obs.getText().setDiv(output);
-				retVal.add(obs);
 			}
+			
+			// Get Lab Result
+			sql = "SELECT Result_Name, Result_Status, Result_LOINC, Result_Description, Numeric_Result, Units, Encounter_ID, Date_Resulted FROM lab_results WHERE Member_ID='"+userInfo.personId+"'";
+			rs = stmt.executeQuery(sql);
+			while (rs.next()) {
+				Date dateTime = new java.util.Date(rs.getDate("Date_Resulted").getTime());
+				Observation obs = createObs(userInfo.userId+"-0-labR-"+rs.getString("Encounter_ID"), 
+						"http://loinc.org", 
+						rs.getString("Result_LOINC"), 
+						rs.getString("Result_Name"), 
+						rs.getString("Numeric_Result"), 
+						rs.getString("Units"),
+						dateTime,
+						rs.getString("Result_Description"));
+
+				// Observation Reference to Patient
+				obs.setSubject(new ResourceReferenceDt("Patient/"+userInfo.userId));
+				retVal.add(obs);					
+			}
+			conn.close();
 		} catch (SQLException se) {
 			// TODO Auto-generated catch block
 			se.printStackTrace();
-			}
+		} catch (NamingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		return retVal;
 	}
 
