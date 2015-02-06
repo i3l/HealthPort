@@ -37,13 +37,15 @@ public class ObservationResourceProvider implements IResourceProvider {
     
     @Read()
     public Observation getResourceById(@IdParam IdDt theId){
-    	Observation obs = new Observation();
+    	Observation obs = null;
     	String resourceId = theId.getIdPart();
-    	String[] Ids  = theId.getIdPart().split("\\-",3);
+    	System.out.println(resourceId);
+    	String[] Ids  = resourceId.split("\\-",3);
     	
     	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
     	String location = HealthPortUser.dataSource;
 		
+    	System.out.println(location);
     	if(location.equals(HealthPortUserInfo.GREENWAY)){
 			System.out.println("Greenway");
 	     	
@@ -179,13 +181,22 @@ public class ObservationResourceProvider implements IResourceProvider {
     }
     
 	@Search()
-	public List<Observation> searchByIdentifier(@RequiredParam(name=Observation.SP_NAME) TokenParam theName) {
-	   String identifierSystem = theName.getSystem();
-	   String name = theName.getValue();
+	public List<Observation> searchByName(@RequiredParam(name=Observation.SP_NAME) TokenParam theName) {
+		// This is search by Observation.name - codeableconcept. 
+		// Observation in FHIR supports LOINC. And, the data we have in the 
+		// Synthetic EHR has only LOINC in observation data.
+	   String systemName = theName.getSystem();
+	   String codeName = theName.getValue();
 	   //System.out.println(identifierSystem);
-	   System.out.println(name);
+	   System.out.println(systemName+":"+codeName);
+
 	   ArrayList<Observation> retVal = new ArrayList<Observation>(); 
-	   retVal = new SyntheticEHRPort().getObservationsByType(name);
+
+	   // Check if the system is LONIC.
+	   if (systemName.equalsIgnoreCase("http://loinc.org") || systemName.equalsIgnoreCase("urn:oid:2.16.840.1.113883.6.1")) {
+		   // SyntheticEHR only has LOINC code name for observation data. But, pass system name anyway just in case.
+		   retVal = new SyntheticEHRPort().getObservationsByType(systemName, codeName);		   
+	   }
 	   return retVal;
 	}
     
