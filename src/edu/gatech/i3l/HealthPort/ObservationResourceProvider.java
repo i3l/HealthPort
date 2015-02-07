@@ -192,11 +192,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 
 	   ArrayList<Observation> retVal = new ArrayList<Observation>(); 
 
-	   // Check if the system is LONIC.
-	   if (systemName.equalsIgnoreCase("http://loinc.org") || systemName.equalsIgnoreCase("urn:oid:2.16.840.1.113883.6.1")) {
-		   // SyntheticEHR only has LOINC code name for observation data. But, pass system name anyway just in case.
-		   retVal = new SyntheticEHRPort().getObservationsByType(systemName, codeName);		   
-	   }
+	   retVal = new SyntheticEHRPort().getObservationsByCodeSystem(systemName, codeName);		   
 	   return retVal;
 	}
     

@@ -69,7 +69,7 @@ public class ConditionResourceProvider implements IResourceProvider {
 		String ccd=null;
 		
 		ArrayList<Condition> finalRetVal = new ArrayList<Condition>();
-		ArrayList<Condition> retVal = new ArrayList<Condition>();
+		//ArrayList<Condition> retVal = new ArrayList<Condition>();
     	try{
 			context = new InitialContext();
 			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
@@ -90,16 +90,12 @@ public class ConditionResourceProvider implements IResourceProvider {
 		    			System.out.println(ccd);
 		    	}
 		    	else if(location.equals(HealthPortUserInfo.SyntheticEHR)){ 			
-		    		retVal = new SyntheticEHRPort().getConditions(HealthPortUser);
-		    		finalRetVal.addAll(retVal);
+		    		finalRetVal.addAll(new SyntheticEHRPort().getConditions(HealthPortUser));
 		 
 		    	}else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
-		    		retVal = new HealthVaultPort().getConditions(HealthPortUser);
-		    		finalRetVal.addAll(retVal);
+		    		finalRetVal.addAll(new HealthVaultPort().getConditions(HealthPortUser));
 				}
 		    	
-		    	retVal.clear();
-	
 			}
 			connection.close();
 			
@@ -142,13 +138,15 @@ public class ConditionResourceProvider implements IResourceProvider {
 	}
 	
 	@Search()
-	public List<Condition> searchByIdentifier(@RequiredParam(name=Condition.SP_CODE) TokenParam theId) {
-	   String identifierSystem = theId.getSystem();
-	   String identifier = theId.getValue();
-	   System.out.println(identifierSystem);
-	   System.out.println(identifier);
+	public List<Condition> searchByCode(@RequiredParam(name=Condition.SP_CODE) TokenParam theId) {
+	   String codeSystem = theId.getSystem();
+	   String code = theId.getValue();
+	   System.out.println(codeSystem);
+	   System.out.println(code);
+	   
 	   ArrayList<Condition> retVal = new ArrayList<Condition>(); 
-	   retVal = new SyntheticEHRPort().getConditionsByType(identifier);
+	   
+	   retVal = new SyntheticEHRPort().getConditionsByCodeSystem(codeSystem, code);
 	   return retVal;
 	}
 

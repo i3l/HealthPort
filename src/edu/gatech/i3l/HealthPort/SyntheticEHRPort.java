@@ -316,91 +316,551 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		return retVal;
 	}
 
-	public ArrayList<Condition> getConditions(HealthPortUserInfo userInfo) {
-		ArrayList<Condition> retVal = new ArrayList<Condition>();
-		Connection conn = null;
-	    Statement stmt = null;    
-	    //String condVal = null;
-	    String condConceptId = null;
-	    String condId = null;
-	    String condDate = null;
-	    String condName = null;
-	    int count = 0;
-	    try {
-			//Class.forName(driverName);
-			String URL = url + "/" + dbName;
-			conn = DriverManager.getConnection(URL, username, password);
-			stmt = conn.createStatement();
-			String sql = "SELECT condition_occurrence_id, condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE person_id= " + userInfo.personId;
-			ResultSet rs = stmt.executeQuery(sql);
-			while(rs.next()){
-				//condVal = rs.getString("observation_value");
-				condConceptId = rs.getString("condition_id");
-				condId = rs.getString("condition_occurrence_id");
-				condDate = rs.getString("condition_start_date");
-				condName = rs.getString("condition_name");
-				Condition cond = new Condition();
-				cond.setId(userInfo.userId+"-"+count+"-"+condId);
-				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userInfo.userId);
-				cond.setSubject(subj);
-				//cond.setNotes(condDate);
-				CodeableConceptDt value = new CodeableConceptDt();
-				value.setText(condName);
-				CodingDt code = new CodingDt();
-				code.setCode(condConceptId);
-				code.setSystem("http://snomed.info/sct");
-				code.setDisplay(condName);
-				List<CodingDt> theValue = new ArrayList<CodingDt>();
-				theValue.add(code);
-				value.setCoding(theValue);
-				cond.setCode(value );
-				Date date = new Date();
-				//String finaldate = condDate.substring(0, 8);
-				//System.out.println(finaldate);
-				try {
-					date = formatter2.parse(condDate.substring(0, 8));
-				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+	public Observation getObservation(String resourceId) {
+			//ArrayList<String> obsList = new ArrayList<String>();
+			String[] Ids  = resourceId.split("\\-", 3);
+	    	//Ids[0] -> user id
+			//Ids[1] -> (locally defined) observation type
+			//Ids[2] -> member id (in exact database).
+			
+			// We know that we are getting observations. Use the
+			// reference ID to figure out which observations we need to return
+		    Connection conn = null;
+		    Statement stmt = null;
+		    //String personId = null;
+		    String sql = null; 
+		    ResultSet rs = null;
+		    Observation obs = null;
+		    
+			Context context = null;
+			DataSource datasource;
+	
+		    try {
+		    	context = new InitialContext();
+				datasource = (DataSource) context.lookup("java:/comp/env/jdbc/ExactDataSample");
+				conn = datasource.getConnection();
+				
+				stmt = conn.createStatement();
+	
+	//			URL = url + "/" + dbName;
+	//			conn = DriverManager.getConnection(URL, username, password);
+	//			sql = "SELECT observation_id, observation_value, observation_date, observation_concept_id FROM observation WHERE observation_id= " + Ids[2];
+				if (Ids[1].equalsIgnoreCase(Lab_Results)) {
+					// We are asked to return lab result part of observation. 
+					// Use the member ID to search and return the observations
+					sql = "SELECT Result_Name, Result_Status, Result_LOINC, Result_Description, Numeric_Result, Units, Encounter_ID, Date_Resulted FROM lab_results WHERE Lab_Result_ID="+Ids[2];
+					rs = stmt.executeQuery(sql);
+					while (rs.next()) {
+						Date dateTime = new java.util.Date(rs.getDate("Date_Resulted").getTime());
+						obs = createObs(Ids[0]+"-"+Ids[1]+"-"+rs.getString("Encounter_ID"), 
+								"http://loinc.org", 
+								rs.getString("Result_LOINC"), 
+								rs.getString("Result_Name"), 
+								rs.getString("Numeric_Result"), 
+								rs.getString("Units"),
+								dateTime,
+								rs.getString("Result_Description"));
+	
+						// Observation Reference to Patient
+						obs.setSubject(new ResourceReferenceDt("Patient/"+Ids[0]));				
+					}
+				} else {
+					sql = "SELECT * FROM vital_sign WHERE Encounter_ID='"+Ids[2]+"'";
+					rs = stmt.executeQuery(sql);
+					while(rs.next()){
+						Date dateTime = new java.util.Date(rs.getDate("Encounter_Date").getTime());
+						String Units="";
+						String Value="";
+						String DispName="";
+						String ConceptCode="";
+						if (Ids[1].equalsIgnoreCase(Weight)) {
+							ConceptCode = weightLOINC;
+							DispName = "Body Weight";
+							Value = rs.getString("Weight");
+							Units = rs.getString("Weight_Units");
+						} else if (Ids[1].equalsIgnoreCase(Height)) {
+							ConceptCode = heightLOINC;
+							DispName = "Body Height";
+							Value = rs.getString("Height");
+							Units = rs.getString("Height_Units");
+						} else if (Ids[1].equalsIgnoreCase(Respiration)) {
+							ConceptCode = respirationLOINC;
+							DispName = "Respiration Rate";
+							Value = rs.getString("Respiration");
+						} else if (Ids[1].equalsIgnoreCase(Pulse)) {
+							ConceptCode = pulseLOINC;
+							DispName = "Heart Beat";
+							Value = rs.getString("Pulse");
+						} else if (Ids[1].equalsIgnoreCase(SystolicBP)) {
+							ConceptCode = systolicBPLOINC;
+							DispName = "Systolic BP";
+							Value = rs.getString("SystoliBP");
+							Units = "mm[Hg]";
+						} else if (Ids[1].equalsIgnoreCase(DiastolicBP))  {
+							ConceptCode = diastolicBPLOINC;
+							DispName = "Diastolic BP";
+							Value = rs.getString("DiastolicBP");
+							Units = "mm[Hg]";
+						} else if (Ids[1].equalsIgnoreCase(Temperature)) {
+							ConceptCode = temperatureLOINC;
+							DispName = "Body Temperature";
+							Value = rs.getString("Temperature");
+							Units = rs.getString("Temperature_Units");
+						} 
+						
+						if (!Value.isEmpty()) {
+							obs = createObs(Ids[0]+"-"+Ids[1]+"-"+Ids[2], 
+									"http://loinc.org", 
+									ConceptCode, 
+									DispName, 
+									Value, 
+									Units,
+									dateTime,
+									"");
+	
+							// Observation Reference to Patient
+							obs.setSubject(new ResourceReferenceDt("Patient/"+Ids[0]));
+						}
+					}
 				}
-				cond.setDateAssertedWithDayPrecision(date);
-				NarrativeStatusEnum narrative = null;
-				cond.getText().setStatus(narrative.GENERATED);
-				StringBuffer buffer_narrative = new StringBuffer();		
-				//cond.setCode(value);
-				//cond.addIdentifier("ICD9", condConceptId);
-				cond.setStatus(ConditionStatusEnum.CONFIRMED);
-				buffer_narrative.append("<div>\n");
-				buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
-				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
-				buffer_narrative.append("	<tbody>\n");
-				buffer_narrative.append("		<tr>\n");
-				buffer_narrative.append("			<td>Status</td>\n");
-				buffer_narrative.append("			<td>"+ cond.getStatus().getValue() + "</td>\n");
-				buffer_narrative.append("		</tr>\n");
-				buffer_narrative.append("		<tr>\n");
-				buffer_narrative.append("			<td>Date</td>\n");
-				buffer_narrative.append("			<td>"+ date + "</td>\n");
-				buffer_narrative.append("		</tr>\n");
-				buffer_narrative.append("	</tbody>\n");
-				buffer_narrative.append("</table>\n");
-				buffer_narrative.append("</div>\n");
-				String output = buffer_narrative.toString();
-			    cond.getText().setDiv(output);
-				//DateDt date = new DateDt(condDate);
-				//setDateAsserted(date);
-				//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-			    //String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
-			    //cond.getText().setDiv(output);
-				//count = count+1;
-				retVal.add(cond);
+				
+				conn.close();
+			} catch (SQLException se) {
+				se.printStackTrace();
+				} catch (NamingException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
-		} catch (SQLException se) {
+	
+			return obs;
+		    
+		}
+
+
+	public ArrayList<Observation> getObservationsByCodeSystem(String codeSystem, String code) {
+		// In Observation, we search vital and lab result data. 
+		// 
+	
+		ArrayList<Observation> retVal = new ArrayList<Observation>();
+	
+		// Check if the system is LONIC.
+		if (!codeSystem.equalsIgnoreCase("http://loinc.org") && !codeSystem.equalsIgnoreCase("urn:oid:2.16.840.1.113883.6.1")) {
+			// SyntheticEHR only has LOINC code name for observation data. But, pass system name anyway just in case.
+			return retVal;
+		}
+		
+		//ArrayList<String> retList = new ArrayList<String>();    	
+		//Get all Observations
+		Connection conn = null;
+		Connection conn2 = null;
+	    Statement stmt = null;   
+	    Statement stmt2 = null; 
+	    Context context = null;
+		DataSource datasource = null;
+		Context context2 = null;
+		DataSource datasource2 = null;  
+	    try {
+	    	context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = datasource.getConnection();
+			stmt = conn.createStatement();
+			context2 = new InitialContext();
+			datasource2 = (DataSource) context2.lookup("java:/comp/env/jdbc/HealthPort");
+			conn2 = datasource2.getConnection();
+			stmt2 = conn2.createStatement();
+			
+			if (code.equalsIgnoreCase(weightLOINC) ||
+					code.equalsIgnoreCase(heightLOINC) ||
+					code.equalsIgnoreCase(respirationLOINC) ||
+					code.equalsIgnoreCase(pulseLOINC) ||
+					code.equalsIgnoreCase(systolicBPLOINC) ||
+					code.equalsIgnoreCase(diastolicBPLOINC) ||
+					code.equalsIgnoreCase(temperatureLOINC)) {
+				String sql = "SELECT * FROM vital_sign";
+				ResultSet rs = stmt.executeQuery(sql);
+				while(rs.next()){
+					String memberID = rs.getString("Member_ID");
+					String memSql = "SELECT ID FROM USER WHERE ORGANIZATIONID=3 AND PERSONID='"+memberID+"'";
+					ResultSet rs2 = stmt2.executeQuery(memSql);
+					String hpUserID = ""; 
+					while (rs2.next()) {
+						hpUserID = rs2.getString("ID");
+					}
+					if (hpUserID.isEmpty()) {
+						// This is in fact an error since we need to have all members in Synthetic DB
+						// in HealthPort DB. We just skip..
+						System.out.println("[SyntheticEHRPort:getObservationsByType] Failed to get this user,"+memberID+", in HealthPort DB");
+						continue;  
+					}
+					
+					Date dateTime = new java.util.Date(rs.getDate("Encounter_Date").getTime());
+					if (code.equalsIgnoreCase(heightLOINC)) {
+						String height = rs.getString("Height");				
+						if (!height.isEmpty()) {
+							String heightUnit = rs.getString("Height_Units");
+							Observation obs = createObs(hpUserID+"-"+Height+"-"+rs.getString("Encounter_ID"), 
+									"http://loinc.org", 
+									heightLOINC, 
+									"Body Height", 
+									height, 
+									heightUnit,
+									dateTime,
+									"");
+	
+							// Observation Reference to Patient
+							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
+							retVal.add(obs);
+						}
+					} else if (code.equalsIgnoreCase(weightLOINC)) {
+						String weight = rs.getString("Weight");
+						if (!weight.isEmpty()) {
+							String weightUnit = rs.getString("Weight_Units");
+							Observation obs = createObs(hpUserID+"-"+Weight+"-"+rs.getString("Encounter_ID"), 
+									"http://loinc.org", 
+									weightLOINC, 
+									"Body Weight", 
+									weight, 
+									weightUnit, 
+									dateTime,
+									"");
+	
+							// Observation Reference to Patient
+							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
+							retVal.add(obs);					
+						}
+					} else if (code.equalsIgnoreCase(respirationLOINC)) {
+						String respiration = rs.getString("Respiration");
+						if (!respiration.isEmpty()) {
+							Observation obs = createObs(hpUserID+"-"+Respiration+"-"+rs.getString("Encounter_ID"), 
+									"http://loinc.org", 
+									respirationLOINC, 
+									"Respiration Rate", 
+									respiration, 
+									"", 
+									dateTime,
+									"");
+	
+							// Observation Reference to Patient
+							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
+							retVal.add(obs);					
+						}
+					} else if (code.equalsIgnoreCase(pulseLOINC)) {
+						String pulse = rs.getString("Pulse");
+						if (!pulse.isEmpty()) {
+							Observation obs = createObs(hpUserID+"-"+Pulse+"-"+rs.getString("Encounter_ID"), 
+									"http://loinc.org", 
+									pulseLOINC, 
+									"Heart Beat", 
+									pulse, 
+									"",
+									dateTime,
+									"");
+	
+							// Observation Reference to Patient
+							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
+							retVal.add(obs);					
+						}					
+					} else if (code.equalsIgnoreCase(systolicBPLOINC)) {
+						String systolicBP = rs.getString("SystolicBP");
+						if (!systolicBP.isEmpty()) {
+							Observation obs = createObs(hpUserID+"-"+SystolicBP+"-"+rs.getString("Encounter_ID"), 
+									"http://loinc.org", 
+									systolicBPLOINC, 
+									"Systolic BP", 
+									systolicBP, 
+									"mm[Hg]",
+									dateTime,
+									"");
+	
+							// Observation Reference to Patient
+							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
+							retVal.add(obs);					
+						}
+					} else if (code.equalsIgnoreCase(diastolicBPLOINC)) {
+						String diastolicBP = rs.getString("DiastolicBP");
+						if (!diastolicBP.isEmpty()) {
+							Observation obs = createObs(hpUserID+"-"+DiastolicBP+"-"+rs.getString("Encounter_ID"), 
+									"http://loinc.org", 
+									diastolicBPLOINC, 
+									"Diastolic BP", 
+									diastolicBP, 
+									"mm[Hg]",
+									dateTime,
+									"");
+	
+							// Observation Reference to Patient
+							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
+							retVal.add(obs);					
+						}					
+					} else if (code.equalsIgnoreCase(temperatureLOINC)) {
+						String temp = rs.getString("Temperature");
+						if (!temp.isEmpty()) {
+							String tempUnit = rs.getString("Temperature_Units");
+							Observation obs = createObs(hpUserID+"-"+Temperature+"-"+rs.getString("Encounter_ID"), 
+									"http://loinc.org", 
+									temperatureLOINC, 
+									"Body Temperature", 
+									temp, 
+									tempUnit,
+									dateTime,
+									"");
+	
+							// Observation Reference to Patient
+							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
+							retVal.add(obs);					
+						}					
+					} 
+				}
+			} else {
+				// No Vital Sign.Check Lab Result.
+				// Get Lab Result
+				String sql = "SELECT Lab_Result_ID, Member_ID, Result_Name, Result_Status, Result_LOINC, Result_Description, Numeric_Result, Units, Encounter_ID, Date_Resulted FROM lab_results WHERE Result_LOINC='"+code+"'";
+				ResultSet rs = stmt.executeQuery(sql);
+				while (rs.next()) {
+					String memberID = rs.getString("Member_ID");
+					String memSql = "SELECT ID FROM USER WHERE ORGANIZATIONID=3 AND PERSONID='"+memberID+"'";
+					ResultSet rs2 = stmt2.executeQuery(memSql);
+					String hpUserID = ""; 
+					while (rs2.next()) {
+						hpUserID = rs2.getString("ID");
+					}
+					if (hpUserID.isEmpty()) {
+						// This is in fact an error since we need to have all members in Synthetic DB
+						// in HealthPort DB. We just skip..
+						System.out.println("[SyntheticEHRPort:getObservationsByType] Failed to get this user,"+memberID+", in HealthPort DB");
+						continue;  
+					}
+	
+					Date dateTime = new java.util.Date(rs.getDate("Date_Resulted").getTime());
+					Observation obs = createObs(hpUserID+"-"+Lab_Results+"-"+rs.getInt("Lab_Result_ID"), 
+							"http://loinc.org", 
+							rs.getString("Result_LOINC"), 
+							rs.getString("Result_Name"), 
+							rs.getString("Numeric_Result"), 
+							rs.getString("Units"),
+							dateTime,
+							rs.getString("Result_Description"));
+	
+					// Observation Reference to Patient
+					obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
+					retVal.add(obs);					
+				}
+			}
+		} catch (SQLException | NamingException se) {
 			// TODO Auto-generated catch block
 			se.printStackTrace();
 			}
 		return retVal;
 	}
+
+
+	private Condition createCondition (String ID, String subjRef, String nameUri, String nameCode, String nameDisp, Date dateTime) {
+		Condition condition = new Condition();
+		
+		// Set ID
+		condition.setId(ID);
+		
+		// Set subject reference to Patient
+		ResourceReferenceDt subj = new ResourceReferenceDt(subjRef);
+		condition.setSubject(subj);
+
+		// Set Code
+		nameDisp = StringEscapeUtils.escapeHtml4(nameDisp);
+		CodingDt nameCoding = new CodingDt(nameUri, nameCode);
+		nameCoding.setDisplay(nameDisp);
+		ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+		codingList.add(nameCoding);
+		CodeableConceptDt codeDt = new CodeableConceptDt();
+		codeDt.setCoding(codingList);
+		condition.setCode(codeDt);
+		
+		// Set status
+		condition.setStatus(ConditionStatusEnum.CONFIRMED);
+		
+		// Optional onsetdate
+		condition.setOnset(new DateDt(dateTime));
+		
+		// Optional human readable part.
+		String textBody = "<table class=\"hapiPropertyTable\">";
+		textBody = textBody+"<tr><td>Problem</td><td>Onset Date</td><td>ICD-9</td></tr>";
+		textBody = textBody+"<tr><td>"+nameDisp+"</td>"+"<td>"+dateTime.toString()+"</td>"+"<td>"+nameCode+"</td></tr></table>";
+		condition.getText().setDiv(textBody);
+		condition.getText().setStatus(NarrativeStatusEnum.GENERATED);
+		
+		return condition;
+	}
+	
+	public ArrayList<Condition> getConditions(HealthPortUserInfo userInfo) {
+		ArrayList<Condition> retVal = new ArrayList<Condition>();
+	    Condition condition = null;
+
+		Context context;
+		DataSource datasource;
+		
+		Connection conn = null;
+	    Statement stmt = null;    
+	    int count = 0;
+	    try {
+	    	context = new InitialContext();
+	    	datasource = (DataSource) context.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = datasource.getConnection();
+			stmt = conn.createStatement();
+			String sql = "SELECT * FROM problem";
+			ResultSet rs = stmt.executeQuery(sql);	    	
+			while(rs.next()){
+				// ExactData uses only ICD9 code.
+				String memberID = rs.getString("Member_ID");
+				if (memberID.isEmpty()) {
+					// If Member_ID is empty, we skip. This should not happen but I noticed empty Member_ID in
+					// the problem CSV file.
+					continue; 
+				}
+
+				// Get onset date
+				Date dateTime = new java.util.Date(rs.getDate("Onset_Date").getTime());
+
+				condition = createCondition(
+						userInfo.userId+"-"+count+"-"+rs.getInt("ID"),
+						"Patient/"+userInfo.userId,
+						"http://hl7.org/fhir/sid/icd-9",
+						rs.getString("Problem_Code"),
+						rs.getString("Problem_Description"),
+						dateTime
+						);
+
+				retVal.add(condition);
+			}
+			
+			conn.close();
+		} catch (SQLException | NamingException se) {
+			// TODO Auto-generated catch block
+			se.printStackTrace();
+		}
+		return retVal;
+	}
+
+	public Condition getCondition(String resourceId) {
+		String[] Ids  = resourceId.split("\\-",3);
+		//Ids[0] -> person id
+		//Ids[1] -> count 
+		//Ids[2] -> condition ID -> eg. 8302-2 for height
+		
+		if (Ids.length != 3) return null;
+		
+		Condition condition = null;
+	    Connection conn = null;
+	    DataSource datasource = null;
+	    Statement stmt = null;
+	    int count = 0;
+	    String sql = null; 
+	    ResultSet rs = null;
+
+	    try {
+			Context context = new InitialContext();
+	    	datasource = (DataSource) context.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = datasource.getConnection();
+			stmt = conn.createStatement();
+			
+			sql = "SELECT * FROM problem WHERE ID=" + Ids[2];
+			rs = stmt.executeQuery(sql);
+			while(rs.next()){				
+				// Get onset date
+				Date dateTime = new java.util.Date(rs.getDate("Onset_Date").getTime());
+
+				condition = createCondition(
+						Ids[0]+"-"+count+"-"+rs.getInt("ID"),
+						"Patient/"+Ids[0],
+						"http://hl7.org/fhir/sid/icd-9",
+						rs.getString("Problem_Code"),
+						rs.getString("Problem_Description"),
+						dateTime
+						);
+			}		
+			
+			conn.close();
+		} catch (SQLException | NamingException se) {
+			se.printStackTrace();
+		}
+	
+		return condition;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see edu.gatech.i3l.HealthPort.HealthPortFHIRIntf#getConditionsByCodeSystem(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public ArrayList<Condition> getConditionsByCodeSystem(String codeSystem, String code) {
+		ArrayList<Condition> retVal = new ArrayList<Condition>();
+		
+		// Currently, we support only ICD-9. If code system is not specified, we assume it's ICD-9
+		if (codeSystem != null && !codeSystem.isEmpty() && !codeSystem.equalsIgnoreCase("http://hl7.org/fhir/sid/icd-9") && !codeSystem.equalsIgnoreCase("urn:oid:2.16.840.1.113883.6.42")) {
+			// return if it's not ICD-9
+			return retVal;
+		}
+		
+		Condition condition = null;
+		Connection conn = null;
+		Connection conn2 = null;
+	    Statement stmt = null;   
+	    Statement stmt2 = null; 
+	    Context context = null;
+		DataSource datasource = null;
+		Context context2 = null;
+		DataSource datasource2 = null;
+	    
+	    String personId = null;
+	    String id = null;
+	    int count = 0;
+	    try {
+			
+			context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = datasource.getConnection();
+			stmt = conn.createStatement();
+			context2 = new InitialContext();
+			datasource2 = (DataSource) context2.lookup("java:/comp/env/jdbc/HealthPort");
+			conn2 = datasource2.getConnection();
+			stmt2 = conn2.createStatement();
+			
+			String sql = "SELECT * FROM problem WHERE Problem_Code= " + code;
+			ResultSet rs = stmt.executeQuery(sql);
+			while(rs.next()){
+				personId = rs.getString("Member_ID").trim();
+				if (personId.isEmpty()) continue; // no Member_ID.. just skip this. But, this should be triggered.
+				
+				String codeDisplay = rs.getString("Problem_Description");
+				
+				Date dateTime = new java.util.Date(rs.getDate("Onset_Date").getTime());
+				sql = "SELECT ID FROM USER WHERE PERSONID='" + personId+"'";
+				ResultSet temprs = stmt2.executeQuery(sql);
+				while(temprs.next()){
+					id = temprs.getString("ID");
+					condition = createCondition(
+							id+"-"+count+"-"+rs.getInt("ID"),
+							"Patient/"+id,
+							"http://hl7.org/fhir/sid/icd-9",
+							code,
+							codeDisplay,
+							dateTime
+							);
+
+					retVal.add(condition);
+					break; // Only one user. just break out.
+				}
+			}
+			
+			conn.close();
+			conn2.close();
+		} catch (SQLException | NamingException se) {
+			// TODO Auto-generated catch block
+			se.printStackTrace();
+		}
+		
+		return retVal;
+		
+	}
+
 
 	public ArrayList<MedicationPrescription> getMedicationPrescriptions(HealthPortUserInfo userInfo) {
 		ArrayList<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
@@ -444,8 +904,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				DateTimeDt date = new DateTimeDt(lastFilled.substring(0,8));
 				med.setDateWritten(date);
 				med.addIdentifier("NDC", drugConceptId);
-				NarrativeStatusEnum narrative = null;
-				med.getText().setStatus(narrative.GENERATED);
+				med.getText().setStatus(NarrativeStatusEnum.GENERATED);
 				StringBuffer buffer_narrative = new StringBuffer();
 				buffer_narrative.append("<div>\n");
 				buffer_narrative.append("<status value=\"generated\"/>\n");
@@ -519,8 +978,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				DateTimeDt date = new DateTimeDt(lastFilled.substring(0,8));
 				med.setDateWritten(date);
 				med.addIdentifier("NDC", drugId);
-				NarrativeStatusEnum narrative = null;
-				med.getText().setStatus(narrative.GENERATED);
+				med.getText().setStatus(NarrativeStatusEnum.GENERATED);
 				StringBuffer buffer_narrative = new StringBuffer();
 				buffer_narrative.append("<div>\n");
 				buffer_narrative.append("<status value=\"generated\"/>\n");
@@ -545,529 +1003,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
     	return med;
 	}
 
-	public Observation getObservation(String resourceId) {
-		//ArrayList<String> obsList = new ArrayList<String>();
-		String[] Ids  = resourceId.split("\\-", 3);
-    	//Ids[0] -> user id
-		//Ids[1] -> (locally defined) observation type
-		//Ids[2] -> member id (in exact database).
-		
-		// We know that we are getting observations. Use the
-		// reference ID to figure out which observations we need to return
-	    Connection conn = null;
-	    Statement stmt = null;
-	    //String personId = null;
-	    String sql = null; 
-	    ResultSet rs = null;
-	    Observation obs = null;
-	    
-		Context context = null;
-		DataSource datasource;
-
-	    try {
-	    	context = new InitialContext();
-			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
-			
-			stmt = conn.createStatement();
-
-//			URL = url + "/" + dbName;
-//			conn = DriverManager.getConnection(URL, username, password);
-//			sql = "SELECT observation_id, observation_value, observation_date, observation_concept_id FROM observation WHERE observation_id= " + Ids[2];
-			if (Ids[1].equalsIgnoreCase(Lab_Results)) {
-				// We are asked to return lab result part of observation. 
-				// Use the member ID to search and return the observations
-				sql = "SELECT Result_Name, Result_Status, Result_LOINC, Result_Description, Numeric_Result, Units, Encounter_ID, Date_Resulted FROM lab_results WHERE Lab_Result_ID="+Ids[2];
-				rs = stmt.executeQuery(sql);
-				while (rs.next()) {
-					Date dateTime = new java.util.Date(rs.getDate("Date_Resulted").getTime());
-					obs = createObs(Ids[0]+"-"+Ids[1]+"-"+rs.getString("Encounter_ID"), 
-							"http://loinc.org", 
-							rs.getString("Result_LOINC"), 
-							rs.getString("Result_Name"), 
-							rs.getString("Numeric_Result"), 
-							rs.getString("Units"),
-							dateTime,
-							rs.getString("Result_Description"));
-
-					// Observation Reference to Patient
-					obs.setSubject(new ResourceReferenceDt("Patient/"+Ids[0]));				
-				}
-			} else {
-				sql = "SELECT * FROM vital_sign WHERE Encounter_ID='"+Ids[2]+"'";
-				rs = stmt.executeQuery(sql);
-				while(rs.next()){
-					Date dateTime = new java.util.Date(rs.getDate("Encounter_Date").getTime());
-					String Units="";
-					String Value="";
-					String DispName="";
-					String ConceptCode="";
-					if (Ids[1].equalsIgnoreCase(Weight)) {
-						ConceptCode = weightLOINC;
-						DispName = "Body Weight";
-						Value = rs.getString("Weight");
-						Units = rs.getString("Weight_Units");
-					} else if (Ids[1].equalsIgnoreCase(Height)) {
-						ConceptCode = heightLOINC;
-						DispName = "Body Height";
-						Value = rs.getString("Height");
-						Units = rs.getString("Height_Units");
-					} else if (Ids[1].equalsIgnoreCase(Respiration)) {
-						ConceptCode = respirationLOINC;
-						DispName = "Respiration Rate";
-						Value = rs.getString("Respiration");
-					} else if (Ids[1].equalsIgnoreCase(Pulse)) {
-						ConceptCode = pulseLOINC;
-						DispName = "Heart Beat";
-						Value = rs.getString("Pulse");
-					} else if (Ids[1].equalsIgnoreCase(SystolicBP)) {
-						ConceptCode = systolicBPLOINC;
-						DispName = "Systolic BP";
-						Value = rs.getString("SystoliBP");
-						Units = "mm[Hg]";
-					} else if (Ids[1].equalsIgnoreCase(DiastolicBP))  {
-						ConceptCode = diastolicBPLOINC;
-						DispName = "Diastolic BP";
-						Value = rs.getString("DiastolicBP");
-						Units = "mm[Hg]";
-					} else if (Ids[1].equalsIgnoreCase(Temperature)) {
-						ConceptCode = temperatureLOINC;
-						DispName = "Body Temperature";
-						Value = rs.getString("Temperature");
-						Units = rs.getString("Temperature_Units");
-					} 
-					
-					if (!Value.isEmpty()) {
-						obs = createObs(Ids[0]+"-"+Ids[1]+"-"+Ids[2], 
-								"http://loinc.org", 
-								ConceptCode, 
-								DispName, 
-								Value, 
-								Units,
-								dateTime,
-								"");
-
-						// Observation Reference to Patient
-						obs.setSubject(new ResourceReferenceDt("Patient/"+Ids[0]));
-					}
-				}
-			}
-			
-			conn.close();
-		} catch (SQLException se) {
-			se.printStackTrace();
-			} catch (NamingException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
-		return obs;
-	    
-	}
-
-	public Condition getCondition(String resourceId) {
-		String[] Ids  = resourceId.split("\\-",3);
-    	//Ids[0] -> person id
-		//Ids[1] -> count 
-		//Ids[2] -> concept id -> eg. 8302-2 for height
-	    Connection conn = null;
-	    Statement stmt = null;
-	    String condConceptId = null;
-	    //String condId = null;
-	    String condDate = null;
-	    String condName = null;
-	    int count = 0;
-	    String URL = null;
-	    String sql = null; 
-	    ResultSet rs = null;
-	    Condition cond = new Condition();
-	    try {
-	    	URL = url + "/" + dbName;
-			conn = DriverManager.getConnection(URL, username, password);
-			stmt = conn.createStatement();
-			sql = "SELECT condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE condition_occurrence_id= " + Ids[2];
-			rs = stmt.executeQuery(sql);
-			while(rs.next()){
-				condConceptId = rs.getString("condition_id");
-				//condId = rs.getString("condition_occurrence_id");
-				condDate = rs.getString("condition_start_date");
-				condName = rs.getString("condition_name");
-				FhirContext ctx = new FhirContext();
-				cond.setId(Ids[0]+"-"+count+"-"+Ids[2]);
-				ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+Ids[0]);
-				cond.setSubject(subj);
-				//cond.setNotes(condDate);
-				CodeableConceptDt value = new CodeableConceptDt();
-				value.setText(condName);
-				CodingDt code = new CodingDt();
-				code.setCode(condConceptId);
-				code.setSystem("http://snomed.info/sct");
-				code.setDisplay(condName);
-				List<CodingDt> theValue = new ArrayList<CodingDt>();
-				theValue.add(code);
-				value.setCoding(theValue);
-				cond.setCode(value );
-				Date date = new Date();
-				//String finaldate = condDate.substring(0, 8);
-				//System.out.println(finaldate);
-				try {
-					date = formatter2.parse(condDate.substring(0, 8));
-				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				cond.setDateAssertedWithDayPrecision(date);
-				StringBuffer buffer_narrative = new StringBuffer();		
-				//cond.setCode(value);
-				//cond.addIdentifier("ICD9", condConceptId);
-				cond.setStatus(ConditionStatusEnum.CONFIRMED);
-				NarrativeStatusEnum narrative = null;
-				cond.getText().setStatus(narrative.GENERATED);		
-
-				buffer_narrative.append("<div>\n");
-				buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
-				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
-				buffer_narrative.append("	<tbody>\n");
-				buffer_narrative.append("		<tr>\n");
-				buffer_narrative.append("			<td>Status</td>\n");
-				buffer_narrative.append("			<td>"+ cond.getStatus().getValue() + "</td>\n");
-				buffer_narrative.append("		</tr>\n");
-				buffer_narrative.append("		<tr>\n");
-				buffer_narrative.append("			<td>Date</td>\n");
-				buffer_narrative.append("			<td>"+ date + "</td>\n");
-				buffer_narrative.append("		</tr>\n");
-				buffer_narrative.append("	</tbody>\n");
-				buffer_narrative.append("</table>\n");
-				buffer_narrative.append("</div>\n");
-				String output = buffer_narrative.toString();
-			    cond.getText().setDiv(output);
-			}			
-		} catch (SQLException se) {
-			se.printStackTrace();
-			}
-
-		return cond;
-	}
-	
-	public ArrayList<Condition> getConditionsByType(String code) {
-		ArrayList<Condition> retVal = new ArrayList<Condition>();
-		Connection conn = null;
-		Connection conn2 = null;
-	    Statement stmt = null;   
-	    Statement stmt2 = null; 
-	    Context context = null;
-		DataSource datasource = null;
-		Context context2 = null;
-		DataSource datasource2 = null;
-	    
-	    String condConceptId = null;
-	    String condId = null;
-	    String condDate = null;
-	    String condName = null;
-	    String personId = null;
-	    String id = null;
-	    int count = 0;
-	    try {
-			
-			context = new InitialContext();
-			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/OMOP");
-			conn = datasource.getConnection();
-			stmt = conn.createStatement();
-			context2 = new InitialContext();
-			datasource2 = (DataSource) context2.lookup("java:/comp/env/jdbc/HealthPort");
-			conn2 = datasource2.getConnection();
-			stmt2 = conn2.createStatement();
-			
-			String sql = "SELECT condition_occurrence_id, person_id,condition_start_date, condition_id, condition_name FROM condition_occurrence WHERE condition_id= " + code;
-			ResultSet rs = stmt.executeQuery(sql);
-			while(rs.next()){
-				//condVal = rs.getString("observation_value");
-				condConceptId = rs.getString("condition_id");
-				condId = rs.getString("condition_occurrence_id");
-				condDate = rs.getString("condition_start_date");
-				condName = rs.getString("condition_name");
-				personId = rs.getString("person_id");
-				sql = "SELECT id FROM USER WHERE PERSONID= " + personId;
-				ResultSet temprs = stmt2.executeQuery(sql);
-				while(temprs.next()){
-					id = temprs.getString("id");
-				
-					Condition cond = new Condition();
-					cond.setId(id+"-"+count+"-"+condId);
-					ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+id);
-					cond.setSubject(subj);
-					CodeableConceptDt value = new CodeableConceptDt();
-					value.setText(condName);
-					CodingDt codeString = new CodingDt();
-					codeString.setCode(condConceptId);
-					codeString.setSystem("http://snomed.info/sct");
-					codeString.setDisplay(condName);
-					List<CodingDt> theValue = new ArrayList<CodingDt>();
-					theValue.add(codeString);
-					value.setCoding(theValue);
-					cond.setCode(value );
-					Date date = new Date();
-					//String finaldate = condDate.substring(0, 8);
-					//System.out.println(finaldate);
-					try {
-						date = formatter2.parse(condDate.substring(0, 8));
-					} catch (ParseException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					cond.setDateAssertedWithDayPrecision(date);
-					cond.setStatus(ConditionStatusEnum.CONFIRMED);
-					NarrativeStatusEnum narrative = null;
-					cond.getText().setStatus(narrative.GENERATED);
-					StringBuffer buffer_narrative = new StringBuffer();		
-					//cond.setCode(value);
-					//cond.addIdentifier("ICD9", condConceptId);
-
-					buffer_narrative.append("<div>\n");
-					buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
-					buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
-					buffer_narrative.append("	<tbody>\n");
-					buffer_narrative.append("		<tr>\n");
-					buffer_narrative.append("			<td>Status</td>\n");
-					buffer_narrative.append("			<td>"+ cond.getStatus().getValue() + "</td>\n");
-					buffer_narrative.append("		</tr>\n");
-					buffer_narrative.append("		<tr>\n");
-					buffer_narrative.append("			<td>Date</td>\n");
-					buffer_narrative.append("			<td>"+ date + "</td>\n");
-					buffer_narrative.append("		</tr>\n");
-					buffer_narrative.append("	</tbody>\n");
-					buffer_narrative.append("</table>\n");
-					buffer_narrative.append("</div>\n");
-					String output = buffer_narrative.toString();
-				    cond.getText().setDiv(output);
-				    retVal.add(cond);
-				}
-			}
-		} catch (SQLException | NamingException se) {
-			// TODO Auto-generated catch block
-			se.printStackTrace();
-			}
-		
-		return retVal;
-		
-	}
-	
-	public ArrayList<Observation> getObservationsByType(String systemName, String codeName) {
-		// In Observation, we search vital and lab result data. 
-		// 
-		
-		ArrayList<Observation> retVal = new ArrayList<Observation>();
-    	//ArrayList<String> retList = new ArrayList<String>();    	
-    	//Get all Observations
-		Connection conn = null;
-		Connection conn2 = null;
-	    Statement stmt = null;   
-	    Statement stmt2 = null; 
-	    Context context = null;
-		DataSource datasource = null;
-		Context context2 = null;
-		DataSource datasource2 = null;  
-	    String obsVal = null;
-	    String obsConceptId = null;
-	    String obsId = null;
-	    String obsDate = null;
-	    String personId=null;
-	    String id = null;
-	    int count = 0;
-	    try {
-	    	context = new InitialContext();
-			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
-			stmt = conn.createStatement();
-			context2 = new InitialContext();
-			datasource2 = (DataSource) context2.lookup("java:/comp/env/jdbc/HealthPort");
-			conn2 = datasource2.getConnection();
-			stmt2 = conn2.createStatement();
-			
-			if (codeName.equalsIgnoreCase(weightLOINC) ||
-					codeName.equalsIgnoreCase(heightLOINC) ||
-					codeName.equalsIgnoreCase(respirationLOINC) ||
-					codeName.equalsIgnoreCase(pulseLOINC) ||
-					codeName.equalsIgnoreCase(systolicBPLOINC) ||
-					codeName.equalsIgnoreCase(diastolicBPLOINC) ||
-					codeName.equalsIgnoreCase(temperatureLOINC)) {
-				String sql = "SELECT * FROM vital_sign";
-				ResultSet rs = stmt.executeQuery(sql);
-				while(rs.next()){
-					String memberID = rs.getString("Member_ID");
-					String memSql = "SELECT ID FROM USER WHERE ORGANIZATIONID=3 AND PERSONID='"+memberID+"'";
-					ResultSet rs2 = stmt2.executeQuery(memSql);
-					String hpUserID = ""; 
-					while (rs2.next()) {
-						hpUserID = rs2.getString("ID");
-					}
-					if (hpUserID.isEmpty()) {
-						// This is in fact an error since we need to have all members in Synthetic DB
-						// in HealthPort DB. We just skip..
-						System.out.println("[SyntheticEHRPort:getObservationsByType] Failed to get this user,"+memberID+", in HealthPort DB");
-						continue;  
-					}
-					
-					Date dateTime = new java.util.Date(rs.getDate("Encounter_Date").getTime());
-					if (codeName.equalsIgnoreCase(heightLOINC)) {
-						String height = rs.getString("Height");				
-						if (!height.isEmpty()) {
-							String heightUnit = rs.getString("Height_Units");
-							Observation obs = createObs(hpUserID+"-"+Height+"-"+rs.getString("Encounter_ID"), 
-									"http://loinc.org", 
-									heightLOINC, 
-									"Body Height", 
-									height, 
-									heightUnit,
-									dateTime,
-									"");
-	
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
-							retVal.add(obs);
-						}
-					} else if (codeName.equalsIgnoreCase(weightLOINC)) {
-						String weight = rs.getString("Weight");
-						if (!weight.isEmpty()) {
-							String weightUnit = rs.getString("Weight_Units");
-							Observation obs = createObs(hpUserID+"-"+Weight+"-"+rs.getString("Encounter_ID"), 
-									"http://loinc.org", 
-									weightLOINC, 
-									"Body Weight", 
-									weight, 
-									weightUnit, 
-									dateTime,
-									"");
-	
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
-							retVal.add(obs);					
-						}
-					} else if (codeName.equalsIgnoreCase(respirationLOINC)) {
-						String respiration = rs.getString("Respiration");
-						if (!respiration.isEmpty()) {
-							Observation obs = createObs(hpUserID+"-"+Respiration+"-"+rs.getString("Encounter_ID"), 
-									"http://loinc.org", 
-									respirationLOINC, 
-									"Respiration Rate", 
-									respiration, 
-									"", 
-									dateTime,
-									"");
-	
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
-							retVal.add(obs);					
-						}
-					} else if (codeName.equalsIgnoreCase(pulseLOINC)) {
-						String pulse = rs.getString("Pulse");
-						if (!pulse.isEmpty()) {
-							Observation obs = createObs(hpUserID+"-"+Pulse+"-"+rs.getString("Encounter_ID"), 
-									"http://loinc.org", 
-									pulseLOINC, 
-									"Heart Beat", 
-									pulse, 
-									"",
-									dateTime,
-									"");
-	
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
-							retVal.add(obs);					
-						}					
-					} else if (codeName.equalsIgnoreCase(systolicBPLOINC)) {
-						String systolicBP = rs.getString("SystolicBP");
-						if (!systolicBP.isEmpty()) {
-							Observation obs = createObs(hpUserID+"-"+SystolicBP+"-"+rs.getString("Encounter_ID"), 
-									"http://loinc.org", 
-									systolicBPLOINC, 
-									"Systolic BP", 
-									systolicBP, 
-									"mm[Hg]",
-									dateTime,
-									"");
-	
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
-							retVal.add(obs);					
-						}
-					} else if (codeName.equalsIgnoreCase(diastolicBPLOINC)) {
-						String diastolicBP = rs.getString("DiastolicBP");
-						if (!diastolicBP.isEmpty()) {
-							Observation obs = createObs(hpUserID+"-"+DiastolicBP+"-"+rs.getString("Encounter_ID"), 
-									"http://loinc.org", 
-									diastolicBPLOINC, 
-									"Diastolic BP", 
-									diastolicBP, 
-									"mm[Hg]",
-									dateTime,
-									"");
-	
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
-							retVal.add(obs);					
-						}					
-					} else if (codeName.equalsIgnoreCase(temperatureLOINC)) {
-						String temp = rs.getString("Temperature");
-						if (!temp.isEmpty()) {
-							String tempUnit = rs.getString("Temperature_Units");
-							Observation obs = createObs(hpUserID+"-"+Temperature+"-"+rs.getString("Encounter_ID"), 
-									"http://loinc.org", 
-									temperatureLOINC, 
-									"Body Temperature", 
-									temp, 
-									tempUnit,
-									dateTime,
-									"");
-	
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
-							retVal.add(obs);					
-						}					
-					} 
-				}
-			} else {
-				// No Vital Sign.Check Lab Result.
-				// Get Lab Result
-				String sql = "SELECT Lab_Result_ID, Member_ID, Result_Name, Result_Status, Result_LOINC, Result_Description, Numeric_Result, Units, Encounter_ID, Date_Resulted FROM lab_results WHERE Result_LOINC='"+codeName+"'";
-				ResultSet rs = stmt.executeQuery(sql);
-				while (rs.next()) {
-					String memberID = rs.getString("Member_ID");
-					String memSql = "SELECT ID FROM USER WHERE ORGANIZATIONID=3 AND PERSONID='"+memberID+"'";
-					ResultSet rs2 = stmt2.executeQuery(memSql);
-					String hpUserID = ""; 
-					while (rs2.next()) {
-						hpUserID = rs2.getString("ID");
-					}
-					if (hpUserID.isEmpty()) {
-						// This is in fact an error since we need to have all members in Synthetic DB
-						// in HealthPort DB. We just skip..
-						System.out.println("[SyntheticEHRPort:getObservationsByType] Failed to get this user,"+memberID+", in HealthPort DB");
-						continue;  
-					}
-
-					Date dateTime = new java.util.Date(rs.getDate("Date_Resulted").getTime());
-					Observation obs = createObs(hpUserID+"-"+Lab_Results+"-"+rs.getInt("Lab_Result_ID"), 
-							"http://loinc.org", 
-							rs.getString("Result_LOINC"), 
-							rs.getString("Result_Name"), 
-							rs.getString("Numeric_Result"), 
-							rs.getString("Units"),
-							dateTime,
-							rs.getString("Result_Description"));
-
-					// Observation Reference to Patient
-					obs.setSubject(new ResourceReferenceDt("Patient/"+hpUserID));
-					retVal.add(obs);					
-				}
-			}
-		} catch (SQLException | NamingException se) {
-			// TODO Auto-generated catch block
-			se.printStackTrace();
-			}
-		return retVal;
-	}
-	
 	public ArrayList<MedicationPrescription> getMedicationPrescriptionsByType(String medName) {
 		ArrayList<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
 		Connection conn = null;
