@@ -28,8 +28,17 @@ import ca.uhn.fhir.rest.server.IResourceProvider;
 
 
 public class ConditionResourceProvider implements IResourceProvider {
-	public static final String SQL_STATEMENT = "SELECT ID FROM USER";
+	public static final String SQL_STATEMENT = "SELECT U1.ID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)";
 
+	private SyntheticEHRPort syntheticEHRPort;
+	private HealthVaultPort healthvaultPort;
+	
+	// Constructor
+	public ConditionResourceProvider () {
+		syntheticEHRPort = new SyntheticEHRPort();
+		healthvaultPort = new HealthVaultPort();
+	}
+	
 	@Override
 	public Class<? extends IResource> getResourceType() {
 		// TODO Auto-generated method stub
@@ -38,7 +47,7 @@ public class ConditionResourceProvider implements IResourceProvider {
 	
 	@Read()
 	 public Condition getResourceById(@IdParam IdDt theId){
-    	Condition cond = new Condition();
+    	Condition cond = null;
     	String resourceId = theId.getIdPart();
     	String[] Ids  = theId.getIdPart().split("\\-",3);
     	
@@ -49,12 +58,12 @@ public class ConditionResourceProvider implements IResourceProvider {
 			System.out.println("Greenway");
 	     	
 		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
-			cond = new SyntheticEHRPort().getCondition(resourceId);
-			
+			//cond = new SyntheticEHRPort().getCondition(resourceId);
+			cond = syntheticEHRPort.getCondition(resourceId);
 		} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
-			cond = new HealthVaultPort().getCondition(resourceId);
+			//cond = new HealthVaultPort().getCondition(resourceId);
+			cond = healthvaultPort.getCondition(resourceId);
 		}
-    	
     	
     	return cond; 	
     }
@@ -69,31 +78,40 @@ public class ConditionResourceProvider implements IResourceProvider {
 		String ccd=null;
 		
 		ArrayList<Condition> finalRetVal = new ArrayList<Condition>();
-		//ArrayList<Condition> retVal = new ArrayList<Condition>();
+		ArrayList<Condition> retVal = null;
+		
     	try{
 			context = new InitialContext();
 			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 			connection = datasource.getConnection();
 			statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
+			HealthPortUserInfo HealthPortUser = new HealthPortUserInfo();
 			while (resultSet.next()) {
 				//String Name = resultSet.getString("NAME");
-				int userId = resultSet.getInt("ID");
-				
-				HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(userId);
-		    	String rId = HealthPortUser.recordId;
-		    	String pId = HealthPortUser.personId;
-		    	location = HealthPortUser.dataSource;
+				HealthPortUser.userId = String.valueOf(resultSet.getInt("ID"));
+				HealthPortUser.dataSource = resultSet.getString("TAG");
+				HealthPortUser.recordId = resultSet.getString("RECORDID");
+				HealthPortUser.personId = resultSet.getString("PERSONID");
+				HealthPortUser.gender = resultSet.getString("GENDER");
+				HealthPortUser.contact = resultSet.getString("CONTACT");
+				HealthPortUser.address = resultSet.getString("ADDRESS");
 		    
-		    	if(location.equals(HealthPortUserInfo.GREENWAY)){
-		    			ccd = GreenwayPort.getCCD(pId);
+		    	if(HealthPortUser.dataSource.equals(HealthPortUserInfo.GREENWAY)){
+		    			ccd = GreenwayPort.getCCD(HealthPortUser.personId);
 		    			System.out.println(ccd);
 		    	}
-		    	else if(location.equals(HealthPortUserInfo.SyntheticEHR)){ 			
-		    		finalRetVal.addAll(new SyntheticEHRPort().getConditions(HealthPortUser));
+		    	else if(HealthPortUser.dataSource.equals(HealthPortUserInfo.SyntheticEHR)){ 
+		    		retVal = syntheticEHRPort.getConditions(HealthPortUser);
+		    		if (retVal != null && !retVal.isEmpty()) {
+		    			finalRetVal.addAll(retVal);
+		    		}
 		 
-		    	}else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
-		    		finalRetVal.addAll(new HealthVaultPort().getConditions(HealthPortUser));
+		    	}else if(HealthPortUser.dataSource.equals(HealthPortUserInfo.HEALTHVAULT)){
+		    		retVal = healthvaultPort.getConditions(HealthPortUser);
+					if (retVal != null && !retVal.isEmpty()) {
+						finalRetVal.addAll(retVal);
+					}
 				}
 		    	
 			}
@@ -116,7 +134,7 @@ public class ConditionResourceProvider implements IResourceProvider {
 		String ccd=null;
     	int patientNum = Integer.parseInt(theSubject.getIdPart());
 		
-		ArrayList<Condition> retVal = new ArrayList<Condition>();  
+		ArrayList<Condition> retVal = null;  
 		
 		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(patientNum);
     	String rId = HealthPortUser.recordId;
@@ -128,10 +146,12 @@ public class ConditionResourceProvider implements IResourceProvider {
     			System.out.println(ccd);
     	}
     	else if(location.equals(HealthPortUserInfo.SyntheticEHR)){ 			
-    		retVal = new SyntheticEHRPort().getConditions(HealthPortUser);
+    		//retVal = new SyntheticEHRPort().getConditions(HealthPortUser);
+    		retVal = syntheticEHRPort.getConditions(HealthPortUser);
  
     	}else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
-    		retVal = new HealthVaultPort().getConditions(HealthPortUser);
+    		//retVal = new HealthVaultPort().getConditions(HealthPortUser);
+    		retVal = healthvaultPort.getConditions(HealthPortUser);
 		}
 		
 		return retVal;
@@ -146,8 +166,9 @@ public class ConditionResourceProvider implements IResourceProvider {
 	   
 	   ArrayList<Condition> retVal = new ArrayList<Condition>(); 
 	   
-	   retVal = new SyntheticEHRPort().getConditionsByCodeSystem(codeSystem, code);
-	   return retVal;
+	   //retVal = new SyntheticEHRPort().getConditionsByCodeSystem(codeSystem, code);
+	   //return retVal;
+	   return syntheticEHRPort.getConditionsByCodeSystem(codeSystem, code);
 	}
 
 

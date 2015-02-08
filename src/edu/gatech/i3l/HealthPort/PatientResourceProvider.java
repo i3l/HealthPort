@@ -25,7 +25,7 @@ import ca.uhn.fhir.rest.server.IResourceProvider;
  * All resource providers must implement IResourceProvider
  */
 public class PatientResourceProvider implements IResourceProvider {
-	public static final String SQL_STATEMENT = "SELECT * FROM USER";
+	public static final String SQL_STATEMENT = "SELECT U1.ID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)";
  
     /**
      * The getResourceType method comes from IResourceProvider, and must
@@ -60,7 +60,7 @@ public class PatientResourceProvider implements IResourceProvider {
 		ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 		// Encode the output, including the narrative
 		String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
-		patient.getText().setDiv(output);
+		//patient.getText().setDiv(output);
     	
     	return patient;
     }
@@ -107,22 +107,11 @@ public class PatientResourceProvider implements IResourceProvider {
 				//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 				// Encode the output, including the narrative
 				//String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
-		        NarrativeStatusEnum narrative = null;
-				patient.getText().setStatus(narrative.GENERATED);
-				StringBuffer buffer_narrative = new StringBuffer();
-		        buffer_narrative.append("<div>\n");
-				buffer_narrative.append("<div class=\"hapiHeaderText\">" + fullName+ "</div>\n");
-				buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
-				buffer_narrative.append("	<tbody>\n");
-				buffer_narrative.append("		<tr>\n");
-				buffer_narrative.append("			<td>Name</td>\n");
-				buffer_narrative.append("			<td>"+ fullName+ "</td>\n");
-				buffer_narrative.append("		</tr>\n");
-				buffer_narrative.append("	</tbody>\n");
-				buffer_narrative.append("</table>\n");
-				buffer_narrative.append("</div>\n");
-				String output = buffer_narrative.toString();
-			    patient.getText().setDiv(output);
+				patient.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				String textBody = "<table class=\"hapiPropertyTable\">"
+						+ "<tr><td>Name</td><td>"+ fullName
+						+ "</td></tr></table>";
+			    patient.getText().setDiv(textBody);
 		        retVal.add(patient);
 			}
 			connection.close();

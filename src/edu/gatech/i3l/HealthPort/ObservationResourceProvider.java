@@ -24,8 +24,17 @@ import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.exceptions.InvalidRequestException;
 
 public class ObservationResourceProvider implements IResourceProvider {
-	public static final String SQL_STATEMENT = "SELECT ID FROM USER";
+	public static final String SQL_STATEMENT = "SELECT U1.ID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)";
 
+	private SyntheticEHRPort syntheticEHRPort;
+	private HealthVaultPort healthvaultPort;
+	
+	// Constructor
+	public ObservationResourceProvider () {
+		syntheticEHRPort = new SyntheticEHRPort();
+		healthvaultPort = new HealthVaultPort();
+	}
+	
     /**
      * The getResourceType method comes from IResourceProvider, and must
      * be overridden to indicate what type of resource this provider
@@ -50,10 +59,12 @@ public class ObservationResourceProvider implements IResourceProvider {
 			System.out.println("Greenway");
 	     	
 		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
-			obs = new SyntheticEHRPort().getObservation(resourceId);
+			//obs = new SyntheticEHRPort().getObservation(resourceId);
+			obs = syntheticEHRPort.getObservation(resourceId);
 			
 		} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
-			obs = new HealthVaultPort().getObservation(resourceId);
+			//obs = new HealthVaultPort().getObservation(resourceId);
+			obs = healthvaultPort.getObservation(resourceId);
 		}
     
     	return obs; 	
@@ -65,41 +76,44 @@ public class ObservationResourceProvider implements IResourceProvider {
 		Statement statement = null;
 		Context context = null;
 		DataSource datasource = null;
-		String location=null;
 		String ccd=null;
 		
 		ArrayList<Observation> finalRetVal = new ArrayList<Observation>();
-		ArrayList<Observation> retVal = new ArrayList<Observation>();
+		ArrayList<Observation> retVal = null;
     	try{
 			context = new InitialContext();
 			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 			connection = datasource.getConnection();
 			statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
+			HealthPortUserInfo HealthPortUser = new HealthPortUserInfo();
 			while (resultSet.next()) {
-				//String Name = resultSet.getString("NAME");
-				int userId = resultSet.getInt("ID");
-				
-				HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(userId);
-		    	String rId = HealthPortUser.recordId;
-		    	String pId = HealthPortUser.personId;
-		    	location = HealthPortUser.dataSource;
-		    
-		    	if(location.equals(HealthPortUserInfo.GREENWAY)){
-					ccd = GreenwayPort.getCCD(pId);
+				HealthPortUser.userId = String.valueOf(resultSet.getInt("ID"));
+				HealthPortUser.dataSource = resultSet.getString("TAG");
+				HealthPortUser.recordId = resultSet.getString("RECORDID");
+				HealthPortUser.personId = resultSet.getString("PERSONID");
+				HealthPortUser.gender = resultSet.getString("GENDER");
+				HealthPortUser.contact = resultSet.getString("CONTACT");
+				HealthPortUser.address = resultSet.getString("ADDRESS");
+
+		    	if(HealthPortUser.dataSource.equals(HealthPortUserInfo.GREENWAY)){
+					ccd = GreenwayPort.getCCD(HealthPortUser.personId);
 					//System.out.println(ccd);
 			     	
-				} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
-					retVal = new SyntheticEHRPort().getObservations(HealthPortUser);
-					finalRetVal.addAll(retVal);
+				} else if (HealthPortUser.dataSource.equals(HealthPortUserInfo.SyntheticEHR)) {
+					//retVal = new SyntheticEHRPort().getObservations(HealthPortUser);
+					//finalRetVal.addAll(retVal);
+					retVal = syntheticEHRPort.getObservations(HealthPortUser);
+					if (retVal != null && !retVal.isEmpty()) {
+						finalRetVal.addAll(retVal);
+					}
 					
-				} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
+				} else if(HealthPortUser.dataSource.equals(HealthPortUserInfo.HEALTHVAULT)){
 					retVal = new HealthVaultPort().getObservations(HealthPortUser);
-					finalRetVal.addAll(retVal);
-				}
-		    	
-		    	retVal.clear();
-	
+					if (retVal != null && !retVal.isEmpty()) {
+						finalRetVal.addAll(retVal);
+					}
+				}	
 			}
 			connection.close();
 			
@@ -114,12 +128,10 @@ public class ObservationResourceProvider implements IResourceProvider {
     @Search()
     public List<Observation> getObservationsbyPatient(
     		@RequiredParam(name=Observation.SP_SUBJECT) ReferenceParam theSubject){
-    	
-		String location=null;
-		String ccd=null;	
+    	String ccd=null;	
 		
   
-    	ArrayList<Observation> retVal = new ArrayList<Observation>();
+    	ArrayList<Observation> retVal = null;
     	String PatientID;
  
     	if (theSubject.hasResourceType()) {
@@ -134,11 +146,7 @@ public class ObservationResourceProvider implements IResourceProvider {
     	}
     	
     	int patientNum = Integer.parseInt(PatientID);
-		
     	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(patientNum);
-    	String rId = HealthPortUser.recordId;
-    	String pId = HealthPortUser.personId;
-    	location = HealthPortUser.dataSource;
     	
 //		try{
 //			context = new InitialContext();
@@ -165,15 +173,17 @@ public class ObservationResourceProvider implements IResourceProvider {
 //		}
 
 		//Access Greenway and get CCD of patient
-		if(location.equals(HealthPortUserInfo.GREENWAY)){
-			ccd = GreenwayPort.getCCD(pId);
+		if(HealthPortUser.dataSource.equals(HealthPortUserInfo.GREENWAY)){
+			ccd = GreenwayPort.getCCD(HealthPortUser.personId);
 			System.out.println(ccd);
 	     	
-		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
-			retVal = new SyntheticEHRPort().getObservations(HealthPortUser);
+		} else if (HealthPortUser.dataSource.equals(HealthPortUserInfo.SyntheticEHR)) {
+			//retVal = new SyntheticEHRPort().getObservations(HealthPortUser);
+			retVal = syntheticEHRPort.getObservations(HealthPortUser);
 			
-		} else if(location.equals(HealthPortUserInfo.HEALTHVAULT)){
-			retVal = new HealthVaultPort().getObservations(HealthPortUser);
+		} else if(HealthPortUser.dataSource.equals(HealthPortUserInfo.HEALTHVAULT)){
+			//retVal = new HealthVaultPort().getObservations(HealthPortUser);
+			retVal = healthvaultPort.getObservations(HealthPortUser);
 		}
 
        return retVal;
@@ -190,10 +200,10 @@ public class ObservationResourceProvider implements IResourceProvider {
 	   //System.out.println(identifierSystem);
 	   System.out.println(systemName+":"+codeName);
 
-	   ArrayList<Observation> retVal = new ArrayList<Observation>(); 
+	   //ArrayList<Observation> retVal = new ArrayList<Observation>(); 
 
-	   retVal = new SyntheticEHRPort().getObservationsByCodeSystem(systemName, codeName);		   
-	   return retVal;
+	   //retVal = new SyntheticEHRPort().getObservationsByCodeSystem(systemName, codeName);		   
+	   return syntheticEHRPort.getObservationsByCodeSystem(systemName, codeName);
 	}
     
  

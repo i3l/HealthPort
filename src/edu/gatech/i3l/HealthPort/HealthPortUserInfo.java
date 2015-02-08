@@ -34,6 +34,13 @@ public class HealthPortUserInfo {
 		setInformation (userId);
 	}
 	
+	/**
+	 * 
+	 */
+	public HealthPortUserInfo() {
+		// TODO Auto-generated constructor stub
+	}
+
 	private void setInformation (int userId) {
     	Connection connection = null;
 		Statement statement = null;
