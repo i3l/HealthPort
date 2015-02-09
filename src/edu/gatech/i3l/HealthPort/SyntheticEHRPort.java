@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -133,9 +132,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	}
 
 	public ArrayList<Observation> getObservations(HealthPortUserInfo userInfo) {
-		// TODO Auto-generated method stub
 		ArrayList<Observation> retVal = new ArrayList<Observation>();
-		// ArrayList<String> retList = new ArrayList<String>();
 
 		// Get all Observations
 		Connection conn = null;
@@ -281,12 +278,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				retVal.add(obs);
 			}
 			conn.close();
-		} catch (SQLException se) {
-			// TODO Auto-generated catch block
+		} catch (SQLException | NamingException se) {
 			se.printStackTrace();
-		} catch (NamingException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
 		}
 		return retVal;
 	}
@@ -406,11 +399,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			}
 
 			conn.close();
-		} catch (SQLException se) {
+		} catch (SQLException | NamingException se) {
 			se.printStackTrace();
-		} catch (NamingException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
 		}
 
 		return obs;
@@ -641,7 +631,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			conn.close();
 			conn2.close();
 		} catch (SQLException | NamingException se) {
-			// TODO Auto-generated catch block
 			se.printStackTrace();
 		}
 		return retVal;
@@ -730,7 +719,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
 			conn.close();
 		} catch (SQLException | NamingException se) {
-			// TODO Auto-generated catch block
 			se.printStackTrace();
 		}
 		return retVal;
@@ -864,7 +852,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			conn.close();
 			conn2.close();
 		} catch (SQLException | NamingException se) {
-			// TODO Auto-generated catch block
 			se.printStackTrace();
 		}
 
@@ -998,7 +985,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
 			conn.close();
 		} catch (SQLException | NamingException se) {
-			// TODO Auto-generated catch block
 			se.printStackTrace();
 		}
 		return retVal;
@@ -1108,7 +1094,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			conn.close();
 			conn2.close();
 		} catch (SQLException | NamingException se) {
-			// TODO Auto-generated catch block
 			se.printStackTrace();
 		}
 		return retVal;
