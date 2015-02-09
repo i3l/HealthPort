@@ -3,35 +3,21 @@
  */
 package edu.gatech.i3l.HealthPort;
 
-import java.io.StringReader;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.model.api.IDatatype;
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dstu.composite.CodingDt;
@@ -52,8 +38,6 @@ import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.IdDt;
-import ca.uhn.fhir.model.primitive.StringDt;
-import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 
 /**
  * @author MC142
@@ -61,14 +45,14 @@ import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
  */
 public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
-	String serverName = "localhost";
-	String url = "jdbc:mysql://" + serverName;
-	String username = "healthport";
-	String password = "i3lworks";
-	String dbName = "OMOP";
-	String dbName2 = "HealthPort";
-	SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-	SimpleDateFormat formatter2 = new SimpleDateFormat("yyyyMMdd");
+//	String serverName = "localhost";
+//	String url = "jdbc:mysql://" + serverName;
+//	String username = "healthport";
+//	String password = "i3lworks";
+//	String dbName = "OMOP";
+//	String dbName2 = "HealthPort";
+//	SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+//	SimpleDateFormat formatter2 = new SimpleDateFormat("yyyyMMdd");
 
 	// ResourceID Differentiators
 	static String Height = "h";
@@ -485,12 +469,122 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				ResultSet rs = stmt.executeQuery(sql);
 				while (rs.next()) {
 					String memberID = rs.getString("Member_ID");
-					String memSql = "SELECT ID FROM USER WHERE ORGANIZATIONID=3 AND PERSONID='"
+					String memSql = "SELECT U.ID, U.NAME FROM USER AS U, ORGANIZATION AS O WHERE U.ORGANIZATIONID=O.ID AND O.TAG='SyntheticEHR' AND U.PERSONID='"
 							+ memberID + "'";
+//					String memSql = "SELECT ID FROM USER WHERE ORGANIZATIONID=3 AND PERSONID='"
+//							+ memberID + "'";
 					ResultSet rs2 = stmt2.executeQuery(memSql);
 					String hpUserID = "";
 					while (rs2.next()) {
 						hpUserID = rs2.getString("ID");
+						
+						Date dateTime = new java.util.Date(rs.getDate(
+								"Encounter_Date").getTime());
+						if (code.equalsIgnoreCase(heightLOINC)) {
+							String height = rs.getString("Height");
+							if (!height.isEmpty()) {
+								String heightUnit = rs.getString("Height_Units");
+								Observation obs = createObs(hpUserID + "-" + Height
+										+ "-" + rs.getString("Encounter_ID"),
+										"http://loinc.org", heightLOINC,
+										"Body Height", height, heightUnit,
+										dateTime, "");
+
+								// Observation Reference to Patient
+								obs.setSubject(new ResourceReferenceDt("Patient/"
+										+ hpUserID));
+								retVal.add(obs);
+							}
+						} else if (code.equalsIgnoreCase(weightLOINC)) {
+							String weight = rs.getString("Weight");
+							if (!weight.isEmpty()) {
+								String weightUnit = rs.getString("Weight_Units");
+								Observation obs = createObs(hpUserID + "-" + Weight
+										+ "-" + rs.getString("Encounter_ID"),
+										"http://loinc.org", weightLOINC,
+										"Body Weight", weight, weightUnit,
+										dateTime, "");
+
+								// Observation Reference to Patient
+								obs.setSubject(new ResourceReferenceDt("Patient/"
+										+ hpUserID));
+								retVal.add(obs);
+							}
+						} else if (code.equalsIgnoreCase(respirationLOINC)) {
+							String respiration = rs.getString("Respiration");
+							if (!respiration.isEmpty()) {
+								Observation obs = createObs(
+										hpUserID + "-" + Respiration + "-"
+												+ rs.getString("Encounter_ID"),
+										"http://loinc.org", respirationLOINC,
+										"Respiration Rate", respiration, "",
+										dateTime, "");
+
+								// Observation Reference to Patient
+								obs.setSubject(new ResourceReferenceDt("Patient/"
+										+ hpUserID));
+								retVal.add(obs);
+							}
+						} else if (code.equalsIgnoreCase(pulseLOINC)) {
+							String pulse = rs.getString("Pulse");
+							if (!pulse.isEmpty()) {
+								Observation obs = createObs(hpUserID + "-" + Pulse
+										+ "-" + rs.getString("Encounter_ID"),
+										"http://loinc.org", pulseLOINC,
+										"Heart Beat", pulse, "", dateTime, "");
+
+								// Observation Reference to Patient
+								obs.setSubject(new ResourceReferenceDt("Patient/"
+										+ hpUserID));
+								retVal.add(obs);
+							}
+						} else if (code.equalsIgnoreCase(systolicBPLOINC)) {
+							String systolicBP = rs.getString("SystolicBP");
+							if (!systolicBP.isEmpty()) {
+								Observation obs = createObs(
+										hpUserID + "-" + SystolicBP + "-"
+												+ rs.getString("Encounter_ID"),
+										"http://loinc.org", systolicBPLOINC,
+										"Systolic BP", systolicBP, "mm[Hg]",
+										dateTime, "");
+
+								// Observation Reference to Patient
+								obs.setSubject(new ResourceReferenceDt("Patient/"
+										+ hpUserID));
+								retVal.add(obs);
+							}
+						} else if (code.equalsIgnoreCase(diastolicBPLOINC)) {
+							String diastolicBP = rs.getString("DiastolicBP");
+							if (!diastolicBP.isEmpty()) {
+								Observation obs = createObs(
+										hpUserID + "-" + DiastolicBP + "-"
+												+ rs.getString("Encounter_ID"),
+										"http://loinc.org", diastolicBPLOINC,
+										"Diastolic BP", diastolicBP, "mm[Hg]",
+										dateTime, "");
+
+								// Observation Reference to Patient
+								obs.setSubject(new ResourceReferenceDt("Patient/"
+										+ hpUserID));
+								retVal.add(obs);
+							}
+						} else if (code.equalsIgnoreCase(temperatureLOINC)) {
+							String temp = rs.getString("Temperature");
+							if (!temp.isEmpty()) {
+								String tempUnit = rs.getString("Temperature_Units");
+								Observation obs = createObs(
+										hpUserID + "-" + Temperature + "-"
+												+ rs.getString("Encounter_ID"),
+										"http://loinc.org", temperatureLOINC,
+										"Body Temperature", temp, tempUnit,
+										dateTime, "");
+
+								// Observation Reference to Patient
+								obs.setSubject(new ResourceReferenceDt("Patient/"
+										+ hpUserID));
+								retVal.add(obs);
+							}
+						}
 					}
 					if (hpUserID.isEmpty()) {
 						// This is in fact an error since we need to have all
@@ -500,114 +594,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 								.println("[SyntheticEHRPort:getObservationsByType] Failed to get this user,"
 										+ memberID + ", in HealthPort DB");
 						continue;
-					}
-
-					Date dateTime = new java.util.Date(rs.getDate(
-							"Encounter_Date").getTime());
-					if (code.equalsIgnoreCase(heightLOINC)) {
-						String height = rs.getString("Height");
-						if (!height.isEmpty()) {
-							String heightUnit = rs.getString("Height_Units");
-							Observation obs = createObs(hpUserID + "-" + Height
-									+ "-" + rs.getString("Encounter_ID"),
-									"http://loinc.org", heightLOINC,
-									"Body Height", height, heightUnit,
-									dateTime, "");
-
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"
-									+ hpUserID));
-							retVal.add(obs);
-						}
-					} else if (code.equalsIgnoreCase(weightLOINC)) {
-						String weight = rs.getString("Weight");
-						if (!weight.isEmpty()) {
-							String weightUnit = rs.getString("Weight_Units");
-							Observation obs = createObs(hpUserID + "-" + Weight
-									+ "-" + rs.getString("Encounter_ID"),
-									"http://loinc.org", weightLOINC,
-									"Body Weight", weight, weightUnit,
-									dateTime, "");
-
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"
-									+ hpUserID));
-							retVal.add(obs);
-						}
-					} else if (code.equalsIgnoreCase(respirationLOINC)) {
-						String respiration = rs.getString("Respiration");
-						if (!respiration.isEmpty()) {
-							Observation obs = createObs(
-									hpUserID + "-" + Respiration + "-"
-											+ rs.getString("Encounter_ID"),
-									"http://loinc.org", respirationLOINC,
-									"Respiration Rate", respiration, "",
-									dateTime, "");
-
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"
-									+ hpUserID));
-							retVal.add(obs);
-						}
-					} else if (code.equalsIgnoreCase(pulseLOINC)) {
-						String pulse = rs.getString("Pulse");
-						if (!pulse.isEmpty()) {
-							Observation obs = createObs(hpUserID + "-" + Pulse
-									+ "-" + rs.getString("Encounter_ID"),
-									"http://loinc.org", pulseLOINC,
-									"Heart Beat", pulse, "", dateTime, "");
-
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"
-									+ hpUserID));
-							retVal.add(obs);
-						}
-					} else if (code.equalsIgnoreCase(systolicBPLOINC)) {
-						String systolicBP = rs.getString("SystolicBP");
-						if (!systolicBP.isEmpty()) {
-							Observation obs = createObs(
-									hpUserID + "-" + SystolicBP + "-"
-											+ rs.getString("Encounter_ID"),
-									"http://loinc.org", systolicBPLOINC,
-									"Systolic BP", systolicBP, "mm[Hg]",
-									dateTime, "");
-
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"
-									+ hpUserID));
-							retVal.add(obs);
-						}
-					} else if (code.equalsIgnoreCase(diastolicBPLOINC)) {
-						String diastolicBP = rs.getString("DiastolicBP");
-						if (!diastolicBP.isEmpty()) {
-							Observation obs = createObs(
-									hpUserID + "-" + DiastolicBP + "-"
-											+ rs.getString("Encounter_ID"),
-									"http://loinc.org", diastolicBPLOINC,
-									"Diastolic BP", diastolicBP, "mm[Hg]",
-									dateTime, "");
-
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"
-									+ hpUserID));
-							retVal.add(obs);
-						}
-					} else if (code.equalsIgnoreCase(temperatureLOINC)) {
-						String temp = rs.getString("Temperature");
-						if (!temp.isEmpty()) {
-							String tempUnit = rs.getString("Temperature_Units");
-							Observation obs = createObs(
-									hpUserID + "-" + Temperature + "-"
-											+ rs.getString("Encounter_ID"),
-									"http://loinc.org", temperatureLOINC,
-									"Body Temperature", temp, tempUnit,
-									dateTime, "");
-
-							// Observation Reference to Patient
-							obs.setSubject(new ResourceReferenceDt("Patient/"
-									+ hpUserID));
-							retVal.add(obs);
-						}
 					}
 				}
 			} else {
@@ -855,7 +841,10 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
 				Date dateTime = new java.util.Date(rs.getDate("Onset_Date")
 						.getTime());
-				sql = "SELECT ID FROM USER WHERE PERSONID='" + personId + "'";
+				sql = "SELECT U.ID, U.NAME FROM USER AS U, ORGANIZATION AS O WHERE U.ORGANIZATIONID=O.ID AND O.TAG='SyntheticEHR' AND U.PERSONID='"
+						+ personId + "'";
+
+				//sql = "SELECT ID FROM USER WHERE PERSONID='" + personId + "'";
 				ResultSet temprs = stmt2.executeQuery(sql);
 				while (temprs.next()) {
 					id = temprs.getString("ID");
@@ -1019,11 +1008,6 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
 		Connection conn = null;
 		Statement stmt = null;
-		String[] drugDosage = null;
-		String drugName = null;
-		String lastFilled = null;
-		String drugId = null;
-		String URL = null;
 		String sql = null;
 		ResultSet rs = null;
 		// String type = null;
@@ -1063,9 +1047,12 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		return medPrescript;
 	}
 
+	// This is searching by medication name. 
 	public ArrayList<MedicationPrescription> getMedicationPrescriptionsByType(
 			String medName) {
 		ArrayList<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
+		MedicationPrescription medPrescript = null;
+
 		Connection conn = null;
 		Connection conn2 = null;
 		Statement stmt = null;
@@ -1074,18 +1061,11 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		DataSource datasource = null;
 		Context context2 = null;
 		DataSource datasource2 = null;
-		String[] drugDosage = null;
-		String drugName = null;
-		String lastFilled = null;
-		String drugId = null;
-		String drugConceptId = null;
-		String personId = null;
-		String id = null;
 		int count = 0;
 		try {
 			context = new InitialContext();
 			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/OMOP");
+					.lookup("java:/comp/env/jdbc/ExactDataSample");
 			conn = datasource.getConnection();
 			stmt = conn.createStatement();
 			context2 = new InitialContext();
@@ -1094,64 +1074,31 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			conn2 = datasource2.getConnection();
 			stmt2 = conn2.createStatement();
 
-			String sql = "SELECT drug_exposure_id,person_id, drug_id, drug_name, drug_dosage, last_filled_date FROM drug_exposure WHERE drug_name= "
-					+ "\'" + medName + "\'";
+			String sql = "SELECT * FROM medication_orders WHERE Drug_Name LIKE "
+					+ "'%" + medName + "%'";
 			ResultSet rs = stmt.executeQuery(sql);
 			while (rs.next()) {
-				drugDosage = rs.getString("drug_dosage").split("\\s", 2);
-				drugId = rs.getString("drug_exposure_id");
-				drugConceptId = rs.getString("drug_id");
-				drugName = rs.getString("drug_name");
-				lastFilled = rs.getString("last_filled_date");
-				personId = rs.getString("person_id");
+				String memberID = rs.getString("Member_ID");
+				Date dateTime = new java.util.Date(rs.getDate("Order_Date")
+						.getTime());
 
-				sql = "SELECT id FROM USER WHERE PERSONID= " + personId;
-				ResultSet temprs = stmt2.executeQuery(sql);
-				while (temprs.next()) {
-					id = temprs.getString("id");
+				// Get FHIR userID using the member_id in ExactData DB.
+				String memSql = "SELECT U.ID, U.NAME FROM USER AS U, ORGANIZATION AS O WHERE U.ORGANIZATIONID=O.ID AND O.TAG='SyntheticEHR' AND U.PERSONID='"
+						+ memberID + "'";
+				ResultSet rs2 = stmt2.executeQuery(memSql);
+				while (rs2.next()) {
+					String hpID = rs2.getString("ID");
+					medPrescript = createMedPrescript(hpID + "-" + count + "-"
+							+ rs.getString("ID"), "Patient/" + hpID,
+							rs.getString("Order_Provider_Name"),
+							"urn:oid:2.16.840.1.113883.6.69",
+							rs.getString("Drug_NDC"), rs.getInt("ID"),
+							rs.getString("Drug_Name"), rs.getString("Dose"),
+							rs.getString("Units"), rs.getString("Sig"),
+							(double) rs.getInt("Qty_Ordered"),
+							rs.getInt("Refills"), rs.getString("Status"), dateTime);
 
-					MedicationPrescription med = new MedicationPrescription();
-					med.setId(id + "-" + count + "-" + drugId); // This is
-																// object
-																// resource ID.
-					ResourceReferenceDt subj = new ResourceReferenceDt(
-							"Patient/" + id);
-					med.setPatient(subj);
-					ResourceReferenceDt medicationName = new ResourceReferenceDt();
-					medicationName.setDisplay(drugName);
-
-					med.setMedication(medicationName);
-					ArrayList<MedicationPrescription.DosageInstruction> dosageList = new ArrayList<MedicationPrescription.DosageInstruction>();
-					MedicationPrescription.DosageInstruction dosage = new MedicationPrescription.DosageInstruction();
-					double theValue = Double.parseDouble(drugDosage[0]);
-					dosage.setDoseQuantity(null, theValue, drugDosage[1]);
-					dosageList.add(dosage);
-					med.setDosageInstruction(dosageList);
-					// yyyymmdd
-					DateTimeDt date = new DateTimeDt(lastFilled.substring(0, 8));
-					med.setDateWritten(date);
-					med.addIdentifier("NDC", drugConceptId);
-					NarrativeStatusEnum narrative = null;
-					med.getText().setStatus(narrative.GENERATED);
-					StringBuffer buffer_narrative = new StringBuffer();
-					buffer_narrative.append("<div>\n");
-					buffer_narrative.append("<status value=\"generated\"/>\n");
-					buffer_narrative.append("<div class=\"hapiHeaderText\">"
-							+ med.getMedication().getDisplay() + "</div>\n");
-					buffer_narrative
-							.append("<table class=\"hapiPropertyTable\">\n");
-					buffer_narrative.append("	<tbody>\n");
-					buffer_narrative.append("		<tr>\n");
-					buffer_narrative.append("			<td>Medication Name</td>\n");
-					buffer_narrative.append("			<td>"
-							+ med.getMedication().getDisplay() + "</td>\n");
-					buffer_narrative.append("		</tr>\n");
-					buffer_narrative.append("	</tbody>\n");
-					buffer_narrative.append("</table>\n");
-					buffer_narrative.append("</div>\n");
-					String output = buffer_narrative.toString();
-					med.getText().setDiv(output);
-					retVal.add(med);
+					retVal.add(medPrescript);
 				}
 			}
 		} catch (SQLException | NamingException se) {

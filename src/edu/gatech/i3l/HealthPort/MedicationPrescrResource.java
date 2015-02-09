@@ -103,7 +103,7 @@ public class MedicationPrescrResource implements IResourceProvider {
 				if (HealthPortUser.dataSource
 						.equals(HealthPortUserInfo.GREENWAY)) {
 					ccd = GreenwayPort.getCCD(HealthPortUser.personId);
-					//System.out.println(ccd);
+					// System.out.println(ccd);
 				} else if (HealthPortUser.dataSource
 						.equals(HealthPortUserInfo.SyntheticEHR)) {
 					retVal = syntheticEHRPort
@@ -163,15 +163,19 @@ public class MedicationPrescrResource implements IResourceProvider {
 	}
 
 	@Search
-	public List<MedicationPrescription> findReportsWithChain(
-			@RequiredParam(name = MedicationPrescription.SP_MEDICATION, chainWhitelist = { Medication.SP_NAME }) ReferenceParam theSubject) {
+	public List<MedicationPrescription> findMedPrescriptListWithChain(
+			@RequiredParam(name = MedicationPrescription.SP_MEDICATION, chainWhitelist = { Medication.SP_NAME }) ReferenceParam theMedication) {
+		// This is /MedicationPrescription?medication.name=<medicine_name>.
+		// We are chaining "name" parameter in Medication resource to MedicationPrescription.
+		
 		List<MedicationPrescription> retVal = null;
 
-		String chain = theSubject.getChain();
+		// The search parameter is medication in the MedicationPrescription resource
+		// with chained search parameter, "name" in Medication resource. 
+		// Check if the chained parameter search is "medication.name".
+		String chain = theMedication.getChain();
 		if (Medication.SP_NAME.equals(chain)) {
-			String medName = theSubject.getValue();
-			// retVal = new
-			// SyntheticEHRPort().getMedicationPrescriptionsByType(medName);
+			String medName = theMedication.getValue();
 			retVal = syntheticEHRPort.getMedicationPrescriptionsByType(medName);
 		}
 
