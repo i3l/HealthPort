@@ -5,7 +5,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,6 +38,7 @@ import org.xml.sax.InputSource;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
+import ca.uhn.fhir.model.dstu.composite.CodingDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
@@ -43,6 +48,8 @@ import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
+import ca.uhn.fhir.model.primitive.BoundCodeDt;
+import ca.uhn.fhir.narrative.CustomThymeleafNarrativeGenerator;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 
 import com.microsoft.hsg.ConnectionFactory;
@@ -412,6 +419,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setWeightObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
 		FhirContext ctx = new FhirContext();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i=i+3) {
 		Observation obs = new Observation();
 		obs.setId(userId + "-"+count+"-"+ retList.get(i));
@@ -422,8 +430,34 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		obs.setComments("Body Weight");
 		obs.setStatus(ObservationStatusEnum.FINAL);
 		obs.setReliability(ObservationReliabilityEnum.OK);
-		ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-	    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+		Date date = new Date();
+		try {
+			String[] parsedDate = retList.get(i+1).split("T");
+			date = formatter.parse(parsedDate[0]);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		obs.setIssuedWithMillisPrecision(date);
+		
+		StringBuffer buffer_narrative = new StringBuffer();
+		
+		NarrativeStatusEnum narrative = null;
+		obs.getText().setStatus(narrative.GENERATED);
+		buffer_narrative.append("<div>\n");
+		buffer_narrative.append("<div class=\"hapiHeaderText\">Body Weight</div>\n");
+		buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+		buffer_narrative.append("	<tbody>\n");
+		buffer_narrative.append("		<tr>\n");
+		buffer_narrative.append("			<td>Value</td>\n");
+		buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
+		buffer_narrative.append("		</tr>\n");
+		buffer_narrative.append("	</tbody>\n");
+		buffer_narrative.append("</table>\n");
+		buffer_narrative.append("</div>\n");
+		String output = buffer_narrative.toString();
+		
+		//obs.getText().setStatus(output);
 	    obs.getText().setDiv(output);
 	  
 		retVal.add(obs);
@@ -475,6 +509,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setHeightObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
 		FhirContext ctx = new FhirContext();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i=i+3) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
@@ -485,8 +520,31 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setComments("Height");
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			obs.setIssuedWithMillisPrecision(date);
+			
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
+			StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">Height</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
 		  
 			retVal.add(obs);
@@ -534,6 +592,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setBloodPressObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
 		FhirContext ctx = new FhirContext();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i=i+5) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
@@ -544,8 +603,30 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setComments(retList.get(i+1) + ", Overall:"+ retList.get(i+4));
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			obs.setIssuedWithMillisPrecision(date);
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
+			StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+3)+" "+ retList.get(i+4) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
 			if (retList.get(i+1).equals("Systolic Blood Pressure")){
 				count = count+1;
@@ -603,6 +684,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setBloodGlucoseObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count = 0;
 		FhirContext ctx = new FhirContext();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i=i+4) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
@@ -613,8 +695,30 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setComments("Glucose in " + retList.get(i+3));
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			obs.setIssuedWithMillisPrecision(date);
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
+			StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">Glucose in " + retList.get(i+4)+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
 		   
 			retVal.add(obs);
@@ -660,6 +764,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	static public ArrayList<Observation> setCholesterolObservation(String userId, ArrayList<String> retList, ArrayList<Observation> retVal){
 		int count =0;
 		FhirContext ctx = new FhirContext();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i=i+3) {
 			Observation obs = new Observation();
 			obs.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
@@ -668,10 +773,34 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+1))).setUnits(retList.get(i+2));
 			obs.setValue(quantity);
 			obs.setComments("Cholesterol");
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+			obs.setSubject(subj);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			obs.setIssuedWithMillisPrecision(date);
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
+			StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">Cholesterol</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+2)+" "+ retList.get(i+3) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
 			retVal.add(obs);
 		}
@@ -735,9 +864,24 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			obs.setComments(retList.get(i+2)+" from: "+retList.get(i+1));
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-			String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
-			obs.getText().setDiv(output);
+
+			NarrativeStatusEnum narrative = null;
+			obs.getText().setStatus(narrative.GENERATED);
+			StringBuffer buffer_narrative = new StringBuffer();
+			//buffer_narrative.append("<status value=\"generated\"/>\n");
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Value</td>\n");
+			buffer_narrative.append("			<td>"+ retList.get(i+3)+" "+ retList.get(i+4) + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
+		    obs.getText().setDiv(output);
 			count = count+1;	    
 			retVal.add(obs);
 		}
@@ -786,7 +930,14 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			cond.setSubject(subj);
 			CodeableConceptDt value = new CodeableConceptDt();
-			value.setText(conditionList.get(i+1));
+			value.setText(conditionList.get(i+2));
+			CodingDt code = new CodingDt();
+			code.setCode("0000");
+			code.setSystem("http://snomed.info/sct");
+			code.setDisplay(conditionList.get(i+2));
+			List<CodingDt> theValue = new ArrayList<CodingDt>();
+			theValue.add(code);
+			value.setCoding(theValue);
 			cond.setCode(value );
 			if (conditionList.get(i+2).equals("active")) {
 				// Active
@@ -821,8 +972,21 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				//System.out.println("Put refuted to FHIR status");
 			} 
 			
-			ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		    String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(cond);
+			NarrativeStatusEnum narrative = null;
+			cond.getText().setStatus(narrative.GENERATED);
+			StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("		<tr>\n");
+			buffer_narrative.append("			<td>Status</td>\n");
+			buffer_narrative.append("			<td>"+ cond.getStatus().getValue() + "</td>\n");
+			buffer_narrative.append("		</tr>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
+			String output = buffer_narrative.toString();
 		    cond.getText().setDiv(output);
 			count = count+1;
 			retVal.add(cond);
@@ -895,14 +1059,36 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	}
 	static public ArrayList<MedicationPrescription> setMedications(String userId, ArrayList<String> retList, ArrayList<MedicationPrescription> retVal){
 		//MedicationPrescription med = new MedicationPrescription();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		int count =0;
 		for (int i = 0; i < retList.size(); i=i+10) {
 			MedicationPrescription med = new MedicationPrescription();
 			med.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "0000";
-			
-			
-			//obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
+			med.setPatient(subj);
+			ResourceReferenceDt medicationName = new ResourceReferenceDt();
+			medicationName.setDisplay(retList.get(i+2));
+			med.setMedication(medicationName);
+			Date date = new Date();
+			try {
+				String[] parsedDate = retList.get(i+1).split("T");
+				date = formatter.parse(parsedDate[0]);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			med.setDateWrittenWithSecondsPrecision(date);
+			NarrativeStatusEnum narrative = null;
+			med.getText().setStatus(narrative.GENERATED);
+			StringBuffer buffer_narrative = new StringBuffer();
+			buffer_narrative.append("<div>\n");
+			buffer_narrative.append("<div class=\"hapiHeaderText\">" + med.getMedication().getDisplay()+ "</div>\n");
+			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
+			buffer_narrative.append("	<tbody>\n");
+			buffer_narrative.append("	</tbody>\n");
+			buffer_narrative.append("</table>\n");
+			buffer_narrative.append("</div>\n");
 			//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 		    //output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(obs);
 		    //obs.getText().setDiv(output);
