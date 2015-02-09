@@ -164,7 +164,7 @@ public class ConditionResourceProvider implements IResourceProvider {
 		System.out.println(codeSystem);
 		System.out.println(code);
 
-		ArrayList<Condition> retVal = new ArrayList<Condition>();
+		//ArrayList<Condition> retVal = new ArrayList<Condition>();
 
 		// retVal = new SyntheticEHRPort().getConditionsByCodeSystem(codeSystem,
 		// code);
