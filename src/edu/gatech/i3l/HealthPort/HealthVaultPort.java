@@ -51,7 +51,6 @@ import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
 import ca.uhn.fhir.model.primitive.BoundCodeDt;
-import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.narrative.CustomThymeleafNarrativeGenerator;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 
@@ -486,18 +485,12 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		obs.setApplies(new DateTimeDt(date));
-		//obs.setIssuedWithMillisPrecision(date);
+		obs.setIssuedWithMillisPrecision(date);
 		
 		StringBuffer buffer_narrative = new StringBuffer();
 		
 		NarrativeStatusEnum narrative = null;
 		obs.getText().setStatus(narrative.GENERATED);
-	    String textBody = date.toString()+" "+"Body Weight"+"="+retList.get(i+2)+" "+ retList.get(i+3);         
-        textBody = StringEscapeUtils.escapeHtml4(textBody);
-        //System.out.println(textBody);
-        obs.getText().setDiv(textBody);
-		/*
 		buffer_narrative.append("<div>\n");
 		buffer_narrative.append("<div class=\"hapiHeaderText\">Body Weight</div>\n");
 		buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -510,9 +503,9 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		buffer_narrative.append("</table>\n");
 		buffer_narrative.append("</div>\n");
 		String output = buffer_narrative.toString();
-		*/
+		
 		//obs.getText().setStatus(output);
-	    //obs.getText().setDiv(output);
+	    obs.getText().setDiv(output);
 	  
 		retVal.add(obs);
 		}
@@ -592,15 +585,11 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			//obs.setIssuedWithMillisPrecision(date);
-			obs.setApplies(new DateTimeDt(date));
+			obs.setIssuedWithMillisPrecision(date);
 			
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
-			String textBody = date.toString()+" "+"Height"+"="+retList.get(i+2)+" "+ retList.get(i+3);         
-	        textBody = StringEscapeUtils.escapeHtml4(textBody);
-	        obs.getText().setDiv(textBody);
-			/*StringBuffer buffer_narrative = new StringBuffer();
+			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Height</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -614,7 +603,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
-		  */
+
 			retVal.add(obs);
 		}
 		return retVal;
@@ -693,14 +682,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			obs.setApplies(new DateTimeDt(date));
-			//obs.setIssuedWithMillisPrecision(date);
+			obs.setIssuedWithMillisPrecision(date);
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
-			String textBody = date.toString()+" "+retList.get(i+2)+"="+retList.get(i+3)+" "+ retList.get(i+4);         
-	        textBody = StringEscapeUtils.escapeHtml4(textBody);
-	        obs.getText().setDiv(textBody);
-			/*StringBuffer buffer_narrative = new StringBuffer();
+			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -714,7 +699,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
-		    */
+		   
 			if (retList.get(i+2).equals("Systolic Blood Pressure")){
 				count = count+1;
 			}
@@ -800,14 +785,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			obs.setApplies(new DateTimeDt(date));
-			//obs.setIssuedWithMillisPrecision(date);
+			obs.setIssuedWithMillisPrecision(date);
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
-			String textBody = date.toString()+" "+"Glucose in " + retList.get(i+4)+"="+retList.get(i+2)+" "+ retList.get(i+3);         
-	        textBody = StringEscapeUtils.escapeHtml4(textBody);
-	        obs.getText().setDiv(textBody);
-			/*StringBuffer buffer_narrative = new StringBuffer();
+			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Glucose in " + retList.get(i+4)+ "</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -821,7 +802,6 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
 		    obs.getText().setDiv(output);
-		   */
 			
 			retVal.add(obs);
 		}
@@ -895,16 +875,12 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			obs.setApplies(new DateTimeDt(date));
-			//obs.setIssuedWithMillisPrecision(date);
+			obs.setIssuedWithMillisPrecision(date);
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
-			String textBody = date.toString()+" "+"Cholesterol " +"="+retList.get(i+2)+" "+ retList.get(i+3);         
-	        textBody = StringEscapeUtils.escapeHtml4(textBody);
-	        obs.getText().setDiv(textBody);
-			/*StringBuffer buffer_narrative = new StringBuffer();
+			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Cholesterol</div>\n");
 			buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -917,7 +893,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
-		    obs.getText().setDiv(output);*/
+		    obs.getText().setDiv(output);
 			retVal.add(obs);
 		}
 		return retVal;
@@ -993,10 +969,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 
 			NarrativeStatusEnum narrative = null;
 			obs.getText().setStatus(narrative.GENERATED);
-			String textBody =retList.get(i+2) +"="+retList.get(i+3)+" "+ retList.get(i+4);         
-	        textBody = StringEscapeUtils.escapeHtml4(textBody);
-	        obs.getText().setDiv(textBody);
-			/*StringBuffer buffer_narrative = new StringBuffer();
+			StringBuffer buffer_narrative = new StringBuffer();
 			//buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
@@ -1010,7 +983,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("</table>\n");
 			buffer_narrative.append("</div>\n");
 			String output = buffer_narrative.toString();
-		    obs.getText().setDiv(output);*/
+		    obs.getText().setDiv(output);
 			count = count+1;	    
 			retVal.add(obs);
 		}
@@ -1256,6 +1229,24 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 	 
 	    	return lcode;
 		}
+	/* (non-Javadoc)
+	 * @see edu.gatech.i3l.HealthPort.HealthPortFHIRIntf#getObservationsByCodeSystem(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public ArrayList<Observation> getObservationsByCodeSystem(
+			String codeSystem, String code) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	/* (non-Javadoc)
+	 * @see edu.gatech.i3l.HealthPort.HealthPortFHIRIntf#getConditionsByCodeSystem(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public ArrayList<Condition> getConditionsByCodeSystem(String CodeSystem,
+			String Code) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	
 	 //Parse a given CCD (using mdht) and create observations
