@@ -20,7 +20,6 @@ import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;
-import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 
 public class MedicationPrescrResource implements IResourceProvider {
@@ -74,7 +73,7 @@ public class MedicationPrescrResource implements IResourceProvider {
 	}
 
 	@Search
-	public List<MedicationPrescription> getAllMedicationPrescription() {
+	public List<MedicationPrescription> getAllMedicationPrescriptions() {
 		Connection connection = null;
 		Statement statement = null;
 		Context context = null;
@@ -120,7 +119,7 @@ public class MedicationPrescrResource implements IResourceProvider {
 					}
 				}
 
-				// retVal.clear();
+				retVal = null;
 
 			}
 			connection.close();

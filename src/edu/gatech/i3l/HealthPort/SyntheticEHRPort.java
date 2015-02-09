@@ -637,6 +637,9 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					retVal.add(obs);
 				}
 			}
+			
+			conn.close();
+			conn2.close();
 		} catch (SQLException | NamingException se) {
 			// TODO Auto-generated catch block
 			se.printStackTrace();
@@ -1101,6 +1104,9 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					retVal.add(medPrescript);
 				}
 			}
+			
+			conn.close();
+			conn2.close();
 		} catch (SQLException | NamingException se) {
 			// TODO Auto-generated catch block
 			se.printStackTrace();
