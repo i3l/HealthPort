@@ -13,6 +13,7 @@ import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;
+import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 
 
@@ -76,4 +77,16 @@ public class ConditionResourceProvider implements IResourceProvider {
 		return retVal;
 	}
 	
+	@Search()
+	public List<Condition> searchByIdentifier(@RequiredParam(name=Condition.SP_CODE) TokenParam theId) {
+	   String identifierSystem = theId.getSystem();
+	   String identifier = theId.getValue();
+	   System.out.println(identifierSystem);
+	   System.out.println(identifier);
+	   ArrayList<Condition> retVal = new ArrayList<Condition>(); 
+	   retVal = new SyntheticEHRPort().getConditionsByType(identifier);
+	   return retVal;
+	}
+
+
 }
