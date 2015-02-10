@@ -66,8 +66,8 @@ public class HealthPortUserInfo {
 				contact = resultSet.getString("CONTACT");
 				address = resultSet.getString("ADDRESS");
 				
-				System.out.println("[HealthPortUserInfo]"+userId);
-				System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
+//				System.out.println("[HealthPortUserInfo]"+userId);
+//				System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
 			}
 			
 			connection.close();

@@ -6,13 +6,15 @@ import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
-import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
-import ca.uhn.fhir.narrative.INarrativeGenerator;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import edu.gatech.i3l.HealthPort.ConditionResourceProvider;
 import edu.gatech.i3l.HealthPort.ObservationResourceProvider;
 import edu.gatech.i3l.HealthPort.PatientResourceProvider;
+
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 
 /**
  * In this example, we are using Servlet 3.0 annotations to define the URL
@@ -22,7 +24,15 @@ import edu.gatech.i3l.HealthPort.PatientResourceProvider;
 public class RestfulServlet extends RestfulServer {
 
 	private static final long serialVersionUID = 1L;
+	
+	public RestfulServlet () {
+		Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+		root.setLevel(Level.ERROR);
 
+		org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RestfulServlet.class);
+		System.out.println("FHIR Servlet Debug Enabled?:"+logger.isDebugEnabled());
+	}
+	
 	/**
 	 * The initialize method is automatically called when the servlet is
 	 * starting up, so it can be used to configure the servlet to define

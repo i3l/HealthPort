@@ -143,7 +143,7 @@ public class MedicationPrescrResource implements IResourceProvider {
 
 		if (HealthPortUser.dataSource.equals(HealthPortUserInfo.GREENWAY)) {
 			ccd = GreenwayPort.getCCD(HealthPortUser.personId);
-			System.out.println(ccd);
+			// System.out.println(ccd);
 		} else if (HealthPortUser.dataSource
 				.equals(HealthPortUserInfo.SyntheticEHR)) {
 			// retVal = new
