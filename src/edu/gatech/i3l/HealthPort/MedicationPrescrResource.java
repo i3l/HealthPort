@@ -56,6 +56,8 @@ public class MedicationPrescrResource implements IResourceProvider {
 				Integer.parseInt(Ids[0]));
 		String location = HealthPortUser.dataSource;
 
+		if (location == null) return med;
+		
 		if (location.equals(HealthPortUserInfo.GREENWAY)) {
 			System.out.println("Greenway");
 
@@ -144,7 +146,7 @@ public class MedicationPrescrResource implements IResourceProvider {
 
 		if (HealthPortUser.dataSource.equals(HealthPortUserInfo.GREENWAY)) {
 			ccd = GreenwayPort.getCCD(HealthPortUser.personId);
-			System.out.println(ccd);
+			// System.out.println(ccd);
 		} else if (HealthPortUser.dataSource
 				.equals(HealthPortUserInfo.SyntheticEHR)) {
 			// retVal = new

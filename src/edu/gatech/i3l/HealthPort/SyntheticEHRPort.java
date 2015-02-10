@@ -692,7 +692,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 					.lookup("java:/comp/env/jdbc/ExactDataSample");
 			conn = datasource.getConnection();
 			stmt = conn.createStatement();
-			String sql = "SELECT * FROM problem";
+			String sql = "SELECT * FROM problem WHERE Member_ID='"+userInfo.personId+"'";
 			ResultSet rs = stmt.executeQuery(sql);
 			while (rs.next()) {
 				// ExactData uses only ICD9 code.
@@ -820,7 +820,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			conn2 = datasource2.getConnection();
 			stmt2 = conn2.createStatement();
 
-			String sql = "SELECT * FROM problem WHERE Problem_Code= " + code;
+			String sql = "SELECT * FROM problem WHERE Problem_Code='" + code + "'";
 			ResultSet rs = stmt.executeQuery(sql);
 			while (rs.next()) {
 				personId = rs.getString("Member_ID").trim();

@@ -137,9 +137,11 @@ public class ConditionResourceProvider implements IResourceProvider {
 		String pId = HealthPortUser.personId;
 		location = HealthPortUser.dataSource;
 
+		if (location == null) return retVal;
+		
 		if (location.equals(HealthPortUserInfo.GREENWAY)) {
 			ccd = GreenwayPort.getCCD(pId);
-			System.out.println(ccd);
+			// System.out.println(ccd);
 		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
 			// retVal = new SyntheticEHRPort().getConditions(HealthPortUser);
 			retVal = syntheticEHRPort.getConditions(HealthPortUser);
@@ -157,8 +159,8 @@ public class ConditionResourceProvider implements IResourceProvider {
 			@RequiredParam(name = Condition.SP_CODE) TokenParam theId) {
 		String codeSystem = theId.getSystem();
 		String code = theId.getValue();
-		System.out.println(codeSystem);
-		System.out.println(code);
+		// System.out.println(codeSystem);
+		// System.out.println(code);
 
 		//ArrayList<Condition> retVal = new ArrayList<Condition>();
 

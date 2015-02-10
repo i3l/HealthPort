@@ -44,6 +44,8 @@ public class PatientResourceProvider implements IResourceProvider {
     	int id = Integer.parseInt(theId.getIdPart());
     	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(id);
     	
+    	if (HealthPortUser.userId == null) return patient;
+    	
 		patient.setId(HealthPortUser.userId);
 		patient.addIdentifier();
 		patient.getIdentifier().get(0).setSystem(new UriDt("urn:hapitest:mrns"));

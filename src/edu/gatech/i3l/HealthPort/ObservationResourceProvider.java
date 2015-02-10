@@ -46,14 +46,14 @@ public class ObservationResourceProvider implements IResourceProvider {
 	public Observation getResourceById(@IdParam IdDt theId) {
 		Observation obs = null;
 		String resourceId = theId.getIdPart();
-		System.out.println(resourceId);
+		//System.out.println(resourceId);
 		String[] Ids = resourceId.split("\\-", 3);
 
 		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(
 				Integer.parseInt(Ids[0]));
 		String location = HealthPortUser.dataSource;
 
-		System.out.println(location);
+		//System.out.println(location);
 		if (location.equals(HealthPortUserInfo.GREENWAY)) {
 			System.out.println("Greenway");
 
@@ -155,6 +155,8 @@ public class ObservationResourceProvider implements IResourceProvider {
 
 		int patientNum = Integer.parseInt(PatientID);
 		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(patientNum);
+		
+		if (HealthPortUser.dataSource == null) return retVal;
 
 		if (HealthPortUser.dataSource.equals(HealthPortUserInfo.GREENWAY)) {
 			ccd = GreenwayPort.getCCD(HealthPortUser.personId);
@@ -184,7 +186,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 		String systemName = theName.getSystem();
 		String codeName = theName.getValue();
 		// System.out.println(identifierSystem);
-		System.out.println(systemName + ":" + codeName);
+		//System.out.println(systemName + ":" + codeName);
 
 		return syntheticEHRPort.getObservationsByCodeSystem(systemName,
 				codeName);

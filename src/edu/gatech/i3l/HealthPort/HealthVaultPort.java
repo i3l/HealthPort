@@ -157,7 +157,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		if (Person_id == null || Record_id == null) {
 			return null;
 		}
-		System.out.println(thing_id);
+		//System.out.println(thing_id);
 		String id = "a712ca78-68b5-4df2-8f3e-0f94b6e7fb61";
 		StringBuilder requestXml = new StringBuilder();
 		requestXml.append("<info><group>");
@@ -905,7 +905,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		if(responseStr.equals("temp response")){
 			responseStr= getThings("5800eab5-a8c2-482a-a4d6-f1db25ae08c3",Record_id,Person_id);
 		}
-		System.out.println(responseStr);
+		// System.out.println(responseStr);
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -996,7 +996,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		if (responseStr.equals("temp response")){
 			responseStr= getThings("7ea7a1f9-880b-4bd4-b593-f5660f20eda8",Record_id,Person_id);
 		}
-		System.out.println(responseStr);
+		// System.out.println(responseStr);
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -1010,7 +1010,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 					id = nNode.getFirstChild().getTextContent();
 					finalList.add(id);
 					finalList.add(nNode.getLastChild().getPreviousSibling().getTextContent());
-					System.out.println(nNode.getLastChild().getPreviousSibling().getTextContent());
+					// System.out.println(nNode.getLastChild().getPreviousSibling().getTextContent());
 					Element eElement = (Element) nNode;
 					finalList.add(eElement.getElementsByTagName("name").item(0).getFirstChild().getTextContent());
 					nNode = nNode.getLastChild().getFirstChild().getFirstChild().getNextSibling();
