@@ -157,6 +157,8 @@ public class ObservationResourceProvider implements IResourceProvider {
 
 		int patientNum = Integer.parseInt(PatientID);
 		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(patientNum);
+		
+		if (HealthPortUser.dataSource == null) return retVal;
 
 		if (HealthPortUser.dataSource.equals(HealthPortUserInfo.GREENWAY)) {
 			ccd = GreenwayPort.getCCD(HealthPortUser.personId);
