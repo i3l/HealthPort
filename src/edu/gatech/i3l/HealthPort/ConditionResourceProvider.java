@@ -26,11 +26,13 @@ public class ConditionResourceProvider implements IResourceProvider {
 
 	private SyntheticEHRPort syntheticEHRPort;
 	private HealthVaultPort healthvaultPort;
+	private HealthPortUserInfo healthPortUser;
 
 	// Constructor
 	public ConditionResourceProvider() {
-		syntheticEHRPort = new SyntheticEHRPort();
+		syntheticEHRPort = new SyntheticEHRPort("jdbc/ExactDataSample");
 		healthvaultPort = new HealthVaultPort();
+		healthPortUser = new HealthPortUserInfo("jdbc/HealthPort");
 	}
 
 	@Override
@@ -45,18 +47,17 @@ public class ConditionResourceProvider implements IResourceProvider {
 		String resourceId = theId.getIdPart();
 		String[] Ids = theId.getIdPart().split("\\-", 3);
 
-		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(
-				Integer.parseInt(Ids[0]));
-		String location = HealthPortUser.dataSource;
+//		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(
+//				Integer.parseInt(Ids[0]));
+		healthPortUser.setInformation(Ids[0]);
+		String location = healthPortUser.source;
 
 		if (location.equals(HealthPortUserInfo.GREENWAY)) {
 			System.out.println("Greenway");
 
 		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
-			// cond = new SyntheticEHRPort().getCondition(resourceId);
 			cond = syntheticEHRPort.getCondition(resourceId);
 		} else if (location.equals(HealthPortUserInfo.HEALTHVAULT)) {
-			// cond = new HealthVaultPort().getCondition(resourceId);
 			cond = healthvaultPort.getCondition(resourceId);
 		}
 
@@ -75,37 +76,39 @@ public class ConditionResourceProvider implements IResourceProvider {
 		ArrayList<Condition> retVal = null;
 
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/HealthPort");
-			connection = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/HealthPort");
+//			connection = datasource.getConnection();
+			connection = healthPortUser.getConnection();
 			statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
-			HealthPortUserInfo HealthPortUser = new HealthPortUserInfo();
+//			HealthPortUserInfo HealthPortUser = new HealthPortUserInfo();
 			while (resultSet.next()) {
 				// String Name = resultSet.getString("NAME");
-				HealthPortUser.userId = String.valueOf(resultSet.getInt("ID"));
-				HealthPortUser.dataSource = resultSet.getString("TAG");
-				HealthPortUser.recordId = resultSet.getString("RECORDID");
-				HealthPortUser.personId = resultSet.getString("PERSONID");
-				HealthPortUser.gender = resultSet.getString("GENDER");
-				HealthPortUser.contact = resultSet.getString("CONTACT");
-				HealthPortUser.address = resultSet.getString("ADDRESS");
+//				HealthPortUser.userId = String.valueOf(resultSet.getInt("ID"));
+//				HealthPortUser.dataSource = resultSet.getString("TAG");
+//				HealthPortUser.recordId = resultSet.getString("RECORDID");
+//				HealthPortUser.personId = resultSet.getString("PERSONID");
+//				HealthPortUser.gender = resultSet.getString("GENDER");
+//				HealthPortUser.contact = resultSet.getString("CONTACT");
+//				HealthPortUser.address = resultSet.getString("ADDRESS");
+				
+				healthPortUser.setRSInformation(resultSet);
 
-				if (HealthPortUser.dataSource
+				if (healthPortUser.source
 						.equals(HealthPortUserInfo.GREENWAY)) {
-					ccd = GreenwayPort.getCCD(HealthPortUser.personId);
+					ccd = GreenwayPort.getCCD(healthPortUser.personId);
 					// System.out.println(ccd);
-				} else if (HealthPortUser.dataSource
+				} else if (healthPortUser.source
 						.equals(HealthPortUserInfo.SyntheticEHR)) {
-					retVal = syntheticEHRPort.getConditions(HealthPortUser);
+					retVal = syntheticEHRPort.getConditions(healthPortUser);
 					if (retVal != null && !retVal.isEmpty()) {
 						finalRetVal.addAll(retVal);
 					}
-
-				} else if (HealthPortUser.dataSource
+				} else if (healthPortUser.source
 						.equals(HealthPortUserInfo.HEALTHVAULT)) {
-					retVal = healthvaultPort.getConditions(HealthPortUser);
+					retVal = healthvaultPort.getConditions(healthPortUser);
 					if (retVal != null && !retVal.isEmpty()) {
 						finalRetVal.addAll(retVal);
 					}
@@ -128,14 +131,15 @@ public class ConditionResourceProvider implements IResourceProvider {
 
 		String location = null;
 		String ccd = null;
-		int patientNum = Integer.parseInt(theSubject.getIdPart());
+//		int patientNum = Integer.parseInt(theSubject.getIdPart());
 
 		ArrayList<Condition> retVal = null;
 
-		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(patientNum);
-		String rId = HealthPortUser.recordId;
-		String pId = HealthPortUser.personId;
-		location = HealthPortUser.dataSource;
+//		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(patientNum);
+		healthPortUser.setInformation(theSubject.getIdPart());
+		String rId = healthPortUser.recordId;
+		String pId = healthPortUser.personId;
+		location = healthPortUser.source;
 
 		if (location == null) return retVal;
 		
@@ -144,11 +148,11 @@ public class ConditionResourceProvider implements IResourceProvider {
 			// System.out.println(ccd);
 		} else if (location.equals(HealthPortUserInfo.SyntheticEHR)) {
 			// retVal = new SyntheticEHRPort().getConditions(HealthPortUser);
-			retVal = syntheticEHRPort.getConditions(HealthPortUser);
+			retVal = syntheticEHRPort.getConditions(healthPortUser);
 
 		} else if (location.equals(HealthPortUserInfo.HEALTHVAULT)) {
 			// retVal = new HealthVaultPort().getConditions(HealthPortUser);
-			retVal = healthvaultPort.getConditions(HealthPortUser);
+			retVal = healthvaultPort.getConditions(healthPortUser);
 		}
 
 		return retVal;

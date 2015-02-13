@@ -15,4 +15,15 @@
 	<session-config>
 		<session-timeout>20</session-timeout>
 	</session-config>
+
+	<resource-env-ref>
+		<description>HealthPort Patient Database</description>
+		<resource-env-ref-name>jdbc/HealthPort</resource-env-ref-name>
+		<resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
+	</resource-env-ref>
+	<resource-env-ref>
+		<description>SyntheticSample Database</description>
+		<resource-env-ref-name>jdbc/ExactDataSample</resource-env-ref-name>
+		<resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
+	</resource-env-ref>
 </web-app>

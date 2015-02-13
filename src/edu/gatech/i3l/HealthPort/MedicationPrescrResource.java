@@ -27,11 +27,13 @@ public class MedicationPrescrResource implements IResourceProvider {
 
 	private SyntheticEHRPort syntheticEHRPort;
 	private HealthVaultPort healthvaultPort;
+	private HealthPortUserInfo healthPortUser;
 
 	// Constructor
 	public MedicationPrescrResource() {
-		syntheticEHRPort = new SyntheticEHRPort();
+		syntheticEHRPort = new SyntheticEHRPort("jdbc/ExactDataSample");
 		healthvaultPort = new HealthVaultPort();
+		healthPortUser = new HealthPortUserInfo("jdbc/HealthPort"); 
 	}
 
 	/*
@@ -51,9 +53,8 @@ public class MedicationPrescrResource implements IResourceProvider {
 		String resourceId = theId.getIdPart();
 		String[] Ids = theId.getIdPart().split("\\-", 3);
 
-		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(
-				Integer.parseInt(Ids[0]));
-		String location = HealthPortUser.dataSource;
+		healthPortUser.setInformation(Ids[0]);
+		String location = healthPortUser.source;
 
 		if (location == null) return med;
 		
@@ -85,37 +86,39 @@ public class MedicationPrescrResource implements IResourceProvider {
 		ArrayList<MedicationPrescription> finalRetVal = new ArrayList<MedicationPrescription>();
 		ArrayList<MedicationPrescription> retVal = null;
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/HealthPort");
-			connection = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/HealthPort");
+//			connection = datasource.getConnection();
+			connection = healthPortUser.getConnection();
 			statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
-			HealthPortUserInfo HealthPortUser = new HealthPortUserInfo();
+//			HealthPortUserInfo HealthPortUser = new HealthPortUserInfo();
 			while (resultSet.next()) {
-				HealthPortUser.userId = String.valueOf(resultSet.getInt("ID"));
-				HealthPortUser.dataSource = resultSet.getString("TAG");
-				HealthPortUser.recordId = resultSet.getString("RECORDID");
-				HealthPortUser.personId = resultSet.getString("PERSONID");
-				HealthPortUser.gender = resultSet.getString("GENDER");
-				HealthPortUser.contact = resultSet.getString("CONTACT");
-				HealthPortUser.address = resultSet.getString("ADDRESS");
+				healthPortUser.setRSInformation(resultSet);
+//				healthPortUser.userId = String.valueOf(resultSet.getInt("ID"));
+//				healthPortUser.source = resultSet.getString("TAG");
+//				healthPortUser.recordId = resultSet.getString("RECORDID");
+//				healthPortUser.personId = resultSet.getString("PERSONID");
+//				healthPortUser.gender = resultSet.getString("GENDER");
+//				healthPortUser.contact = resultSet.getString("CONTACT");
+//				healthPortUser.address = resultSet.getString("ADDRESS");
 
-				if (HealthPortUser.dataSource
+				if (healthPortUser.source
 						.equals(HealthPortUserInfo.GREENWAY)) {
-					ccd = GreenwayPort.getCCD(HealthPortUser.personId);
+					ccd = GreenwayPort.getCCD(healthPortUser.personId);
 					// System.out.println(ccd);
-				} else if (HealthPortUser.dataSource
+				} else if (healthPortUser.source
 						.equals(HealthPortUserInfo.SyntheticEHR)) {
 					retVal = syntheticEHRPort
-							.getMedicationPrescriptions(HealthPortUser);
+							.getMedicationPrescriptions(healthPortUser);
 					if (retVal != null && !retVal.isEmpty()) {
 						finalRetVal.addAll(retVal);
 					}
-				} else if (HealthPortUser.dataSource
+				} else if (healthPortUser.source
 						.equals(HealthPortUserInfo.HEALTHVAULT)) {
 					retVal = healthvaultPort
-							.getMedicationPrescriptions(HealthPortUser);
+							.getMedicationPrescriptions(healthPortUser);
 					if (retVal != null && !retVal.isEmpty()) {
 						finalRetVal.addAll(retVal);
 					}
@@ -140,24 +143,27 @@ public class MedicationPrescrResource implements IResourceProvider {
 
 		ArrayList<MedicationPrescription> retVal = null;
 		String ccd = null;
-		int patientNum = Integer.parseInt(theSubject.getIdPart());
-		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(patientNum);
-
-		if (HealthPortUser.dataSource.equals(HealthPortUserInfo.GREENWAY)) {
-			ccd = GreenwayPort.getCCD(HealthPortUser.personId);
+//		int patientNum = Integer.parseInt(theSubject.getIdPart());
+//		HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(patientNum);
+		healthPortUser.setInformation(theSubject.getIdPart());
+		
+		if (healthPortUser.source == null) return retVal;
+		
+		if (healthPortUser.source.equals(HealthPortUserInfo.GREENWAY)) {
+			ccd = GreenwayPort.getCCD(healthPortUser.personId);
 			// System.out.println(ccd);
-		} else if (HealthPortUser.dataSource
+		} else if (healthPortUser.source
 				.equals(HealthPortUserInfo.SyntheticEHR)) {
 			// retVal = new
 			// SyntheticEHRPort().getMedicationPrescriptions(HealthPortUser);
 			retVal = syntheticEHRPort
-					.getMedicationPrescriptions(HealthPortUser);
+					.getMedicationPrescriptions(healthPortUser);
 
-		} else if (HealthPortUser.dataSource
+		} else if (healthPortUser.source
 				.equals(HealthPortUserInfo.HEALTHVAULT)) {
 			// retVal = new
 			// HealthVaultPort().getMedicationPrescriptions(HealthPortUser);
-			retVal = healthvaultPort.getMedicationPrescriptions(HealthPortUser);
+			retVal = healthvaultPort.getMedicationPrescriptions(healthPortUser);
 		}
 
 		return retVal;
