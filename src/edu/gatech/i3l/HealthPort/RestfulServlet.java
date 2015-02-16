@@ -31,6 +31,8 @@ public class RestfulServlet extends RestfulServer {
 
 		org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RestfulServlet.class);
 		System.out.println("FHIR Servlet Debug Enabled?:"+logger.isDebugEnabled());
+		
+		this.setServerName("I3L ExactData and HealthVault FHIR Server");
 	}
 	
 	/**

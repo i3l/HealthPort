@@ -44,15 +44,6 @@ import ca.uhn.fhir.model.primitive.IdDt;
  */
 public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
-//	String serverName = "localhost";
-//	String url = "jdbc:mysql://" + serverName;
-//	String username = "healthport";
-//	String password = "i3lworks";
-//	String dbName = "OMOP";
-//	String dbName2 = "HealthPort";
-//	SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-//	SimpleDateFormat formatter2 = new SimpleDateFormat("yyyyMMdd");
-
 	// ResourceID Differentiators
 	static String Height = "h";
 	static String Weight = "w";
@@ -71,7 +62,19 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	static String systolicBPLOINC = "8480-6";
 	static String diastolicBPLOINC = "8462-4";
 	static String temperatureLOINC = "8310-5";
+	
+	private DataSource dataSource = null;
+	
+	public SyntheticEHRPort (String jndiName) {
+		try {
+			dataSource = (DataSource) new InitialContext().lookup("java:/comp/env/"+jndiName);
+		} catch (NamingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
+	}
+	
 	private Observation createObs(String theId, String nameUri,
 			String nameCode, String nameDisp, String theValue, String theUnit,
 			Date date, String desc) {
@@ -137,14 +140,14 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		// Get all Observations
 		Connection conn = null;
 		Statement stmt = null;
-		Context context = null;
-		DataSource datasource;
+		//Context context = null;
+//		DataSource datasource;
 
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
 
 			stmt = conn.createStatement();
 
@@ -278,7 +281,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				retVal.add(obs);
 			}
 			conn.close();
-		} catch (SQLException | NamingException se) {
+//		} catch (SQLException | NamingException se) {
+		} catch (SQLException se) {
 			se.printStackTrace();
 		}
 		return retVal;
@@ -303,14 +307,14 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		ResultSet rs = null;
 		Observation obs = null;
 
-		Context context = null;
-		DataSource datasource;
+		//Context context = null;
+//		DataSource datasource;
 
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
 
 			stmt = conn.createStatement();
 
@@ -399,7 +403,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			}
 
 			conn.close();
-		} catch (SQLException | NamingException se) {
+//		} catch (SQLException | NamingException se) {
+		} catch (SQLException se) {
 			se.printStackTrace();
 		}
 
@@ -432,15 +437,15 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		Connection conn2 = null;
 		Statement stmt = null;
 		Statement stmt2 = null;
-		Context context = null;
-		DataSource datasource = null;
+//		Context context = null;
+//		DataSource datasource = null;
 		Context context2 = null;
 		DataSource datasource2 = null;
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
 			stmt = conn.createStatement();
 			context2 = new InitialContext();
 			datasource2 = (DataSource) context2
@@ -680,17 +685,17 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		ArrayList<Condition> retVal = new ArrayList<Condition>();
 		Condition condition = null;
 
-		Context context;
-		DataSource datasource;
+//		Context context;
+//		DataSource datasource;
 
 		Connection conn = null;
 		Statement stmt = null;
 		int count = 0;
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
 			stmt = conn.createStatement();
 			String sql = "SELECT * FROM problem WHERE Member_ID='"+userInfo.personId+"'";
 			ResultSet rs = stmt.executeQuery(sql);
@@ -718,7 +723,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			}
 
 			conn.close();
-		} catch (SQLException | NamingException se) {
+//		} catch (SQLException | NamingException se) {
+		} catch (SQLException se) {
 			se.printStackTrace();
 		}
 		return retVal;
@@ -735,17 +741,17 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
 		Condition condition = null;
 		Connection conn = null;
-		DataSource datasource = null;
+//		DataSource datasource = null;
 		Statement stmt = null;
 		int count = 0;
 		String sql = null;
 		ResultSet rs = null;
 
 		try {
-			Context context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
+//			Context context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
 			stmt = conn.createStatement();
 
 			sql = "SELECT * FROM problem WHERE ID=" + Ids[2];
@@ -763,7 +769,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			}
 
 			conn.close();
-		} catch (SQLException | NamingException se) {
+//		} catch (SQLException | NamingException se) {
+		} catch (SQLException se) {
 			se.printStackTrace();
 		}
 
@@ -799,8 +806,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		Connection conn2 = null;
 		Statement stmt = null;
 		Statement stmt2 = null;
-		Context context = null;
-		DataSource datasource = null;
+//		Context context = null;
+//		DataSource datasource = null;
 		Context context2 = null;
 		DataSource datasource2 = null;
 
@@ -808,11 +815,10 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		String id = null;
 		int count = 0;
 		try {
-
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
 			stmt = conn.createStatement();
 			context2 = new InitialContext();
 			datasource2 = (DataSource) context2
@@ -948,17 +954,17 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			HealthPortUserInfo userInfo) {
 		ArrayList<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
 		MedicationPrescription medPrescript = null;
-		Context context = null;
-		DataSource datasource = null;
+//		Context context = null;
+//		DataSource datasource = null;
 
 		Connection conn = null;
 		Statement stmt = null;
 		int count = 0;
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
 			stmt = conn.createStatement();
 
 			String sql = "SELECT * FROM medication_orders WHERE Member_ID = '"
@@ -984,15 +990,16 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			}
 
 			conn.close();
-		} catch (SQLException | NamingException se) {
+//		} catch (SQLException | NamingException se) {
+		} catch (SQLException se) {
 			se.printStackTrace();
 		}
 		return retVal;
 	}
 
 	public MedicationPrescription getMedicationPrescription(String resourceId) {
-		Context context = null;
-		DataSource datasource = null;
+//		Context context = null;
+//		DataSource datasource = null;
 		MedicationPrescription medPrescript = null;
 
 		Connection conn = null;
@@ -1007,10 +1014,10 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
 		int count = 0;
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
 			stmt = conn.createStatement();
 			sql = "SELECT * FROM medication_orders WHERE ID = " + Ids[2];
 			rs = stmt.executeQuery(sql);
@@ -1030,7 +1037,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			}
 
 			conn.close();
-		} catch (SQLException | NamingException se) {
+//		} catch (SQLException | NamingException se) {
+		} catch (SQLException se) {
 			se.printStackTrace();
 		}
 		return medPrescript;
@@ -1046,16 +1054,16 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		Connection conn2 = null;
 		Statement stmt = null;
 		Statement stmt2 = null;
-		Context context = null;
-		DataSource datasource = null;
+//		Context context = null;
+//		DataSource datasource = null;
 		Context context2 = null;
 		DataSource datasource2 = null;
 		int count = 0;
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context
-					.lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context
+//					.lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
 			stmt = conn.createStatement();
 			context2 = new InitialContext();
 			datasource2 = (DataSource) context2

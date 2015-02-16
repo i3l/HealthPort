@@ -27,6 +27,12 @@ import ca.uhn.fhir.rest.server.IResourceProvider;
 public class PatientResourceProvider implements IResourceProvider {
 	public static final String SQL_STATEMENT = "SELECT U1.ID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)";
  
+	private HealthPortUserInfo healthPortUser;
+	
+	public PatientResourceProvider () {
+		healthPortUser = new HealthPortUserInfo ("jdbc/HealthPort");
+	}
+	
     /**
      * The getResourceType method comes from IResourceProvider, and must
      * be overridden to indicate what type of resource this provider
@@ -41,16 +47,16 @@ public class PatientResourceProvider implements IResourceProvider {
     public Patient getResourceById(@IdParam IdDt theId){
     	Patient patient = new Patient();
     	FhirContext ctx = new FhirContext();
-    	int id = Integer.parseInt(theId.getIdPart());
-    	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(id);
+//    	int id = Integer.parseInt(theId.getIdPart());
+//    	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(id);
+    	healthPortUser.setInformation(theId.getIdPart());
+    	if (healthPortUser.source == null) return patient;
     	
-    	if (HealthPortUser.userId == null) return patient;
-    	
-		patient.setId(HealthPortUser.userId);
+		patient.setId(healthPortUser.userId);
 		patient.addIdentifier();
 		patient.getIdentifier().get(0).setSystem(new UriDt("urn:hapitest:mrns"));
-		patient.getIdentifier().get(0).setValue(HealthPortUser.userId);
-		String[] userName  = HealthPortUser.name.split(" ");
+		patient.getIdentifier().get(0).setValue(healthPortUser.userId);
+		String[] userName  = healthPortUser.name.split(" ");
         if (userName.length == 2){
             patient.addName().addFamily(userName[1]);
             patient.getName().get(0).addGiven(userName[0]);
@@ -79,21 +85,26 @@ public class PatientResourceProvider implements IResourceProvider {
 				
 		ArrayList<Patient> retVal = new ArrayList<Patient>();
     	try{
-			context = new InitialContext();
-			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
-			connection = datasource.getConnection();
+//			context = new InitialContext();
+//			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+//			connection = datasource.getConnection();
+    		connection = healthPortUser.getConnection();
 			statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
 			while (resultSet.next()) {
-				String Name = resultSet.getString("NAME");
-				int userId = resultSet.getInt("ID");
-				String[] userName  = Name.split(" ");
+//				String Name = resultSet.getString("NAME");
+//				int userId = resultSet.getInt("ID");
+				
+				healthPortUser.setRSInformation(resultSet);
+				String[] userName  = healthPortUser.name.split(" ");
 				
 				Patient patient = new Patient();
-				patient.setId(String.valueOf(userId));
+//				patient.setId(String.valueOf(userId));
+				patient.setId(healthPortUser.userId);
 				patient.addIdentifier();
 				patient.getIdentifier().get(0).setSystem(new UriDt("urn:hapitest:mrns"));
-				patient.getIdentifier().get(0).setValue(String.valueOf(userId));
+//				patient.getIdentifier().get(0).setValue(String.valueOf(userId));
+				patient.getIdentifier().get(0).setValue(healthPortUser.userId);
 				String fullName = null;
 		        if (userName.length == 2){
                     patient.addName().addFamily(userName[1]);

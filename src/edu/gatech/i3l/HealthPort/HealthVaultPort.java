@@ -59,7 +59,12 @@ import com.microsoft.hsg.HVAccessor;
 import com.microsoft.hsg.Request;
 
 public class HealthVaultPort implements HealthPortFHIRIntf {
-
+	private HealthPortUserInfo healthPortUser;
+	
+	public HealthVaultPort () {
+		healthPortUser = new HealthPortUserInfo ("jdbc/HealthPort");
+	}
+	
 	static public String getCCD (String Record_id, String Person_id) {		
 		
 		if (Person_id == null || Record_id == null) {
@@ -208,9 +213,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		String type = null;
 		String[] Ids  = resourceId.split("\\-",3);
     	
-    	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
-    	String rId = HealthPortUser.recordId;
-    	String pId = HealthPortUser.personId;
+//    	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
+    	healthPortUser.setInformation(Ids[0]);
+    	String rId = healthPortUser.recordId;
+    	String pId = healthPortUser.personId;
     	
     	responseStr = getThingsById(Ids[2],rId, pId);
     	
@@ -316,9 +322,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
   		String type = null;
   		String[] Ids  = resourceId.split("\\-",3);
       	
-      	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
-      	String rId = HealthPortUser.recordId;
-      	String pId = HealthPortUser.personId;
+//      	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
+      	healthPortUser.setInformation(Ids[0]);
+      	String rId = healthPortUser.recordId;
+      	String pId = healthPortUser.personId;
       	
       	responseStr = getThingsById(Ids[2],rId, pId);
       	
@@ -368,9 +375,10 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
   		String type = null;
   		String[] Ids  = resourceId.split("\\-",3);
       	
-      	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
-      	String rId = HealthPortUser.recordId;
-      	String pId = HealthPortUser.personId;
+//      	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(Integer.parseInt(Ids[0]));
+      	healthPortUser.setInformation(Ids[0]);
+      	String rId = healthPortUser.recordId;
+      	String pId = healthPortUser.personId;
       	
       	responseStr = getThingsById(Ids[2],rId, pId);
       	
