@@ -10,6 +10,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
+import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.resource.Patient;
 import ca.uhn.fhir.model.primitive.IdDt;
@@ -151,6 +152,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 		} else {
 			throw new InvalidRequestException(
 					"Need resource type for parameter 'subject'");
+
 		}
 
 		int patientNum = Integer.parseInt(PatientID);

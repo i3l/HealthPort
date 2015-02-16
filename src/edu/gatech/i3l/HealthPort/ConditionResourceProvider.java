@@ -151,7 +151,6 @@ public class ConditionResourceProvider implements IResourceProvider {
 
 		return retVal;
 	}
-
 	@Search()
 	public List<Condition> searchByCode(
 			@RequiredParam(name = Condition.SP_CODE) TokenParam theId) {
@@ -167,5 +166,6 @@ public class ConditionResourceProvider implements IResourceProvider {
 		// return retVal;
 		return syntheticEHRPort.getConditionsByCodeSystem(codeSystem, code);
 	}
+
 
 }
