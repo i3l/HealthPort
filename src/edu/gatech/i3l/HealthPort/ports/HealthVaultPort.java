@@ -1052,7 +1052,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			buffer_narrative.append("	<tbody>\n");
 			buffer_narrative.append("		<tr>\n");
 			buffer_narrative.append("			<td>Status</td>\n");
-			buffer_narrative.append("			<td>"+ cond.getStatus().getValue() + "</td>\n");
+			buffer_narrative.append("			<td>"+ cond.getStatus().toString() + "</td>\n");
 			buffer_narrative.append("		</tr>\n");
 			buffer_narrative.append("	</tbody>\n");
 			buffer_narrative.append("</table>\n");

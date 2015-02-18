@@ -928,7 +928,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
 		// Dispense Qty and Refill
 		Dispense medDispense = new Dispense();
-		medDispense.setQuantity(medQty);
+		medDispense.setQuantity(new QuantityDt(medQty));
 		medDispense.setNumberOfRepeatsAllowed(medRefill);
 		medicationPrescript.setDispense(medDispense);
 

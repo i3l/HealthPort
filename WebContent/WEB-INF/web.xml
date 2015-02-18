@@ -15,8 +15,16 @@
 	<session-config>
 		<session-timeout>20</session-timeout>
 	</session-config>
-
-	<resource-env-ref>
+<!-- 	<servlet>
+		<servlet-name>FHIRServer</servlet-name>
+		<servlet-class>edu.gatech.i3l.HealthPort.RestfulServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>FHIRServer</servlet-name>
+		<url-pattern>/fhir/*</url-pattern>
+	</servlet-mapping>
+ -->
+ 	<resource-env-ref>
 		<description>HealthPort Patient Database</description>
 		<resource-env-ref-name>jdbc/HealthPort</resource-env-ref-name>
 		<resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>

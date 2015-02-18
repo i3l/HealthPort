@@ -3,8 +3,15 @@
  */
 package edu.gatech.i3l.HealthPort.providers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ca.uhn.fhir.model.api.IResource;
+import ca.uhn.fhir.model.dev.resource.Condition;
 import ca.uhn.fhir.model.dev.resource.RiskAssessment;
+import ca.uhn.fhir.rest.annotation.RequiredParam;
+import ca.uhn.fhir.rest.annotation.Search;
+import ca.uhn.fhir.rest.param.ReferenceParam;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 
 /**
@@ -13,7 +20,9 @@ import ca.uhn.fhir.rest.server.IResourceProvider;
  */
 public class RiskAssessmentResourceProvider implements IResourceProvider {
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see ca.uhn.fhir.rest.server.IResourceProvider#getResourceType()
 	 */
 	@Override
@@ -22,4 +31,11 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		return RiskAssessment.class;
 	}
 
+	@Search()
+	public List<RiskAssessment> getRiskAssessmentbySubject(
+			@RequiredParam(name = Condition.SP_SUBJECT) ReferenceParam theSubject) {
+		ArrayList<RiskAssessment> retV = null;
+		return retV;
+		
+	}
 }
