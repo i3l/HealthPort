@@ -26,10 +26,10 @@ public class HealthPortUserInfo {
 	public String contact = null;
 	public String address = null;
 
-	static String HEALTHVAULT = "HV";
-	static String GREENWAY = "GW";
-	static String SyntheticEHR = "SyntheticEHR";
-	static String SyntheticCancer = "SyntheticCancer";
+	public static String HEALTHVAULT = "HV";
+	public static String GREENWAY = "GW";
+	public static String SyntheticEHR = "SyntheticEHR";
+	public static String SyntheticCancer = "SyntheticCancer";
 
 	private DataSource dataSource;
 

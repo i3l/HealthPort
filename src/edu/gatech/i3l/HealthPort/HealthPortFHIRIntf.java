@@ -5,9 +5,9 @@ package edu.gatech.i3l.HealthPort;
 
 import java.util.ArrayList;
 
-import ca.uhn.fhir.model.dstu.resource.Condition;
-import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
-import ca.uhn.fhir.model.dstu.resource.Observation;
+import ca.uhn.fhir.model.dev.resource.Condition;
+import ca.uhn.fhir.model.dev.resource.MedicationPrescription;
+import ca.uhn.fhir.model.dev.resource.Observation;
 
 /**
  * @author MC142

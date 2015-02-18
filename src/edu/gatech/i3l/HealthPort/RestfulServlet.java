@@ -8,11 +8,14 @@ import javax.servlet.annotation.WebServlet;
 
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
-import edu.gatech.i3l.HealthPort.ConditionResourceProvider;
-import edu.gatech.i3l.HealthPort.ObservationResourceProvider;
-import edu.gatech.i3l.HealthPort.PatientResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.ConditionResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.MedicationPrescrResource;
+import edu.gatech.i3l.HealthPort.providers.ObservationResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.PatientResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.RiskAssessmentResourceProvider;
 
 import org.slf4j.LoggerFactory;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 
@@ -51,6 +54,7 @@ public class RestfulServlet extends RestfulServer {
 		resourceProviders.add(new ObservationResourceProvider());
 		resourceProviders.add(new ConditionResourceProvider());
 		resourceProviders.add(new MedicationPrescrResource());
+		resourceProviders.add(new RiskAssessmentResourceProvider());
 		setResourceProviders(resourceProviders);
 
 //		/*
