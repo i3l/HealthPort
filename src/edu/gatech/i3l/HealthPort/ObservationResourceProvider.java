@@ -7,12 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
-import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.Observation;
-import ca.uhn.fhir.model.dstu.resource.Patient;
 import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.rest.annotation.IdParam;
 import ca.uhn.fhir.rest.annotation.Read;
@@ -42,7 +39,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 	 * overridden to indicate what type of resource this provider supplies.
 	 */
 	public Class<Observation> getResourceType() {
-		return Observation.class;
+		return Observation.class; 
 	}
 
 	@Read()
@@ -77,8 +74,8 @@ public class ObservationResourceProvider implements IResourceProvider {
 	public List<Observation> getAllObservations() {
 		Connection connection = null;
 		Statement statement = null;
-		Context context = null;
-		DataSource datasource = null;
+//		Context context = null;
+//		DataSource datasource = null;
 		String ccd = null;
 
 		ArrayList<Observation> finalRetVal = new ArrayList<Observation>();
