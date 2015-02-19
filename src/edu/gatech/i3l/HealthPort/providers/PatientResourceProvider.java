@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dev.resource.Patient;
-import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
+//import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
@@ -121,7 +121,7 @@ public class PatientResourceProvider implements IResourceProvider {
 				//ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
 				// Encode the output, including the narrative
 				//String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
-				patient.getText().setStatus(NarrativeStatusEnum.GENERATED);
+				//patient.getText().setStatus(ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum.GENERATED);
 				String textBody = "<table class=\"hapiPropertyTable\">"
 						+ "<tr><td>Name</td><td>"+ fullName
 						+ "</td></tr></table>";
