@@ -668,7 +668,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		condition.setStatus(ConditionStatusEnum.CONFIRMED);
 
 		// Optional onsetdate
-		condition.setOnset(new DateDt(dateTime));
+		condition.setOnset(new DateTimeDt(dateTime));
 
 		// Optional human readable part.
 		String textBody = "<table class=\"hapiPropertyTable\">";
