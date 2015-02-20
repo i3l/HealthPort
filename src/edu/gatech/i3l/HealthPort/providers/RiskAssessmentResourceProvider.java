@@ -6,8 +6,8 @@ package edu.gatech.i3l.HealthPort.providers;
 import java.util.ArrayList;
 import java.util.List;
 
-import ca.uhn.fhir.model.dev.resource.Condition;
-import ca.uhn.fhir.model.dev.resource.RiskAssessment;
+import ca.uhn.fhir.model.dstu2.resource.Condition;
+import ca.uhn.fhir.model.dstu2.resource.RiskAssessment;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;

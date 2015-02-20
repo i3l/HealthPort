@@ -7,12 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.model.dev.resource.Patient;
-import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
+import ca.uhn.fhir.model.dstu.resource.Patient;
+import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.model.primitive.UriDt;
 import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;

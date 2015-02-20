@@ -6,14 +6,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.sql.DataSource;
-
 import ca.uhn.fhir.model.api.IResource;
-import ca.uhn.fhir.model.dev.resource.Condition;
-import ca.uhn.fhir.model.dev.resource.Medication;
-import ca.uhn.fhir.model.dev.resource.MedicationPrescription;
+import ca.uhn.fhir.model.dstu.resource.Condition;
+import ca.uhn.fhir.model.dstu.resource.Medication;
+import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.rest.annotation.IdParam;
 import ca.uhn.fhir.rest.annotation.Read;
@@ -32,12 +28,14 @@ public class MedicationPrescrResource implements IResourceProvider {
 	private SyntheticEHRPort syntheticEHRPort;
 	private HealthVaultPort healthvaultPort;
 	private HealthPortUserInfo healthPortUser;
+	private SyntheticEHRPort syntheticCancerPort;
 
 	// Constructor
 	public MedicationPrescrResource() {
-		syntheticEHRPort = new SyntheticEHRPort("jdbc/ExactDataSample");
+		syntheticEHRPort = new SyntheticEHRPort("jdbc/ExactDataSample", HealthPortUserInfo.SyntheticEHR);
 		healthvaultPort = new HealthVaultPort();
 		healthPortUser = new HealthPortUserInfo("jdbc/HealthPort"); 
+		syntheticCancerPort = new SyntheticEHRPort("jdbc/ExactDataCancer", HealthPortUserInfo.SyntheticCancer);
 	}
 
 	/*
@@ -74,6 +72,9 @@ public class MedicationPrescrResource implements IResourceProvider {
 			// med = new
 			// HealthVaultPort().getMedicationPrescription(resourceId);
 			med = healthvaultPort.getMedicationPrescription(resourceId);
+		} else if (location.equals(HealthPortUserInfo.SyntheticCancer)) {
+			med = syntheticCancerPort.getMedicationPrescription(resourceId);
+
 		}
 
 		return med;
@@ -83,30 +84,16 @@ public class MedicationPrescrResource implements IResourceProvider {
 	public List<MedicationPrescription> getAllMedicationPrescriptions() {
 		Connection connection = null;
 		Statement statement = null;
-		Context context = null;
-		DataSource datasource = null;
 		String ccd = null;
 
 		ArrayList<MedicationPrescription> finalRetVal = new ArrayList<MedicationPrescription>();
 		ArrayList<MedicationPrescription> retVal = null;
 		try {
-//			context = new InitialContext();
-//			datasource = (DataSource) context
-//					.lookup("java:/comp/env/jdbc/HealthPort");
-//			connection = datasource.getConnection();
 			connection = healthPortUser.getConnection();
 			statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
-//			HealthPortUserInfo HealthPortUser = new HealthPortUserInfo();
 			while (resultSet.next()) {
 				healthPortUser.setRSInformation(resultSet);
-//				healthPortUser.userId = String.valueOf(resultSet.getInt("ID"));
-//				healthPortUser.source = resultSet.getString("TAG");
-//				healthPortUser.recordId = resultSet.getString("RECORDID");
-//				healthPortUser.personId = resultSet.getString("PERSONID");
-//				healthPortUser.gender = resultSet.getString("GENDER");
-//				healthPortUser.contact = resultSet.getString("CONTACT");
-//				healthPortUser.address = resultSet.getString("ADDRESS");
 
 				if (healthPortUser.source
 						.equals(HealthPortUserInfo.GREENWAY)) {
@@ -122,6 +109,13 @@ public class MedicationPrescrResource implements IResourceProvider {
 				} else if (healthPortUser.source
 						.equals(HealthPortUserInfo.HEALTHVAULT)) {
 					retVal = healthvaultPort
+							.getMedicationPrescriptions(healthPortUser);
+					if (retVal != null && !retVal.isEmpty()) {
+						finalRetVal.addAll(retVal);
+					}
+				} else if (healthPortUser.source
+						.equals(HealthPortUserInfo.SyntheticCancer)) {
+					retVal = syntheticCancerPort
 							.getMedicationPrescriptions(healthPortUser);
 					if (retVal != null && !retVal.isEmpty()) {
 						finalRetVal.addAll(retVal);
@@ -168,6 +162,11 @@ public class MedicationPrescrResource implements IResourceProvider {
 			// retVal = new
 			// HealthVaultPort().getMedicationPrescriptions(HealthPortUser);
 			retVal = healthvaultPort.getMedicationPrescriptions(healthPortUser);
+		} else if (healthPortUser.source
+				.equals(HealthPortUserInfo.SyntheticCancer)) {
+			retVal = syntheticCancerPort
+					.getMedicationPrescriptions(healthPortUser);
+
 		}
 
 		return retVal;
@@ -179,15 +178,24 @@ public class MedicationPrescrResource implements IResourceProvider {
 		// This is /MedicationPrescription?medication.name=<medicine_name>.
 		// We are chaining "name" parameter in Medication resource to MedicationPrescription.
 		
-		List<MedicationPrescription> retVal = null;
-
+		List<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
+		List<MedicationPrescription> portRet = null;
+		
 		// The search parameter is medication in the MedicationPrescription resource
 		// with chained search parameter, "name" in Medication resource. 
 		// Check if the chained parameter search is "medication.name".
 		String chain = theMedication.getChain();
 		if (Medication.SP_NAME.equals(chain)) {
 			String medName = theMedication.getValue();
-			retVal = syntheticEHRPort.getMedicationPrescriptionsByType(medName);
+			portRet = syntheticEHRPort.getMedicationPrescriptionsByType(medName);
+			if (portRet != null && !portRet.isEmpty()) {
+				retVal.addAll(portRet);
+			}
+			
+			portRet = syntheticCancerPort.getMedicationPrescriptionsByType(medName);
+			if (portRet != null && !portRet.isEmpty()) {
+				retVal.addAll(portRet);
+			}
 		}
 
 		return retVal;

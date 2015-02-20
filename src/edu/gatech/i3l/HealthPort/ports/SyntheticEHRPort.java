@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -18,22 +19,22 @@ import javax.sql.DataSource;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import ca.uhn.fhir.model.api.IResource;
-import ca.uhn.fhir.model.dev.composite.CodeableConceptDt;
-import ca.uhn.fhir.model.dev.composite.CodingDt;
-import ca.uhn.fhir.model.dev.composite.ContainedDt;
-import ca.uhn.fhir.model.dev.composite.QuantityDt;
-import ca.uhn.fhir.model.dev.composite.ResourceReferenceDt;
-import ca.uhn.fhir.model.dev.resource.Condition;
-import ca.uhn.fhir.model.dev.resource.Medication;
-import ca.uhn.fhir.model.dev.resource.MedicationPrescription;
-import ca.uhn.fhir.model.dev.resource.MedicationPrescription.Dispense;
-import ca.uhn.fhir.model.dev.resource.MedicationPrescription.DosageInstruction;
-import ca.uhn.fhir.model.dev.resource.Observation;
-import ca.uhn.fhir.model.dev.valueset.ConditionStatusEnum;
-import ca.uhn.fhir.model.dev.valueset.MedicationPrescriptionStatusEnum;
-import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
-import ca.uhn.fhir.model.dev.valueset.ObservationReliabilityEnum;
-import ca.uhn.fhir.model.dev.valueset.ObservationStatusEnum;
+import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
+import ca.uhn.fhir.model.dstu.composite.CodingDt;
+import ca.uhn.fhir.model.dstu.composite.ContainedDt;
+import ca.uhn.fhir.model.dstu.composite.QuantityDt;
+import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
+import ca.uhn.fhir.model.dstu.resource.Condition;
+import ca.uhn.fhir.model.dstu.resource.Medication;
+import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
+import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
+import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
+import ca.uhn.fhir.model.dstu.resource.Observation;
+import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.MedicationPrescriptionStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
+import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.IdDt;
@@ -46,6 +47,8 @@ import edu.gatech.i3l.HealthPort.HealthPortUserInfo;
  */
 public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
+	public String dbType;
+	
 	// ResourceID Differentiators
 	static String Height = "h";
 	static String Weight = "w";
@@ -67,14 +70,15 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 	
 	private DataSource dataSource = null;
 	
-	public SyntheticEHRPort (String jndiName) {
+	public SyntheticEHRPort (String jndiName, String dbType) {
+		this.dbType = dbType;
+		
 		try {
 			dataSource = (DataSource) new InitialContext().lookup("java:/comp/env/"+jndiName);
 		} catch (NamingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 	
 	private Observation createObs(String theId, String nameUri,
@@ -466,7 +470,9 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				ResultSet rs = stmt.executeQuery(sql);
 				while (rs.next()) {
 					String memberID = rs.getString("Member_ID");
-					String memSql = "SELECT U.ID, U.NAME FROM USER AS U, ORGANIZATION AS O WHERE U.ORGANIZATIONID=O.ID AND O.TAG='SyntheticEHR' AND U.PERSONID='"
+//					String memSql = "SELECT U.ID, U.NAME FROM USER AS U, ORGANIZATION AS O WHERE U.ORGANIZATIONID=O.ID AND O.TAG='"+dbType+"' AND U.PERSONID='"
+//							+ memberID + "'";
+					String memSql = "SELECT U.ID, U.NAME FROM USER AS U LEFT JOIN ORGANIZATION AS O ON (O.ID=U.ORGANIZATIONID) WHERE O.TAG='"+dbType+"' AND U.PERSONID='"
 							+ memberID + "'";
 //					String memSql = "SELECT ID FROM USER WHERE ORGANIZATIONID=3 AND PERSONID='"
 //							+ memberID + "'";
@@ -588,7 +594,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 						// members in Synthetic DB
 						// in HealthPort DB. We just skip..
 						System.out
-								.println("[SyntheticEHRPort:getObservationsByType] Failed to get this user,"
+								.println("[SyntheticEHRPort("+dbType+"):getObservationsByType] Failed to get this user,"
 										+ memberID + ", in HealthPort DB");
 						continue;
 					}
@@ -601,7 +607,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				ResultSet rs = stmt.executeQuery(sql);
 				while (rs.next()) {
 					String memberID = rs.getString("Member_ID");
-					String memSql = "SELECT ID FROM USER WHERE ORGANIZATIONID=3 AND PERSONID='"
+					String memSql = "SELECT U1.ID FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) WHERE ORG.TAG='"+dbType+"' AND PERSONID='"
 							+ memberID + "'";
 					ResultSet rs2 = stmt2.executeQuery(memSql);
 					String hpUserID = "";
@@ -613,7 +619,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 						// members in Synthetic DB
 						// in HealthPort DB. We just skip..
 						System.out
-								.println("[SyntheticEHRPort:getObservationsByType] Failed to get this user,"
+								.println("[SyntheticEHRPort("+dbType+"):getObservationsByType] Failed to get this user,"
 										+ memberID + ", in HealthPort DB");
 						continue;
 					}
@@ -840,7 +846,9 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 
 				Date dateTime = new java.util.Date(rs.getDate("Onset_Date")
 						.getTime());
-				sql = "SELECT U.ID, U.NAME FROM USER AS U, ORGANIZATION AS O WHERE U.ORGANIZATIONID=O.ID AND O.TAG='SyntheticEHR' AND U.PERSONID='"
+//				sql = "SELECT U.ID, U.NAME FROM USER AS U, ORGANIZATION AS O WHERE U.ORGANIZATIONID=O.ID AND O.TAG='"+dbType+"' AND U.PERSONID='"
+//						+ personId + "'";
+				sql = "SELECT U.ID, U.NAME FROM USER AS U LEFT JOIN ORGANIZATION AS O ON (O.ID=U.ORGANIZATIONID) WHERE O.TAG='"+dbType+"' AND U.PERSONID='"
 						+ personId + "'";
 
 				//sql = "SELECT ID FROM USER WHERE PERSONID='" + personId + "'";
@@ -890,7 +898,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		// contained resource. We use dispaly as well :)
 		// Create Medication Resource
 		CodingDt medCoding = new CodingDt(nameUri, nameCode);
-		ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+		List<CodingDt> codingList = new ArrayList<CodingDt>();
 		codingList.add(medCoding);
 		CodeableConceptDt codeDt = new CodeableConceptDt();
 		codeDt.setCoding(codingList);
@@ -898,7 +906,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		Medication medResource = new Medication();
 		medResource.setCode(codeDt);
 		medResource.setId(String.valueOf(medId));
-		ArrayList<IResource> medResList = new ArrayList<IResource>();
+		List<IResource> medResList = new ArrayList<IResource>();
 		medResList.add(medResource);
 		ContainedDt medContainedDt = new ContainedDt();
 		medContainedDt.setContainedResources(medResList);
@@ -916,8 +924,8 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 			double dQty = Double.parseDouble(doseQty);
 			QuantityDt medQtyDt = new QuantityDt(dQty);
 			medQtyDt.setUnits(doseUnit);
-			// medDosageInstruct.setDoseQuantity(medQtyDt);
-			medDosageInstruct.setDose(medQtyDt);
+			medDosageInstruct.setDoseQuantity(medQtyDt);
+			//medDosageInstruct.setDose(medQtyDt);
 		} catch (NumberFormatException e) {
 			medDosageInstruct.setText("Dose Quanty: " + doseQty);
 		}
@@ -1083,7 +1091,9 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 						.getTime());
 
 				// Get FHIR userID using the member_id in ExactData DB.
-				String memSql = "SELECT U.ID, U.NAME FROM USER AS U, ORGANIZATION AS O WHERE U.ORGANIZATIONID=O.ID AND O.TAG='SyntheticEHR' AND U.PERSONID='"
+//				String memSql = "SELECT U.ID, U.NAME FROM USER AS U, ORGANIZATION AS O WHERE U.ORGANIZATIONID=O.ID AND O.TAG='"+dbType+"' AND U.PERSONID='"
+//						+ memberID + "'";
+				String memSql = "SELECT U.ID, U.NAME FROM USER AS U LEFT JOIN ORGANIZATION AS O ON (O.ID=U.ORGANIZATIONID) WHERE O.TAG='"+dbType+"' AND U.PERSONID='"
 						+ memberID + "'";
 				ResultSet rs2 = stmt2.executeQuery(memSql);
 				while (rs2.next()) {

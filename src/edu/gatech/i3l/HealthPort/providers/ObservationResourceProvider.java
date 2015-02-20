@@ -6,10 +6,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.naming.Context;
-import javax.sql.DataSource;
-
-import ca.uhn.fhir.model.dev.resource.Observation;
+import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.rest.annotation.IdParam;
 import ca.uhn.fhir.rest.annotation.Read;
@@ -30,12 +27,14 @@ public class ObservationResourceProvider implements IResourceProvider {
 	private SyntheticEHRPort syntheticEHRPort;
 	private HealthVaultPort healthvaultPort;
 	private HealthPortUserInfo healthPortUser;
+	private SyntheticEHRPort syntheticCancerPort;
 
 	// Constructor
 	public ObservationResourceProvider() {
-		syntheticEHRPort = new SyntheticEHRPort("jdbc/ExactDataSample");
+		syntheticEHRPort = new SyntheticEHRPort("jdbc/ExactDataSample", HealthPortUserInfo.SyntheticEHR);
 		healthvaultPort = new HealthVaultPort();
 		healthPortUser = new HealthPortUserInfo("jdbc/HealthPort");
+		syntheticCancerPort = new SyntheticEHRPort("jdbc/ExactDataCancer", HealthPortUserInfo.SyntheticCancer);
 	}
 
 	/**
@@ -69,6 +68,9 @@ public class ObservationResourceProvider implements IResourceProvider {
 
 		} else if (location.equals(HealthPortUserInfo.HEALTHVAULT)) {
 			obs = healthvaultPort.getObservation(resourceId);
+		}else if (location.equals(HealthPortUserInfo.SyntheticCancer)) {
+			obs = syntheticCancerPort.getObservation(resourceId);
+
 		}
 
 		return obs;
@@ -78,30 +80,15 @@ public class ObservationResourceProvider implements IResourceProvider {
 	public List<Observation> getAllObservations() {
 		Connection connection = null;
 		Statement statement = null;
-//		Context context = null;
-//		DataSource datasource = null;
 		String ccd = null;
 
 		ArrayList<Observation> finalRetVal = new ArrayList<Observation>();
 		ArrayList<Observation> retVal = null;
 		try {
-//			context = new InitialContext();
-//			datasource = (DataSource) context
-//					.lookup("java:/comp/env/jdbc/HealthPort");
-//			connection = datasource.getConnection();
 			connection = healthPortUser.getConnection();
 			statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
-//			HealthPortUserInfo HealthPortUser = new HealthPortUserInfo();
 			while (resultSet.next()) {
-//				HealthPortUser.userId = String.valueOf(resultSet.getInt("ID"));
-//				HealthPortUser.dataSource = resultSet.getString("TAG");
-//				HealthPortUser.recordId = resultSet.getString("RECORDID");
-//				HealthPortUser.personId = resultSet.getString("PERSONID");
-//				HealthPortUser.gender = resultSet.getString("GENDER");
-//				HealthPortUser.contact = resultSet.getString("CONTACT");
-//				HealthPortUser.address = resultSet.getString("ADDRESS");
-
 				healthPortUser.setRSInformation(resultSet);
 				if (healthPortUser.source
 						.equals(HealthPortUserInfo.GREENWAY)) {
@@ -117,7 +104,6 @@ public class ObservationResourceProvider implements IResourceProvider {
 					if (retVal != null && !retVal.isEmpty()) {
 						finalRetVal.addAll(retVal);
 					}
-
 				} else if (healthPortUser.source
 						.equals(HealthPortUserInfo.HEALTHVAULT)) {
 //					retVal = new HealthVaultPort()
@@ -126,6 +112,13 @@ public class ObservationResourceProvider implements IResourceProvider {
 					if (retVal != null && !retVal.isEmpty()) {
 						finalRetVal.addAll(retVal);
 					}
+				} else if (healthPortUser.source
+						.equals(HealthPortUserInfo.SyntheticCancer)) {
+					retVal = syntheticCancerPort.getObservations(healthPortUser);
+					if (retVal != null && !retVal.isEmpty()) {
+						finalRetVal.addAll(retVal);
+					}
+
 				}
 
 				retVal = null;
@@ -171,16 +164,16 @@ public class ObservationResourceProvider implements IResourceProvider {
 		if (healthPortUser.source.equals(HealthPortUserInfo.GREENWAY)) {
 			ccd = GreenwayPort.getCCD(healthPortUser.personId);
 			// System.out.println(ccd);
-
 		} else if (healthPortUser.source
 				.equals(HealthPortUserInfo.SyntheticEHR)) {
-			// retVal = new SyntheticEHRPort().getObservations(HealthPortUser);
 			retVal = syntheticEHRPort.getObservations(healthPortUser);
-
 		} else if (healthPortUser.source
 				.equals(HealthPortUserInfo.HEALTHVAULT)) {
-			// retVal = new HealthVaultPort().getObservations(HealthPortUser);
 			retVal = healthvaultPort.getObservations(healthPortUser);
+		} else if (healthPortUser.source
+				.equals(HealthPortUserInfo.SyntheticCancer)) {
+			retVal = syntheticCancerPort.getObservations(healthPortUser);
+
 		}
 
 		return retVal;
@@ -197,9 +190,23 @@ public class ObservationResourceProvider implements IResourceProvider {
 		String codeName = theName.getValue();
 		// System.out.println(identifierSystem);
 		//System.out.println(systemName + ":" + codeName);
-
-		return syntheticEHRPort.getObservationsByCodeSystem(systemName,
+		
+		List<Observation> retVal = new ArrayList<Observation>();
+		List<Observation> portRet = null;
+		
+		portRet = syntheticEHRPort.getObservationsByCodeSystem(systemName,
 				codeName);
+		if (portRet != null && !portRet.isEmpty()) {
+			retVal.addAll(portRet);
+		}
+		
+		portRet = syntheticCancerPort.getObservationsByCodeSystem(systemName,
+				codeName);
+		if (portRet != null && !portRet.isEmpty()) {
+			retVal.addAll(portRet);
+		}
+		
+		return retVal;
 	}
 
 }
