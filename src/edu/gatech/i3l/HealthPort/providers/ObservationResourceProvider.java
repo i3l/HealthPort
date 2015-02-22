@@ -84,50 +84,54 @@ public class ObservationResourceProvider implements IResourceProvider {
 
 		ArrayList<Observation> finalRetVal = new ArrayList<Observation>();
 		ArrayList<Observation> retVal = null;
-		try {
-			connection = healthPortUser.getConnection();
-			statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
-			while (resultSet.next()) {
-				healthPortUser.setRSInformation(resultSet);
-				if (healthPortUser.source
-						.equals(HealthPortUserInfo.GREENWAY)) {
-					ccd = GreenwayPort.getCCD(healthPortUser.personId);
-					// System.out.println(ccd);
-
-				} else if (healthPortUser.source
-						.equals(HealthPortUserInfo.SyntheticEHR)) {
-					// retVal = new
-					// SyntheticEHRPort().getObservations(HealthPortUser);
-					// finalRetVal.addAll(retVal);
-					retVal = syntheticEHRPort.getObservations(healthPortUser);
-					if (retVal != null && !retVal.isEmpty()) {
-						finalRetVal.addAll(retVal);
-					}
-				} else if (healthPortUser.source
-						.equals(HealthPortUserInfo.HEALTHVAULT)) {
-//					retVal = new HealthVaultPort()
-//							.getObservations(healthPortUser);
-					retVal = healthvaultPort.getObservations(healthPortUser);
-					if (retVal != null && !retVal.isEmpty()) {
-						finalRetVal.addAll(retVal);
-					}
-				} else if (healthPortUser.source
-						.equals(HealthPortUserInfo.SyntheticCancer)) {
-					retVal = syntheticCancerPort.getObservations(healthPortUser);
-					if (retVal != null && !retVal.isEmpty()) {
-						finalRetVal.addAll(retVal);
-					}
-
-				}
-
-				retVal = null;
-			}
-			connection.close();
-
-		} catch (Exception e) {
-			e.printStackTrace();
+		
+		retVal = syntheticEHRPort.getObservations("3");
+		if (retVal != null && !retVal.isEmpty()) {
+			finalRetVal.addAll(retVal);
 		}
+		retVal = syntheticCancerPort.getObservations("4");
+		if (retVal != null && !retVal.isEmpty()) {
+			finalRetVal.addAll(retVal);
+		}
+
+		
+//		try {
+//			connection = healthPortUser.getConnection();
+//			statement = connection.createStatement();
+//			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
+//			while (resultSet.next()) {
+//				healthPortUser.setRSInformation(resultSet);
+//				if (healthPortUser.source
+//						.equals(HealthPortUserInfo.GREENWAY)) {
+//					ccd = GreenwayPort.getCCD(healthPortUser.personId);
+//				} else if (healthPortUser.source
+//						.equals(HealthPortUserInfo.SyntheticEHR)) {
+//					retVal = syntheticEHRPort.getObservations(healthPortUser);
+//					if (retVal != null && !retVal.isEmpty()) {
+//						finalRetVal.addAll(retVal);
+//					}
+//				} else if (healthPortUser.source
+//						.equals(HealthPortUserInfo.HEALTHVAULT)) {
+//					retVal = healthvaultPort.getObservations(healthPortUser);
+//					if (retVal != null && !retVal.isEmpty()) {
+//						finalRetVal.addAll(retVal);
+//					}
+//				} else if (healthPortUser.source
+//						.equals(HealthPortUserInfo.SyntheticCancer)) {
+//					retVal = syntheticCancerPort.getObservations(healthPortUser);
+//					if (retVal != null && !retVal.isEmpty()) {
+//						finalRetVal.addAll(retVal);
+//					}
+//
+//				}
+//
+//				retVal = null;
+//			}
+//			connection.close();
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 
 		return finalRetVal;
 
