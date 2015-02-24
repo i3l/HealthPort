@@ -4,6 +4,8 @@
 package edu.gatech.i3l.HealthPort.providers;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -33,7 +35,8 @@ import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
  *
  */
 public class RiskAssessmentResourceProvider implements IResourceProvider {
-
+	public static final String predictModel = "/Users/ameliahenderson/Desktop/test.py";
+	public static final String patientFile = "/Users/ameliahenderson/Desktop/persons_id.txt";
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -65,18 +68,51 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 	public MethodOutcome createRiskAssessment(@ResourceParam RiskAssessment theRisk){
 		validateResource(theRisk);
 		MethodOutcome retVal = new MethodOutcome();
-		System.out.println("In risk assessment");
+		int size = theRisk.getBasis().size();
+		String PatientId = null;
+		int count = 0;
+		/*while(count !=size){
+			PatientId = theRisk.getBasis().get(count).getReference().getIdPart();
+			//System.out.println(theRisk.getBasis().get(count).getReference().getIdPart());
+			count = count+1;
+		}*/
+		//System.out.println(size);
+		//System.out.println(theRisk.getBasis().get(0).getReference().getIdPart());
 		
-		int number1 = 4;
+		int tempNum = 4;
+		
+
+		BufferedWriter out = null;
+		try  
+		{
+		    FileWriter fstream = new FileWriter(patientFile, false); //true tells to append data.
+		    out = new BufferedWriter(fstream);
+		    while(count !=size){
+		    	PatientId = theRisk.getBasis().get(count).getReference().getIdPart();
+		    	out.write(PatientId);
+		    	out.write("\n");
+		    	count = count+1;
+		    }
+		}
+		catch (IOException e)
+		{
+		    System.err.println("Error: " + e.getMessage());
+		}
+		finally
+		{
+			try {
+				out.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 		Process p = null;
 		int ret = 0;
-		//String pbCommand[] = { "python", "/Users/ameliahenderson/Desktop/test.py",""+number1};
-		//ProcessBuilder pb = new ProcessBuilder(pbCommand);
-		//Process pb = Runtime.getRuntime().exec(pbCommand);
-		//ProcessBuilder pb = new ProcessBuilder("python","test.py",""+number1);
-		//pb.directory(new File("\\Users\\ameliahenderson\\Desktop"));
+		
 		try {
-			String pbCommand[] = { "python", "/Users/ameliahenderson/Desktop/test.py"," "+number1};
+			String pbCommand[] = { "python", predictModel," "+tempNum};
 			//ProcessBuilder pb = new ProcessBuilder(pbCommand);
 			Process pb = Runtime.getRuntime().exec(pbCommand);
 			 BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.getInputStream()));
@@ -105,9 +141,9 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		/*
 		 * Our server will have a rule that patients must have a family name or we will reject them
 		 */
-		if (theRisk.getSubject().isEmpty()) {
+		if (theRisk.getBasis().isEmpty()) {
 			OperationOutcome outcome = new OperationOutcome();
-			outcome.addIssue().setSeverity(IssueSeverityEnum.FATAL).setDetails("No subject provided,RiskAssessment resources must have at least one subject.");
+			outcome.addIssue().setSeverity(IssueSeverityEnum.FATAL).setDetails("No basis provided,RiskAssessment resources must have basis.");
 			throw new UnprocessableEntityException(outcome);
 		}
 	}
