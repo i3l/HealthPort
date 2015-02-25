@@ -4,6 +4,16 @@
 package edu.gatech.i3l.HealthPort.ports;
 
 //import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -13,17 +23,25 @@ import javax.ws.rs.core.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import edu.gatech.i3l.HealthPort.HealthPortInfo;
+import edu.gatech.i3l.HealthPort.PortIf;
+
 /**
  * @author Neha
  *
  */
-public class GreenwayPort {
-
+public class GreenwayPort implements PortIf {
+	public static String GREENWAY = "GW";
+	
+	String tag;
+	String id;
+	
 	/**
 	 * 
 	 */
 	public GreenwayPort() {
-		// TODO Auto-generated constructor stub
+		this.tag = GREENWAY;
+		this.id = HealthPortInfo.findIdFromTag(tag);
 	}
 	
 	static public String getCCD (String PatientID) {
@@ -58,6 +76,28 @@ public class GreenwayPort {
 				
 		return xml;
 
+	}
+	
+	public ArrayList<String> getObsIds() {
+		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.gatech.i3l.HealthPort.PortIf#getTag()
+	 */
+	@Override
+	public String getTag() {
+		// TODO Auto-generated method stub
+		return tag;
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.gatech.i3l.HealthPort.PortIf#getId()
+	 */
+	@Override
+	public String getId() {
+		// TODO Auto-generated method stub
+		return id;
 	}
 
 }

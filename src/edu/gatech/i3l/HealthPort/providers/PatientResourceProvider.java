@@ -19,18 +19,25 @@ import ca.uhn.fhir.rest.annotation.IdParam;
 import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.server.IResourceProvider;
-import edu.gatech.i3l.HealthPort.HealthPortUserInfo;
+import edu.gatech.i3l.HealthPort.HealthPortInfo;
+import edu.gatech.i3l.HealthPort.ports.ExactDataPort;
+import edu.gatech.i3l.HealthPort.ports.GreenwayPort;
+import edu.gatech.i3l.HealthPort.ports.HealthVaultPort;
 
 /**
  * All resource providers must implement IResourceProvider
  */
 public class PatientResourceProvider implements IResourceProvider {
-	public static final String SQL_STATEMENT = "SELECT U1.ID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)";
+	public static final String SQL_STATEMENT = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)";
  
-	private HealthPortUserInfo healthPortUser;
+	private HealthPortInfo healthPortUser;
+	private String GWID;
+	private String HVID;
 	
 	public PatientResourceProvider () {
-		healthPortUser = new HealthPortUserInfo ("jdbc/HealthPort");
+		healthPortUser = new HealthPortInfo ("jdbc/HealthPort");
+		GWID = healthPortUser.getOrgID(GreenwayPort.GREENWAY);
+		HVID = healthPortUser.getOrgID(HealthVaultPort.HEALTHVAULT);
 	}
 	
     /**
@@ -49,13 +56,26 @@ public class PatientResourceProvider implements IResourceProvider {
     	FhirContext ctx = new FhirContext();
 //    	int id = Integer.parseInt(theId.getIdPart());
 //    	HealthPortUserInfo HealthPortUser = new HealthPortUserInfo(id);
-    	healthPortUser.setInformation(theId.getIdPart());
-    	if (healthPortUser.source == null) return patient;
     	
-		patient.setId(healthPortUser.userId);
+    	String Ids[] = theId.getIdPart().split("\\.", 2);
+    	String patientID;
+    	
+    	if (Ids[0].equals(GWID) ||
+    			Ids[0].equals(HVID)) {
+    		healthPortUser.setInformation(Ids[1]);
+    		patientID = healthPortUser.orgID+"."+healthPortUser.userId;
+    	} else {
+    		healthPortUser.setInformationPersonID(Ids[1], Ids[0]);
+    		patientID = healthPortUser.orgID+"."+healthPortUser.personId;
+    	}
+    	
+    	if (healthPortUser.orgID == null) return null;
+
 		patient.addIdentifier();
-		patient.getIdentifier().get(0).setSystem(new UriDt("urn:hapitest:mrns"));
-		patient.getIdentifier().get(0).setValue(healthPortUser.userId);
+		patient.getIdentifier().get(0).setSystem(new UriDt("urn:healthport:mrns"));
+		patient.setId(patientID);
+		patient.getIdentifier().get(0).setValue(patientID);
+
 		String[] userName  = healthPortUser.name.split(" ");
         if (userName.length == 2){
             patient.addName().addFamily(userName[1]);
@@ -79,32 +99,27 @@ public class PatientResourceProvider implements IResourceProvider {
     	//System.out.println("HERE");
     	Connection connection = null;
 		Statement statement = null;
-		Context context = null;
-		DataSource datasource = null;
-		FhirContext ctx = new FhirContext();
 				
 		ArrayList<Patient> retVal = new ArrayList<Patient>();
     	try{
-//			context = new InitialContext();
-//			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
-//			connection = datasource.getConnection();
     		connection = healthPortUser.getConnection();
 			statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
 			while (resultSet.next()) {
-//				String Name = resultSet.getString("NAME");
-//				int userId = resultSet.getInt("ID");
-				
 				healthPortUser.setRSInformation(resultSet);
 				String[] userName  = healthPortUser.name.split(" ");
 				
 				Patient patient = new Patient();
-//				patient.setId(String.valueOf(userId));
-				patient.setId(healthPortUser.userId);
 				patient.addIdentifier();
-				patient.getIdentifier().get(0).setSystem(new UriDt("urn:hapitest:mrns"));
-//				patient.getIdentifier().get(0).setValue(String.valueOf(userId));
-				patient.getIdentifier().get(0).setValue(healthPortUser.userId);
+				patient.getIdentifier().get(0).setSystem(new UriDt("urn:healthport:mrns"));
+				if (healthPortUser.orgID.equals(GWID) ||
+						healthPortUser.orgID.equalsIgnoreCase(HVID)) {
+					patient.setId(healthPortUser.orgID+"."+healthPortUser.userId);
+					patient.getIdentifier().get(0).setValue(healthPortUser.orgID+"."+healthPortUser.userId);
+				} else {
+					patient.setId(healthPortUser.source+"."+healthPortUser.personId);
+					patient.getIdentifier().get(0).setValue(healthPortUser.orgID+"."+healthPortUser.personId);
+				}
 				String fullName = null;
 		        if (userName.length == 2){
                     patient.addName().addFamily(userName[1]);
@@ -121,7 +136,7 @@ public class PatientResourceProvider implements IResourceProvider {
 				// Encode the output, including the narrative
 				//String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
 				patient.getText().setStatus(NarrativeStatusEnum.GENERATED);
-				String textBody = "<table class=\"hapiPropertyTable\">"
+				String textBody = "<table>"
 						+ "<tr><td>Name</td><td>"+ fullName
 						+ "</td></tr></table>";
 			    patient.getText().setDiv(textBody);
