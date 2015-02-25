@@ -58,18 +58,21 @@ public class PatientResourceProvider implements IResourceProvider {
 		patient.getIdentifier().get(0).setSystem(new UriDt("urn:hapitest:mrns"));
 		patient.getIdentifier().get(0).setValue(healthPortUser.userId);
 		String[] userName  = healthPortUser.name.split(" ");
+		String fullName = null;
         if (userName.length == 2){
             patient.addName().addFamily(userName[1]);
             patient.getName().get(0).addGiven(userName[0]);
+            fullName = userName[0] + " "+userName[1];
         }
         else{
             patient.addName().addFamily(userName[2]);
             patient.getName().get(0).addGiven(userName[0]+ " "+ userName[1]);
+            fullName = userName[0] + " "+userName[1]+ " "+userName[2];
         }
-		ctx.setNarrativeGenerator(new DefaultThymeleafNarrativeGenerator());
-		// Encode the output, including the narrative
-		String output = ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
-		//patient.getText().setDiv(output);
+        String textBody = "<table class=\"hapiPropertyTable\">"
+				+ "<tr><td>Name</td><td>"+ fullName
+				+ "</td></tr></table>";
+	    patient.getText().setDiv(textBody);
     	
     	return patient;
     }
