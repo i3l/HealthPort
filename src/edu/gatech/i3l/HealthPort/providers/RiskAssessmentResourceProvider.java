@@ -8,11 +8,13 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.naming.Context;
@@ -20,26 +22,12 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import ca.uhn.fhir.model.api.IDatatype;
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dev.resource.Condition;
 import ca.uhn.fhir.model.dev.resource.Observation;
@@ -47,7 +35,10 @@ import ca.uhn.fhir.model.dev.resource.OperationOutcome;
 import ca.uhn.fhir.model.dev.resource.Patient;
 import ca.uhn.fhir.model.dev.resource.RiskAssessment;
 import ca.uhn.fhir.model.dev.valueset.IssueSeverityEnum;
+import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
+import ca.uhn.fhir.model.primitive.DecimalDt;
 import ca.uhn.fhir.model.primitive.IdDt;
+import ca.uhn.fhir.model.primitive.InstantDt;
 import ca.uhn.fhir.rest.annotation.Create;
 import ca.uhn.fhir.rest.annotation.IdParam;
 import ca.uhn.fhir.rest.annotation.Read;
@@ -56,6 +47,8 @@ import ca.uhn.fhir.rest.annotation.ResourceParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.param.ReferenceParam;
+import ca.uhn.fhir.rest.param.TokenParam;
+import ca.uhn.fhir.rest.server.IBundleProvider;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
 
@@ -80,23 +73,130 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 	}
 	@Read()
 	public RiskAssessment getResourceById(@IdParam IdDt theId) {
-		RiskAssessment risk = null;
+		RiskAssessment risk = new RiskAssessment();
 		String resourceId = theId.getIdPart();
 		System.out.println(resourceId);
-		String[] Ids = theId.getIdPart().split("\\-", 2);
-		System.out.println(Ids);
+		
+		int count = StringUtils.countMatches(resourceId, "-");
+		int numIds = count +1;
+		
+		String[] Ids = theId.getIdPart().split("\\-", numIds);
+		System.out.println(Ids[0]);
+		
+		
+		
 		
 		return risk;
 		
 	}
-
+	/*@Read()
+	public IBundleProvider getResourceById(@IdParam IdDt theId) {
+		RiskAssessment risk = new RiskAssessment();
+		String resourceId = theId.getIdPart();
+		System.out.println(resourceId);
+		
+		int count = StringUtils.countMatches(resourceId, "-");
+		int numIds = count +1;
+		
+		String[] Ids = theId.getIdPart().split("\\-", numIds);
+		//System.out.println(Ids[0]);
+		final InstantDt searchTime = InstantDt.withCurrentTime();
+        final List<String> matchingResourceIds = Arrays.asList(Ids);
+ 
+        return new IBundleProvider() {
+ 
+            @Override
+            public int size() {
+                return matchingResourceIds.size();
+            }
+ 
+            @Override
+            public List<IResource> getResources(int theFromIndex, int theToIndex) {
+                int end = Math.max(theToIndex, matchingResourceIds.size() - 1);
+                List<String> idsToReturn = matchingResourceIds.subList(theFromIndex, end);
+                return loadResourcesByIds(idsToReturn);
+            }
+ 
+            @Override
+            public InstantDt getPublished() {
+                return searchTime;
+            }
+        };
+		
+	}*/
+	
+	
+	
+	
+	@Search()
+	public List<RiskAssessment> getRiskAssessmentbyID(
+			@RequiredParam(name = RiskAssessment.SP_IDENTIFIER) TokenParam theID) {
+		ArrayList<RiskAssessment> retV = new ArrayList<RiskAssessment>();
+		String resourceId = theID.getValue();
+		//System.out.println(resourceId);
+		
+		int count = StringUtils.countMatches(resourceId, "-");
+		int numIds = count +1;
+		String patientId = null;
+		Double score = null;
+		
+		
+		String[] Ids = theID.getValue().split("\\-", numIds);
+		//System.out.println(Ids[0]);
+		
+		DataSource datasource = null;
+		Connection connection = null;
+		Statement statement = null;
+		Context context = null;
+		
+		for(int i=0; i < numIds; i++){
+			RiskAssessment risk = new RiskAssessment();
+			try {
+				context = new InitialContext();
+				datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+				connection = datasource.getConnection();
+				statement = connection.createStatement();
+				String SQL_Count = "SELECT PATIENTID, SCORE FROM RISKASSESSMENT WHERE ID='"+ Ids[i] +"'";
+				ResultSet check_ret = statement.executeQuery(SQL_Count);
+				check_ret.next();
+				patientId = check_ret.getString(1);
+				score = check_ret.getDouble(2);
+				//score = Double.toString(tempScore);
+				//System.out.println(check_ret.getString(1));
+				//System.out.println(check_ret.getDouble(2));
+			} catch (NamingException | SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			risk.setId(Ids[i]);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+patientId);
+			risk.setSubject(subj);
+			
+			DecimalDt dec = new DecimalDt();
+			dec.setValue(BigDecimal.valueOf(score));
+			
+			IDatatype theValue = null;
+			risk.addPrediction();
+			risk.getPrediction().get(0).setProbability(dec);
+			//risk.getPrediction().get(0).setProbability(String.format("%.1f", new BigDecimal(tempScore)));
+			retV.add(risk);
+			
+		}
+		
+		
+		
+		return retV;
+		
+	}
+/*
 	@Search()
 	public List<RiskAssessment> getRiskAssessmentbySubject(
 			@RequiredParam(name = Condition.SP_SUBJECT) ReferenceParam theSubject) {
 		ArrayList<RiskAssessment> retV = null;
 		return retV;
 		
-	}
+	}*/
 	
 	
 	@Create()
@@ -235,4 +335,17 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 			throw new UnprocessableEntityException(outcome);
 		}
 	}
+
+	 
+	    /**
+	     * Load a list of patient resources given their IDs
+	     */
+	    private List<IResource> loadResourcesByIds(List<String> theFamily) {
+	        // .. implement this search against the database ..
+	    	System.out.println(theFamily);
+	        return null;
+	    }
+	 
+	
+	
 }
