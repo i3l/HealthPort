@@ -7,8 +7,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
+import java.sql.Date;
 import java.util.List;
 
 import javax.naming.InitialContext;
@@ -38,6 +39,7 @@ import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.IdDt;
 import edu.gatech.i3l.HealthPort.HealthPortInfo;
+import edu.gatech.i3l.HealthPort.ObservationSerializable;
 import edu.gatech.i3l.HealthPort.PortIf;
 
 /**
@@ -49,7 +51,7 @@ public class ExactDataPort implements PortIf {
 	// static database tags that this class can be used.
 	public static String SyntheticEHR = "SyntheticEHR";
 	public static String SyntheticCancer = "SyntheticCancer";
-	
+
 	String tag;
 	String id;
 
@@ -81,10 +83,14 @@ public class ExactDataPort implements PortIf {
 			this.tag = null;
 			return;
 		}
-		
+
 		this.tag = tag;
-		this.id = HealthPortInfo.findIdFromTag(tag);
-		
+		try {
+			this.id = HealthPortInfo.findIdFromTag(tag);
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
+
 		try {
 			dataSource = (DataSource) new InitialContext()
 					.lookup("java:/comp/env/" + jndiName);
@@ -93,6 +99,9 @@ public class ExactDataPort implements PortIf {
 		}
 	}
 
+	/*
+	 * Observation from ExactData DB
+	 */
 	private Observation createObs(String theId, String nameUri,
 			String nameCode, String nameDisp, String theValue, String theUnit,
 			Date date, String desc) {
@@ -157,17 +166,19 @@ public class ExactDataPort implements PortIf {
 
 		try {
 			while (rs.next()) {
-				Date dateTime = new java.util.Date(rs.getDate("Encounter_Date")
-						.getTime());
-
+				Date dateTime = null;
+				Timestamp ts = rs.getTimestamp("Encounter_Date");
+				if (ts != null) {
+					dateTime = new Date(ts.getTime());
+				}
+				
 				// Height.
 				String height = rs.getString("Height");
 				if (!height.isEmpty()) {
 					String heightUnit = rs.getString("Height_Units");
-					Observation obs = createObs(
-							id + "." + rs.getString("ID") + "-" + Height,
-							"http://loinc.org", heightLOINC, "Body Height",
-							height, heightUnit, dateTime, "");
+					Observation obs = createObs(id + "." + rs.getString("ID")
+							+ "-" + Height, "http://loinc.org", heightLOINC,
+							"Body Height", height, heightUnit, dateTime, "");
 
 					// Observation Reference to Patient
 					obs.setSubject(new ResourceReferenceDt("Patient/" + id
@@ -179,10 +190,9 @@ public class ExactDataPort implements PortIf {
 				String weight = rs.getString("Weight");
 				if (!weight.isEmpty()) {
 					String weightUnit = rs.getString("Weight_Units");
-					Observation obs = createObs(
-							id + "." + rs.getString("ID") + "-" + Weight,
-							"http://loinc.org", weightLOINC, "Body Weight",
-							weight, weightUnit, dateTime, "");
+					Observation obs = createObs(id + "." + rs.getString("ID")
+							+ "-" + Weight, "http://loinc.org", weightLOINC,
+							"Body Weight", weight, weightUnit, dateTime, "");
 
 					// Observation Reference to Patient
 					obs.setSubject(new ResourceReferenceDt("Patient/" + id
@@ -193,9 +203,8 @@ public class ExactDataPort implements PortIf {
 				// Respiration
 				String respiration = rs.getString("Respiration");
 				if (!respiration.isEmpty()) {
-					Observation obs = createObs(
-							id + "." + rs.getString("ID") + "-"
-									+ Respiration, "http://loinc.org",
+					Observation obs = createObs(id + "." + rs.getString("ID")
+							+ "-" + Respiration, "http://loinc.org",
 							respirationLOINC, "Respiration Rate", respiration,
 							"", dateTime, "");
 
@@ -208,10 +217,9 @@ public class ExactDataPort implements PortIf {
 				// Pulse
 				String pulse = rs.getString("Pulse");
 				if (!pulse.isEmpty()) {
-					Observation obs = createObs(
-							id + "." + rs.getString("ID") + "-" + Pulse,
-							"http://loinc.org", pulseLOINC, "Heart Beat",
-							pulse, "", dateTime, "");
+					Observation obs = createObs(id + "." + rs.getString("ID")
+							+ "-" + Pulse, "http://loinc.org", pulseLOINC,
+							"Heart Beat", pulse, "", dateTime, "");
 
 					// Observation Reference to Patient
 					obs.setSubject(new ResourceReferenceDt("Patient/" + id
@@ -222,9 +230,8 @@ public class ExactDataPort implements PortIf {
 				// Systolic BP
 				String systolicBP = rs.getString("SystolicBP");
 				if (!systolicBP.isEmpty()) {
-					Observation obs = createObs(
-							id + "." + rs.getString("ID") + "-"
-									+ SystolicBP, "http://loinc.org",
+					Observation obs = createObs(id + "." + rs.getString("ID")
+							+ "-" + SystolicBP, "http://loinc.org",
 							systolicBPLOINC, "Systolic BP", systolicBP,
 							"mm[Hg]", dateTime, "");
 
@@ -237,9 +244,8 @@ public class ExactDataPort implements PortIf {
 				// Diastolic BP
 				String diastolicBP = rs.getString("DiastolicBP");
 				if (!diastolicBP.isEmpty()) {
-					Observation obs = createObs(
-							id + "." + rs.getString("ID") + "-"
-									+ DiastolicBP, "http://loinc.org",
+					Observation obs = createObs(id + "." + rs.getString("ID")
+							+ "-" + DiastolicBP, "http://loinc.org",
 							diastolicBPLOINC, "Diastolic BP", diastolicBP,
 							"mm[Hg]", dateTime, "");
 
@@ -253,9 +259,8 @@ public class ExactDataPort implements PortIf {
 				String temp = rs.getString("Temperature");
 				if (!temp.isEmpty()) {
 					String tempUnit = rs.getString("Temperature_Units");
-					Observation obs = createObs(
-							id + "." + rs.getString("ID") + "-"
-									+ Temperature, "http://loinc.org",
+					Observation obs = createObs(id + "." + rs.getString("ID")
+							+ "-" + Temperature, "http://loinc.org",
 							temperatureLOINC, "Body Temperature", temp,
 							tempUnit, dateTime, "");
 
@@ -271,23 +276,228 @@ public class ExactDataPort implements PortIf {
 		return retVal;
 	}
 
+	/*
+	 * Observation from HealthPort DB
+	 */
+	private ObservationSerializable createObsSz(String theId, String nameUri,
+			String nameCode, String nameDisp, String theValue, String theUnit,
+			java.util.Date date, String narrative, String patientId) {
+		ObservationSerializable obs = new ObservationSerializable();
+
+		obs.ID = theId;
+		obs.NAMEURI = nameUri;
+		obs.NAMECODING = nameCode;
+		obs.NAMEDISPLAY = nameDisp;
+		obs.QUANTITY = theValue;
+		obs.UNIT = theUnit;
+		obs.SUBJECT = patientId;
+		obs.STATUS = "FINAL";
+		obs.RELIABILITY = "OK";
+		obs.APPLIES = date;
+		obs.TEXTSTATUS = "GENERATED";
+		obs.NARRATIVE = narrative;
+
+		return obs;
+	}
+
+	public List<String> getVitalSignIds(ResultSet rs) {
+		List<String> retVal = new ArrayList<String>();
+
+		try {
+			while (rs.next()) {
+//				long longDate = rs.getDate("Encounter_Date").getTime();
+//				Date dateTime = new Date(longDate);
+				java.util.Date dateTime = null;
+				Timestamp ts = rs.getTimestamp("Encounter_Date");
+				if (ts != null) {
+					dateTime = new java.util.Date(ts.getTime());
+				}
+
+				
+				String patientId = "Patient/" + id + "." + rs.getString("Member_ID");
+				
+				String height = rs.getString("Height");
+				if (!height.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-" + Height;
+					String heightUnit = rs.getString("Height_Units");
+					String nameDisp = "Body Height";
+					String narrative = dateTime.toString() + " " + nameDisp + "="
+							+ height + " " + heightUnit;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", heightLOINC, nameDisp,
+							height, heightUnit, dateTime,
+							narrative, patientId);
+
+					try {
+						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+						retVal.add(obsId);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+
+				// Weight.
+				String weight = rs.getString("Weight");
+				if (!weight.isEmpty()) {
+					String weightUnit = rs.getString("Weight_Units");
+					String obsId = id + "." + rs.getString("ID") + "-" + Weight;
+					String nameDisp = "Body Weight";
+					String narrative = dateTime.toString() + " " + nameDisp + "="
+							+ weight + " " + weightUnit;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", weightLOINC, nameDisp,
+							weight, weightUnit, dateTime,
+							narrative, patientId);
+
+					try {
+						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+						retVal.add(obsId);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+
+				// Respiration
+				String respiration = rs.getString("Respiration");
+				if (!respiration.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-"
+							+ Respiration;
+					String nameDisp = "Respiration Rate";
+					String narrative = dateTime.toString() + " " + nameDisp + "="
+							+ respiration;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", respirationLOINC, nameDisp,
+							respiration, "", dateTime,
+							narrative, patientId);
+
+					try {
+						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+						retVal.add(obsId);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+
+				// Pulse
+				String pulse = rs.getString("Pulse");
+				if (!pulse.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-" + Pulse;
+					String nameDisp = "Heart Beat";
+					String narrative = dateTime.toString() + " " + nameDisp + "="
+							+ pulse;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", pulseLOINC, nameDisp,
+							pulse, "", dateTime, narrative, patientId);
+
+					try {
+						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+						retVal.add(obsId);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+
+				// Systolic BP
+				String systolicBP = rs.getString("SystolicBP");
+				if (!systolicBP.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-"
+							+ SystolicBP;
+					String nameDisp = "Systolic BP";
+					String narrative = dateTime.toString() + " " + nameDisp + "="
+							+ systolicBP;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", systolicBPLOINC, nameDisp,
+							systolicBP, "mm[Hg]", dateTime, narrative, patientId);
+
+					try {
+						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+						retVal.add(obsId);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+
+				// Diastolic BP
+				String diastolicBP = rs.getString("DiastolicBP");
+				if (!diastolicBP.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-"
+							+ DiastolicBP;
+					String nameDisp = "Diastolic BP";
+					String narrative = dateTime.toString() + " " + nameDisp + "="
+							+ diastolicBP;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", diastolicBPLOINC, nameDisp,
+							diastolicBP, "mm[Hg]", dateTime, narrative, patientId);
+
+					try {
+						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+						retVal.add(obsId);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+
+				// Temperature
+				String temp = rs.getString("Temperature");
+				if (!temp.isEmpty()) {
+					String tempUnit = rs.getString("Temperature_Units");
+					String obsId = id + "." + rs.getString("ID") + "-"
+							+ Temperature;
+					String nameDisp = "Body Temperature";
+					String narrative = dateTime.toString() + " " + nameDisp + "="
+							+ temp;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", temperatureLOINC, nameDisp,
+							temp, tempUnit, dateTime, narrative, patientId);
+					
+					try {
+						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+						retVal.add(obsId);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return retVal;
+	}
+
+		
+	/******************************************************************************/
+	
+	
 	public ArrayList<Observation> getLabs(ResultSet rs) {
 		ArrayList<Observation> retVal = new ArrayList<Observation>();
 
 		try {
 			while (rs.next()) {
-				Date dateTime = new java.util.Date(rs.getDate("Date_Resulted")
-						.getTime());
-				Observation obs = createObs(id + "." + rs.getString("ID")
-						+ "-" + Lab_Results, "http://loinc.org",
+				Date dateTime = new Date(rs.getDate("Date_Resulted").getTime());
+				Observation obs = createObs(id + "." + rs.getString("ID") + "-"
+						+ Lab_Results, "http://loinc.org",
 						rs.getString("Result_LOINC"),
 						rs.getString("Result_Name"),
 						rs.getString("Numeric_Result"), rs.getString("Units"),
 						dateTime, rs.getString("Result_Description"));
 
 				// Observation Reference to Patient
-				obs.setSubject(new ResourceReferenceDt("Patient/" + id
-						+ "." + rs.getString("Member_ID")));
+				obs.setSubject(new ResourceReferenceDt("Patient/" + id + "."
+						+ rs.getString("Member_ID")));
 				retVal.add(obs);
 			}
 		} catch (SQLException e) {
@@ -296,9 +506,42 @@ public class ExactDataPort implements PortIf {
 		return retVal;
 	}
 
-	public ArrayList<Observation> getObservations() {
-		ArrayList<Observation> retVal = new ArrayList<Observation>();
-		ArrayList<Observation> obsList;
+	public List<String> getLabIds(ResultSet rs) {
+		List<String> retVal = new ArrayList<String>();
+
+		try {
+			while (rs.next()) {
+				String obsId = id + "." + rs.getString("ID") + "-"
+						+ Lab_Results;
+				long longDate = rs.getDate("Date_Resulted").getTime();
+				Date dateTime = new Date(longDate);
+				String value = rs.getString("Numeric_Result");
+				String valueUnit = rs.getString("Units");
+				String nameDisp = rs.getString("Result_Name");
+				String narrative = dateTime.toString() + " " + nameDisp + "="
+						+ value + " " + rs.getString("Result_Description");
+				narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+				ObservationSerializable obs = createObsSz(obsId,
+						"http://loinc.org", rs.getString("Result_LOINC"), nameDisp,
+						value, valueUnit, dateTime, narrative, "Patient/" + id + "." + rs.getString("Member_ID"));
+				
+				try {
+					HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+					retVal.add(obsId);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return retVal;
+	}
+
+	public List<String> getObservations() throws SQLException {
+		List<String> retVal = new ArrayList<String>();
+		List<String> obsIds;
 		// Get all Observations
 		Connection conn = null;
 		Statement stmt = null;
@@ -310,28 +553,29 @@ public class ExactDataPort implements PortIf {
 			// Get Vital Sign for this patient.
 			String sql = "SELECT * FROM vital_sign";
 			ResultSet rs = stmt.executeQuery(sql);
-			obsList = getVitalSigns(rs);
-			if (obsList != null && !obsList.isEmpty()) {
-				retVal.addAll(obsList);
+			obsIds = getVitalSignIds(rs);
+			if (obsIds != null && !obsIds.isEmpty()) {
+				retVal.addAll(obsIds);
 			}
 
 			// Get Lab Result
 			sql = "SELECT * FROM lab_results";
 			rs = stmt.executeQuery(sql);
-			obsList = getLabs(rs);
-			if (obsList != null && !obsList.isEmpty()) {
-				retVal.addAll(obsList);
+			obsIds = getLabIds(rs);
+			if (obsIds != null && !obsIds.isEmpty()) {
+				retVal.addAll(obsIds);
 			}
-
-			conn.close();
-
 		} catch (SQLException se) {
 			se.printStackTrace();
+		} finally {
+			conn.close();
 		}
+
 		return retVal;
 	}
 
-	public ArrayList<Observation> getObservationByPatient(String memberID) {
+	public ArrayList<Observation> getObservationByPatient(String memberID)
+			throws SQLException {
 		ArrayList<Observation> retVal = new ArrayList<Observation>();
 		ArrayList<Observation> obsList;
 		// Get all Observations
@@ -359,11 +603,10 @@ public class ExactDataPort implements PortIf {
 			if (obsList != null && !obsList.isEmpty()) {
 				retVal.addAll(obsList);
 			}
-
-			conn.close();
-
 		} catch (SQLException se) {
 			se.printStackTrace();
+		} finally {
+			conn.close();
 		}
 		return retVal;
 	}
@@ -408,11 +651,9 @@ public class ExactDataPort implements PortIf {
 				sql = "SELECT * FROM lab_results WHERE ID=" + Ids[0];
 				rs = stmt.executeQuery(sql);
 				while (rs.next()) {
-					Date dateTime = new java.util.Date(rs.getDate(
-							"Date_Resulted").getTime());
-					obs = createObs(id + "." + rs.getInt("ID") + "-"
-							+ Ids[1], "http://loinc.org",
-							rs.getString("Result_LOINC"),
+					Date dateTime = new Date(rs.getDate("Date_Resulted").getTime());
+					obs = createObs(id + "." + rs.getInt("ID") + "-" + Ids[1],
+							"http://loinc.org", rs.getString("Result_LOINC"),
 							rs.getString("Result_Name"),
 							rs.getString("Numeric_Result"),
 							rs.getString("Units"), dateTime,
@@ -426,8 +667,7 @@ public class ExactDataPort implements PortIf {
 				sql = "SELECT * FROM vital_sign WHERE ID=" + Ids[0];
 				rs = stmt.executeQuery(sql);
 				while (rs.next()) {
-					Date dateTime = new java.util.Date(rs.getDate(
-							"Encounter_Date").getTime());
+					Date dateTime = new Date(rs.getDate("Encounter_Date").getTime());
 					String Units = "";
 					String Value = "";
 					String DispName = "";
@@ -473,8 +713,8 @@ public class ExactDataPort implements PortIf {
 								DispName, Value, Units, dateTime, "");
 
 						// Observation Reference to Patient
-						obs.setSubject(new ResourceReferenceDt("Patient/"
-								+ id + "." + rs.getString("Member_ID")));
+						obs.setSubject(new ResourceReferenceDt("Patient/" + id
+								+ "." + rs.getString("Member_ID")));
 					}
 				}
 			}
@@ -531,8 +771,7 @@ public class ExactDataPort implements PortIf {
 				ResultSet rs = stmt.executeQuery(sql);
 				while (rs.next()) {
 					String ID = rs.getString("ID");
-					Date dateTime = new java.util.Date(rs.getDate(
-							"Encounter_Date").getTime());
+					Date dateTime = new Date(rs.getDate("Encounter_Date").getTime());
 					if (code.equalsIgnoreCase(heightLOINC)) {
 						String height = rs.getString("Height");
 						if (!height.isEmpty()) {
@@ -638,8 +877,7 @@ public class ExactDataPort implements PortIf {
 						+ code + "'";
 				ResultSet rs = stmt.executeQuery(sql);
 				while (rs.next()) {
-					Date dateTime = new java.util.Date(rs.getDate(
-							"Date_Resulted").getTime());
+					Date dateTime = new Date(rs.getDate("Date_Resulted").getTime());
 					Observation obs = createObs(id + "." + rs.getInt("ID")
 							+ "-" + Lab_Results, "http://loinc.org",
 							rs.getString("Result_LOINC"),
@@ -719,8 +957,7 @@ public class ExactDataPort implements PortIf {
 				}
 
 				// Get onset date
-				Date dateTime = new java.util.Date(rs.getDate("Onset_Date")
-						.getTime());
+				Date dateTime = new Date(rs.getDate("Onset_Date").getTime());
 
 				condition = createCondition(id + "." + rs.getInt("ID"),
 						"Patient/" + id + "." + rs.getString("Member_ID"),
@@ -801,8 +1038,7 @@ public class ExactDataPort implements PortIf {
 			rs = stmt.executeQuery(sql);
 			while (rs.next()) {
 				// Get onset date
-				Date dateTime = new java.util.Date(rs.getDate("Onset_Date")
-						.getTime());
+				Date dateTime = new Date(rs.getDate("Onset_Date").getTime());
 
 				condition = createCondition(id + "." + rs.getInt("ID"),
 						"Patient/" + tag + "." + rs.getString("Member_ID"),
@@ -952,12 +1188,11 @@ public class ExactDataPort implements PortIf {
 			while (rs.next()) {
 				String memberID = rs.getString("Member_ID").trim();
 				// Get onset date
-				Date dateTime = new java.util.Date(rs.getDate("Order_Date")
-						.getTime());
+				Date dateTime = new Date(rs.getDate("Order_Date").getTime());
 
 				medPrescript = createMedPrescript(
-					id + "." + rs.getString("ID"), "Patient/" + id
-								+ "." + memberID,
+						id + "." + rs.getString("ID"), "Patient/" + id + "."
+								+ memberID,
 						rs.getString("Order_Provider_Name"),
 						"urn:oid:2.16.840.1.113883.6.69",
 						rs.getString("Drug_NDC"), rs.getInt("ID"),
@@ -1051,12 +1286,11 @@ public class ExactDataPort implements PortIf {
 			rs = stmt.executeQuery(sql);
 			while (rs.next()) {
 				String memberID = rs.getString("Member_ID").trim();
-				Date dateTime = new java.util.Date(rs.getDate("Order_Date")
-						.getTime());
+				Date dateTime = new Date(rs.getDate("Order_Date").getTime());
 
 				medPrescript = createMedPrescript(
-						id + "." + rs.getString("ID"), "Patient/" + tag
-								+ "." + memberID,
+						id + "." + rs.getString("ID"), "Patient/" + tag + "."
+								+ memberID,
 						rs.getString("Order_Provider_Name"),
 						"urn:oid:2.16.840.1.113883.6.69",
 						rs.getString("Drug_NDC"), rs.getInt("ID"),
@@ -1100,21 +1334,23 @@ public class ExactDataPort implements PortIf {
 		return retVal;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see edu.gatech.i3l.HealthPort.PortIf#getTag()
 	 */
 	@Override
 	public String getTag() {
-		// TODO Auto-generated method stub
 		return tag;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see edu.gatech.i3l.HealthPort.PortIf#getId()
 	 */
 	@Override
 	public String getId() {
-		// TODO Auto-generated method stub
 		return id;
 	}
 

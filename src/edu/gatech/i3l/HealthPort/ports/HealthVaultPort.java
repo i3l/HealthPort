@@ -65,11 +65,12 @@ import com.microsoft.hsg.HVAccessor;
 import com.microsoft.hsg.Request;
 
 import edu.gatech.i3l.HealthPort.HealthPortInfo;
+import edu.gatech.i3l.HealthPort.ObservationSerializable;
 import edu.gatech.i3l.HealthPort.PortIf;
 
 public class HealthVaultPort implements PortIf {
 	public static String HEALTHVAULT = "HV";
-	
+
 	private HealthPortInfo healthPortUser;
 
 	private String tag;
@@ -78,7 +79,12 @@ public class HealthVaultPort implements PortIf {
 	public HealthVaultPort() {
 		healthPortUser = new HealthPortInfo("jdbc/HealthPort");
 		this.tag = HEALTHVAULT;
-		this.id = HealthPortInfo.findIdFromTag(tag);
+		try {
+			this.id = HealthPortInfo.findIdFromTag(tag);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	static public String getCCD(String Record_id, String Person_id) {
@@ -259,32 +265,35 @@ public class HealthVaultPort implements PortIf {
 		// Weight type
 		if (type.equals("3d34d87e-7fc1-4153-800f-f56592cb0d17")) {
 			retList = getWeight(responseStr, rId, pId);
-			retVal = setWeightObservation(id+"."+Ids[0], retList, retVal);
+			retVal = setWeightObservation(id + "." + Ids[0], retList, retVal);
 		}
 		// Height type
 		if (type.equals("40750a6a-89b2-455c-bd8d-b420a4cb500b")) {
 			retList = getHeight(responseStr, rId, pId);
-			retVal = setHeightObservation(id+"."+Ids[0], retList, retVal);
+			retVal = setHeightObservation(id + "." + Ids[0], retList, retVal);
 		}
 		// Blood Pressure type
 		if (type.equals("ca3c57f4-f4c1-4e15-be67-0a3caf5414ed")) {
 			retList = getBloodPressure(responseStr, rId, pId);
-			retVal = setBloodPressObservation(id+"."+Ids[0], retList, retVal);
+			retVal = setBloodPressObservation(id + "." + Ids[0], retList,
+					retVal);
 		}
 		// Blood Glucose type
 		if (type.equals("879e7c04-4e8a-4707-9ad3-b054df467ce4")) {
 			retList = getBloodGlucose(responseStr, rId, pId);
-			retVal = setBloodGlucoseObservation(id+"."+Ids[0], retList, retVal);
+			retVal = setBloodGlucoseObservation(id + "." + Ids[0], retList,
+					retVal);
 		}
 		// Cholesterol type
 		if (type.equals("98f76958-e34f-459b-a760-83c1699add38")) {
 			retList = getCholesterol(responseStr, rId, pId);
-			retVal = setCholesterolObservation(id+"."+Ids[0], retList, retVal);
+			retVal = setCholesterolObservation(id + "." + Ids[0], retList,
+					retVal);
 		}
 		// Lab results type
 		if (type.equals("5800eab5-a8c2-482a-a4d6-f1db25ae08c3")) {
 			retList = getLabResults(responseStr, rId, pId);
-			retVal = setLabObservation(id+"."+Ids[0], retList, retVal);
+			retVal = setLabObservation(id + "." + Ids[0], retList, retVal);
 		}
 		Integer index = Integer.parseInt(Ids[1]);
 		if (!index.equals(0)) {
@@ -303,34 +312,98 @@ public class HealthVaultPort implements PortIf {
 		String response = "temp response";
 		// Get the Weight and create Observations
 		retList = getWeight(response, userInfo.recordId, userInfo.personId);
-		retVal = setWeightObservation(id+"."+userInfo.userId, retList, retVal);
+		retVal = setWeightObservation(id + "." + userInfo.userId, retList,
+				retVal);
 
 		// Get the Height and create Observations
 		retList.clear();
 		retList = getHeight(response, userInfo.recordId, userInfo.personId);
-		retVal = setHeightObservation(id+"."+userInfo.userId, retList, retVal);
+		retVal = setHeightObservation(id + "." + userInfo.userId, retList,
+				retVal);
 
 		// Get the blood Pressure and create Observations
 		retList.clear();
 		retList = getBloodPressure(response, userInfo.recordId,
 				userInfo.personId);
-		retVal = setBloodPressObservation(id+"."+userInfo.userId, retList, retVal);
+		retVal = setBloodPressObservation(id + "." + userInfo.userId, retList,
+				retVal);
 
 		// Get the blood Glucose and create Observations
 		retList.clear();
 		retList = getBloodGlucose(response, userInfo.recordId,
 				userInfo.personId);
-		retVal = setBloodGlucoseObservation(id+"."+userInfo.userId, retList, retVal);
+		retVal = setBloodGlucoseObservation(id + "." + userInfo.userId,
+				retList, retVal);
 
 		// Get the Cholesterol and create Observations
 		retList.clear();
 		retList = getCholesterol(response, userInfo.recordId, userInfo.personId);
-		retVal = setCholesterolObservation(id+"."+userInfo.userId, retList, retVal);
+		retVal = setCholesterolObservation(id + "." + userInfo.userId, retList,
+				retVal);
 
 		// Get the Lab Results and create Observations
 		retList.clear();
 		retList = getLabResults(response, userInfo.recordId, userInfo.personId);
-		retVal = setLabObservation(id+"."+userInfo.userId, retList, retVal);
+		retVal = setLabObservation(id + "." + userInfo.userId, retList, retVal);
+
+		return retVal;
+	}
+
+	public List<String> getAllObservations(HealthPortInfo userInfo) {
+		List<String> retVal = new ArrayList<String>();
+		List<String> tempVal;
+		ArrayList<String> retList;
+
+		String response = "temp response";
+		// Get the Weight and create Observations
+		retList = getWeight(response, userInfo.recordId, userInfo.personId);
+		tempVal = setWeightObservation(id + "." + userInfo.userId, retList);
+		if (tempVal != null && !tempVal.isEmpty()) {
+			retVal.addAll(tempVal);
+		}
+
+		// Get the Height and create Observations
+		retList.clear();
+		retList = getHeight(response, userInfo.recordId, userInfo.personId);
+		tempVal = setHeightObservation(id + "." + userInfo.userId, retList);
+		if (tempVal != null && !tempVal.isEmpty()) {
+			retVal.addAll(tempVal);
+		}
+
+		// Get the blood Pressure and create Observations
+		retList.clear();
+		retList = getBloodPressure(response, userInfo.recordId,
+				userInfo.personId);
+		tempVal = setBloodPressObservation(id + "." + userInfo.userId, retList);
+		if (tempVal != null && !tempVal.isEmpty()) {
+			retVal.addAll(tempVal);
+		}
+
+		// Get the blood Glucose and create Observations
+		retList.clear();
+		retList = getBloodGlucose(response, userInfo.recordId,
+				userInfo.personId);
+		tempVal = setBloodGlucoseObservation(id + "." + userInfo.userId,
+				retList);
+		if (tempVal != null && !tempVal.isEmpty()) {
+			retVal.addAll(tempVal);
+		}
+
+		// Get the Cholesterol and create Observations
+		retList.clear();
+		retList = getCholesterol(response, userInfo.recordId, userInfo.personId);
+		tempVal = setCholesterolObservation(id + "." + userInfo.userId, retList);
+		if (tempVal != null && !tempVal.isEmpty()) {
+			retVal.addAll(tempVal);
+		}
+
+		// Get the Lab Results and create Observations
+		retList.clear();
+		retList = getLabResults(response, userInfo.recordId, userInfo.personId);
+		tempVal = setLabObservation(id + "." + userInfo.userId, retList);
+		if (tempVal != null && !tempVal.isEmpty()) {
+			retVal.addAll(tempVal);
+		}
 
 		return retVal;
 	}
@@ -372,7 +445,7 @@ public class HealthVaultPort implements PortIf {
 		// Condition type
 		if (type.equals("7ea7a1f9-880b-4bd4-b593-f5660f20eda8")) {
 			retList = getConditionRequest(responseStr, rId, pId);
-			retVal = setConditionObservation(id+"."+Ids[0], retList, retVal);
+			retVal = setConditionObservation(id + "." + Ids[0], retList, retVal);
 		}
 		finalRetVal = retVal.get(0);
 
@@ -387,7 +460,8 @@ public class HealthVaultPort implements PortIf {
 
 		conditionList = getConditionRequest(response, userInfo.recordId,
 				userInfo.personId);
-		retVal = setConditionObservation(id+"."+userInfo.userId, conditionList, retVal);
+		retVal = setConditionObservation(id + "." + userInfo.userId,
+				conditionList, retVal);
 
 		return retVal;
 
@@ -428,7 +502,8 @@ public class HealthVaultPort implements PortIf {
 		}
 		if (type.equals("30cafccc-047d-4288-94ef-643571f7919d")) {
 			retList = getMedication(responseStr, rId, pId);
-			retVal = setMedicationObservation(id+"."+Ids[0], retList, retVal);
+			retVal = setMedicationObservation(id + "." + Ids[0], retList,
+					retVal);
 		}
 		med = retVal.get(0);
 		return med;
@@ -441,7 +516,8 @@ public class HealthVaultPort implements PortIf {
 		String response = "temp response";
 
 		retList = getMedication(response, userInfo.recordId, userInfo.personId);
-		retVal = setMedicationObservation(id+"."+userInfo.userId, retList, retVal);
+		retVal = setMedicationObservation(id + "." + userInfo.userId, retList,
+				retVal);
 
 		return retVal;
 	}
@@ -499,11 +575,11 @@ public class HealthVaultPort implements PortIf {
 	public ArrayList<Observation> setWeightObservation(String userId,
 			ArrayList<String> retList, ArrayList<Observation> retVal) {
 		int count = 0;
-		FhirContext ctx = new FhirContext();
+
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i = i + 4) {
 			Observation obs = new Observation();
-			obs.setId(id + "." + userId + "-" + count + "-" + retList.get(i));
+			obs.setId(userId + "-" + count + "-" + retList.get(i));
 			String nameCode = getCode("Body weight");
 			obs.setName(new CodeableConceptDt("http://loinc.org", nameCode));
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList
@@ -527,8 +603,7 @@ public class HealthVaultPort implements PortIf {
 
 			StringBuffer buffer_narrative = new StringBuffer();
 
-			NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			buffer_narrative.append("<div>\n");
 			buffer_narrative
 					.append("<div class=\"hapiHeaderText\">Body Weight</div>\n");
@@ -548,6 +623,44 @@ public class HealthVaultPort implements PortIf {
 			obs.getText().setDiv(output);
 
 			retVal.add(obs);
+		}
+		return retVal;
+	}
+
+	public List<String> setWeightObservation(String userId,
+			ArrayList<String> retList) {
+		List<String> retVal = new ArrayList<String>();
+
+		for (int i = 0; i < retList.size(); i = i + 4) {
+			ObservationSerializable obs = new ObservationSerializable();
+			obs.ID = userId + "-0-" + retList.get(i);
+			obs.NAMEURI = "http://loinc.org";
+			obs.NAMECODING = getCode("Body weight");
+			obs.QUANTITY = retList.get(i + 2);
+			obs.UNIT = retList.get(i + 3);
+			obs.COMMENT = "Body Weight";
+			obs.SUBJECT = "Patient/" + userId;
+			obs.STATUS = "FINAL";
+			obs.RELIABILITY = "OK";
+			try {
+				SimpleDateFormat format = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:SS");
+				Date parsed = format.parse(retList.get(i + 1));
+				obs.ISSUED = new Date(parsed.getTime());
+				obs.TEXTSTATUS = "GENERATED";
+				obs.NARRATIVE = "<div>" + "<div >Body Weight</div>" + "<table>"
+						+ "	<tbody>" + "	  <tr>" + "	    <td>Value</td>"
+						+ "	    <td>" + retList.get(i + 2) + " "
+						+ retList.get(i + 3) + "</td>" + "   </tr>"
+						+ "	</tbody>" + "</table>" + "</div>";
+
+				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+				retVal.add(userId);
+			} catch (SQLException | ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}
 		return retVal;
 	}
@@ -602,11 +715,10 @@ public class HealthVaultPort implements PortIf {
 	public ArrayList<Observation> setHeightObservation(String userId,
 			ArrayList<String> retList, ArrayList<Observation> retVal) {
 		int count = 0;
-		FhirContext ctx = new FhirContext();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i = i + 4) {
 			Observation obs = new Observation();
-			obs.setId(id + "." + userId + "-" + count + "-" + retList.get(i)); // This
+			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
 																				// is
 																				// object
 																				// resource
@@ -632,8 +744,7 @@ public class HealthVaultPort implements PortIf {
 			}
 			obs.setIssuedWithMillisPrecision(date);
 
-			NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative
@@ -652,6 +763,43 @@ public class HealthVaultPort implements PortIf {
 			obs.getText().setDiv(output);
 
 			retVal.add(obs);
+		}
+		return retVal;
+	}
+
+	public List<String> setHeightObservation(String userId,
+			ArrayList<String> retList) {
+		List<String> retVal = new ArrayList<String>();
+
+		for (int i = 0; i < retList.size(); i = i + 4) {
+			ObservationSerializable obs = new ObservationSerializable();
+			obs.ID = userId + "-0-" + retList.get(i);
+			obs.NAMEURI = "http://loinc.org";
+			obs.NAMECODING = "8302-2";
+			obs.QUANTITY = retList.get(i + 2);
+			obs.UNIT = retList.get(i + 3);
+			obs.COMMENT = "Height";
+			obs.SUBJECT = "Patient/" + userId;
+			obs.STATUS = "FINAL";
+			obs.RELIABILITY = "OK";
+			try {
+				SimpleDateFormat format = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:SS");
+				Date parsed = format.parse(retList.get(i + 1));
+				obs.ISSUED = new java.sql.Date(parsed.getTime());
+				obs.TEXTSTATUS = "GENERATED";
+				obs.NARRATIVE = "<div>" + "<div >Height</div>" + "<table>"
+						+ "	<tbody>" + "	  <tr>" + "	    <td>Value</td>"
+						+ "	    <td>" + retList.get(i + 2) + " "
+						+ retList.get(i + 3) + "</td>" + "   </tr>"
+						+ "	</tbody>" + "</table>" + "</div>";
+
+				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+				retVal.add(userId);
+			} catch (SQLException | ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return retVal;
 	}
@@ -706,15 +854,14 @@ public class HealthVaultPort implements PortIf {
 		return finalList;
 	}
 
-	public ArrayList<Observation> setBloodPressObservation(
-			String userId, ArrayList<String> retList,
-			ArrayList<Observation> retVal) {
+	public ArrayList<Observation> setBloodPressObservation(String userId,
+			ArrayList<String> retList, ArrayList<Observation> retVal) {
 		int count = 0;
-		FhirContext ctx = new FhirContext();
+
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i = i + 6) {
 			Observation obs = new Observation();
-			obs.setId(id + "." + userId + "-" + count + "-" + retList.get(i)); // This
+			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
 																				// is
 																				// object
 																				// resource
@@ -740,8 +887,7 @@ public class HealthVaultPort implements PortIf {
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
-			NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">"
@@ -764,6 +910,52 @@ public class HealthVaultPort implements PortIf {
 				count = 0;
 			}
 			retVal.add(obs);
+		}
+		return retVal;
+	}
+
+	public List<String> setBloodPressObservation(String userId,
+			ArrayList<String> retList) {
+		List<String> retVal = new ArrayList<String>();
+		int count = 0;
+
+		for (int i = 0; i < retList.size(); i = i + 6) {
+			ObservationSerializable obs = new ObservationSerializable();
+			obs.ID = userId + "-" + count + "-" + retList.get(i);
+			obs.NAMEURI = "http://loinc.org";
+			obs.NAMECODING = "0000";
+			obs.QUANTITY = retList.get(i + 3);
+			obs.UNIT = retList.get(i + 4);
+			obs.COMMENT = retList.get(i + 2) + ", Overall:"
+					+ retList.get(i + 5);
+			obs.SUBJECT = "Patient/" + userId;
+			obs.STATUS = "FINAL";
+			obs.RELIABILITY = "OK";
+			try {
+				SimpleDateFormat format = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:SS");
+				Date parsed = format.parse(retList.get(i + 1));
+				obs.ISSUED = new java.sql.Date(parsed.getTime());
+				obs.TEXTSTATUS = "GENERATED";
+				obs.NARRATIVE = "<div>" + "<div >" + retList.get(i + 2)
+						+ "</div>" + "<table>" + "	<tbody>" + "	  <tr>"
+						+ "	    <td>Value</td>" + "	    <td>"
+						+ retList.get(i + 3) + " " + retList.get(i + 4)
+						+ "</td>" + "   </tr>" + "	</tbody>" + "</table>"
+						+ "</div>";
+
+				if (retList.get(i + 2).equals("Systolic Blood Pressure")) {
+					count = count + 1;
+				} else {
+					count = 0;
+				}
+
+				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+				retVal.add(userId);
+			} catch (SQLException | ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return retVal;
 	}
@@ -819,15 +1011,14 @@ public class HealthVaultPort implements PortIf {
 		return finalList;
 	}
 
-	public ArrayList<Observation> setBloodGlucoseObservation(
-			String userId, ArrayList<String> retList,
-			ArrayList<Observation> retVal) {
+	public ArrayList<Observation> setBloodGlucoseObservation(String userId,
+			ArrayList<String> retList, ArrayList<Observation> retVal) {
 		int count = 0;
 		FhirContext ctx = new FhirContext();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i = i + 5) {
 			Observation obs = new Observation();
-			obs.setId(id + "." + userId + "-" + count + "-" + retList.get(i)); // This
+			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
 																				// is
 																				// object
 																				// resource
@@ -852,8 +1043,7 @@ public class HealthVaultPort implements PortIf {
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
-			NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Glucose in "
@@ -872,6 +1062,44 @@ public class HealthVaultPort implements PortIf {
 			obs.getText().setDiv(output);
 
 			retVal.add(obs);
+		}
+		return retVal;
+	}
+
+	public List<String> setBloodGlucoseObservation(String userId,
+			ArrayList<String> retList) {
+		List<String> retVal = new ArrayList<String>();
+		int count = 0;
+		for (int i = 0; i < retList.size(); i = i + 5) {
+			ObservationSerializable obs = new ObservationSerializable();
+			obs.ID = userId + "-" + count + "-" + retList.get(i);
+			obs.NAMEURI = "http://loinc.org";
+			obs.NAMECODING = "49134-0";
+			obs.QUANTITY = retList.get(i + 2);
+			obs.UNIT = retList.get(i + 3);
+			obs.COMMENT = "Glucose in " + retList.get(i + 4);
+			obs.SUBJECT = "Patient/" + userId;
+			obs.STATUS = "FINAL";
+			obs.RELIABILITY = "OK";
+			try {
+				SimpleDateFormat format = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:SS");
+				Date parsed = format.parse(retList.get(i + 1));
+				obs.ISSUED = new java.sql.Date(parsed.getTime());
+				obs.TEXTSTATUS = "GENERATED";
+				obs.NARRATIVE = "<div>" + "<div >Glucose in "
+						+ retList.get(i + 4) + "</div>" + "<table>"
+						+ "	<tbody>" + "	  <tr>" + "	    <td>Value</td>"
+						+ "	    <td>" + retList.get(i + 2) + " "
+						+ retList.get(i + 3) + "</td>" + "   </tr>"
+						+ "	</tbody>" + "</table>" + "</div>";
+
+				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+				retVal.add(userId);
+			} catch (SQLException | ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return retVal;
 	}
@@ -920,15 +1148,14 @@ public class HealthVaultPort implements PortIf {
 		return finalList;
 	}
 
-	public ArrayList<Observation> setCholesterolObservation(
-			String userId, ArrayList<String> retList,
-			ArrayList<Observation> retVal) {
+	public ArrayList<Observation> setCholesterolObservation(String userId,
+			ArrayList<String> retList, ArrayList<Observation> retVal) {
 		int count = 0;
 		FhirContext ctx = new FhirContext();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i = i + 4) {
 			Observation obs = new Observation();
-			obs.setId(id + "." + userId + "-" + count + "-" + retList.get(i)); // This
+			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
 																				// is
 																				// object
 																				// resource
@@ -972,6 +1199,43 @@ public class HealthVaultPort implements PortIf {
 			String output = buffer_narrative.toString();
 			obs.getText().setDiv(output);
 			retVal.add(obs);
+		}
+		return retVal;
+	}
+
+	public List<String> setCholesterolObservation(String userId,
+			ArrayList<String> retList) {
+		List<String> retVal = new ArrayList<String>();
+		int count = 0;
+		for (int i = 0; i < retList.size(); i = i + 4) {
+			ObservationSerializable obs = new ObservationSerializable();
+			obs.ID = userId + "-" + count + "-" + retList.get(i);
+			obs.NAMEURI = "http://loinc.org";
+			obs.NAMECODING = "11054-4";
+			obs.QUANTITY = retList.get(i + 2);
+			obs.UNIT = retList.get(i + 3);
+			obs.COMMENT = "Cholesterol";
+			obs.SUBJECT = "Patient/" + userId;
+			obs.STATUS = "FINAL";
+			obs.RELIABILITY = "OK";
+			try {
+				SimpleDateFormat format = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:SS");
+				Date parsed = format.parse(retList.get(i + 1));
+				obs.ISSUED = new java.sql.Date(parsed.getTime());
+				obs.TEXTSTATUS = "GENERATED";
+				obs.NARRATIVE = "<div>" + "<div >Cholesterol</div>" + "<table>"
+						+ "	<tbody>" + "	  <tr>" + "	    <td>Value</td>"
+						+ "	    <td>" + retList.get(i + 2) + " "
+						+ retList.get(i + 3) + "</td>" + "   </tr>"
+						+ "	</tbody>" + "</table>" + "</div>";
+
+				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+				retVal.add(userId);
+			} catch (SQLException | ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return retVal;
 	}
@@ -1035,7 +1299,7 @@ public class HealthVaultPort implements PortIf {
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 		for (int i = 0; i < retList.size(); i = i + 5) {
 			Observation obs = new Observation();
-			obs.setId(id + "." + userId + "-" + count + "-" + retList.get(i)); // This
+			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
 																				// is
 																				// object
 																				// resource
@@ -1073,6 +1337,41 @@ public class HealthVaultPort implements PortIf {
 			obs.getText().setDiv(output);
 			count = count + 1;
 			retVal.add(obs);
+		}
+		return retVal;
+	}
+
+	public List<String> setLabObservation(String userId,
+			ArrayList<String> retList) {
+		List<String> retVal = new ArrayList<String>();
+		int count = 0;
+		for (int i = 0; i < retList.size(); i = i + 5) {
+			ObservationSerializable obs = new ObservationSerializable();
+			obs.ID = userId + "-" + count + "-" + retList.get(i);
+			obs.NAMEURI = "http://loinc.org";
+			obs.NAMECODING = "0000";
+			obs.QUANTITY = retList.get(i + 3);
+			obs.UNIT = retList.get(i + 4);
+			obs.COMMENT = retList.get(i + 2) + " from: " + retList.get(i + 1);
+			obs.SUBJECT = "Patient/" + userId;
+			obs.STATUS = "FINAL";
+			obs.RELIABILITY = "OK";
+			obs.TEXTSTATUS = "GENERATED";
+			obs.NARRATIVE = "<div>" + "<div >" + retList.get(i + 2) + "</div>"
+					+ "<table>" + "	<tbody>" + "	  <tr>"
+					+ "	    <td>Value</td>" + "	    <td>" + retList.get(i + 3)
+					+ " " + retList.get(i + 4) + "</td>" + "   </tr>"
+					+ "	</tbody>" + "</table>" + "</div>";
+
+			count = count + 1;
+
+			try {
+				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+				retVal.add(userId);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return retVal;
 	}
@@ -1349,7 +1648,9 @@ public class HealthVaultPort implements PortIf {
 		return lcode;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see edu.gatech.i3l.HealthPort.PortIf#getTag()
 	 */
 	@Override
@@ -1358,7 +1659,9 @@ public class HealthVaultPort implements PortIf {
 		return tag;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see edu.gatech.i3l.HealthPort.PortIf#getId()
 	 */
 	@Override

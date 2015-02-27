@@ -41,7 +41,12 @@ public class GreenwayPort implements PortIf {
 	 */
 	public GreenwayPort() {
 		this.tag = GREENWAY;
-		this.id = HealthPortInfo.findIdFromTag(tag);
+		try {
+			this.id = HealthPortInfo.findIdFromTag(tag);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	static public String getCCD (String PatientID) {

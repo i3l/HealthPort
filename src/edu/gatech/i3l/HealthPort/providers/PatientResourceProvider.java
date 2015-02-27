@@ -117,7 +117,7 @@ public class PatientResourceProvider implements IResourceProvider {
 					patient.setId(healthPortUser.orgID+"."+healthPortUser.userId);
 					patient.getIdentifier().get(0).setValue(healthPortUser.orgID+"."+healthPortUser.userId);
 				} else {
-					patient.setId(healthPortUser.source+"."+healthPortUser.personId);
+					patient.setId(healthPortUser.orgID+"."+healthPortUser.personId);
 					patient.getIdentifier().get(0).setValue(healthPortUser.orgID+"."+healthPortUser.personId);
 				}
 				String fullName = null;

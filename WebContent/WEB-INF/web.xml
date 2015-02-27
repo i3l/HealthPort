@@ -1,42 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns="http://xmlns.jcp.org/xml/ns/javaee"
-	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
-	id="WebApp_ID" version="3.1">
-	<display-name>FHIRWeb</display-name>
-	<welcome-file-list>
-		<welcome-file>index.html</welcome-file>
-		<welcome-file>index.htm</welcome-file>
-		<welcome-file>index.jsp</welcome-file>
-		<welcome-file>default.html</welcome-file>
-		<welcome-file>default.htm</welcome-file>
-		<welcome-file>default.jsp</welcome-file>
-	</welcome-file-list>
-	<session-config>
-		<session-timeout>20</session-timeout>
-	</session-config>
-<!-- 	<servlet>
-		<servlet-name>FHIRServer</servlet-name>
-		<servlet-class>edu.gatech.i3l.HealthPort.RestfulServlet</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>FHIRServer</servlet-name>
-		<url-pattern>/fhir/*</url-pattern>
-	</servlet-mapping>
- -->
- 	<resource-env-ref>
-		<description>HealthPort Patient Database</description>
-		<resource-env-ref-name>jdbc/HealthPort</resource-env-ref-name>
-		<resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
-	</resource-env-ref>
-	<resource-env-ref>
-		<description>SyntheticSample Database</description>
-		<resource-env-ref-name>jdbc/ExactDataSample</resource-env-ref-name>
-		<resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
-	</resource-env-ref>
-	<resource-env-ref>
-		<description>SyntheticCancer Database</description>
-		<resource-env-ref-name>jdbc/ExactDataCancer</resource-env-ref-name>
-		<resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
-	</resource-env-ref>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" id="WebApp_ID" version="3.1">
+  <display-name>FHIRWeb</display-name>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  <session-config>
+    <session-timeout>20</session-timeout>
+  </session-config>
+  <resource-env-ref>
+    <description>HealthPort Patient Database</description>
+    <resource-env-ref-name>jdbc/HealthPort</resource-env-ref-name>
+    <resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
+  </resource-env-ref>
+  <resource-env-ref>
+    <description>SyntheticSample Database</description>
+    <resource-env-ref-name>jdbc/ExactDataSample</resource-env-ref-name>
+    <resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
+  </resource-env-ref>
+  <resource-env-ref>
+    <description>SyntheticCancer Database</description>
+    <resource-env-ref-name>jdbc/ExactDataCancer</resource-env-ref-name>
+    <resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
+  </resource-env-ref>
 </web-app>

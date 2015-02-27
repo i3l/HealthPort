@@ -25,7 +25,7 @@ public class MainPage extends HttpServlet
 		response.setContentType("text/html");
 		PrintWriter printWriter = response.getWriter();
 		printWriter.println("<html>");
-		printWriter.println("<head> <title> Anticoagulant Advisor App Authentication </title></head>");
+		printWriter.println("<head> <title> HealthPort </title></head>");
 		printWriter.println("</html>");
 	}
 

@@ -3,14 +3,35 @@
  */
 package edu.gatech.i3l.HealthPort;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.sql.Date;
+import java.util.List;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+
+import ca.uhn.fhir.model.api.IResource;
+import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
+import ca.uhn.fhir.model.dstu.composite.CodingDt;
+import ca.uhn.fhir.model.dstu.composite.QuantityDt;
+import ca.uhn.fhir.model.dstu.resource.Observation;
+import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
+import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
+import ca.uhn.fhir.model.primitive.DateTimeDt;
+import ca.uhn.fhir.model.primitive.IdDt;
 
 /**
  * @author Myung Choi Constructor requires UserID. - Connects to SQL database to
@@ -27,11 +48,10 @@ public class HealthPortInfo {
 	public String contact = null;
 	public String address = null;
 
-	// Database (or Organization) Names
-	// public static String HEALTHVAULT = "HV";
-	// public static String GREENWAY = "GW";
-	// public static String SyntheticEHR = "SyntheticEHR";
-	// public static String SyntheticCancer = "SyntheticCancer";
+	// Database Paging Resource Names
+	public static String OBSERVATION = "OBSERVATION";
+	public static String CONDITION = "CONDITION";
+	public static String MEDICATIONPRESCRIPTION = "MEDICATIONPRESCRIPTION";
 
 	private DataSource dataSource;
 
@@ -51,7 +71,211 @@ public class HealthPortInfo {
 		setInformation(userId);
 	}
 
-	public static String findIdFromTag(String tag) {
+	public static void storeResource(String tableName,
+			ObservationSerializable obj) throws SQLException {
+		Connection connection = null;
+		String SQL_STATEMENT;
+
+		try {
+			DataSource ds = (DataSource) new InitialContext()
+					.lookup("java:/comp/env/jdbc/HealthPort");
+
+			connection = ds.getConnection();
+			PreparedStatement pstmt = null;
+			if (tableName.equals(OBSERVATION)) {
+				SQL_STATEMENT = "REPLACE INTO "
+						+ tableName
+						+ " (ID, NAMEURI, NAMECODING, NAMEDISPLAY, QUANTITY, UNIT, COMMENT, SUBJECT, STATUS, RELIABILITY, APPLIES, ISSUED, TEXTSTATUS, NARRATIVE) VALUES "
+						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				pstmt = connection.prepareStatement(SQL_STATEMENT);
+
+				// set input parameters
+				pstmt.setString(1, obj.ID);
+				pstmt.setString(2, obj.NAMEURI);
+				pstmt.setString(3, obj.NAMECODING);
+				pstmt.setString(4, obj.NAMEDISPLAY);
+				pstmt.setString(5, obj.QUANTITY);
+				pstmt.setString(6, obj.UNIT);
+				pstmt.setString(7, obj.COMMENT);
+				pstmt.setString(8, obj.SUBJECT);
+				pstmt.setString(9, obj.STATUS);
+				pstmt.setString(10, obj.RELIABILITY);
+				if (obj.APPLIES != null) {
+					Timestamp ts = new Timestamp(obj.APPLIES.getTime());
+					pstmt.setTimestamp(11, ts);
+				} else {
+					pstmt.setTimestamp(11, null);
+				}
+				if (obj.ISSUED != null) {
+					Timestamp ts = new Timestamp(obj.ISSUED.getTime());
+					pstmt.setTimestamp(12, ts);
+				} else {
+					pstmt.setTimestamp(12, null);
+				}
+				pstmt.setString(13, obj.TEXTSTATUS);
+				pstmt.setString(14, obj.NARRATIVE);
+			} else {
+				return;
+			}
+			pstmt.executeUpdate();
+			pstmt.close();
+		} catch (NamingException | SQLException e) {
+			e.printStackTrace();
+		} finally {
+			connection.close();
+		}
+	}
+
+	public static List<IResource> getResourceList(String tableName,
+			List<String> Ids) throws SQLException {
+		List<IResource> retVal = new ArrayList<IResource>();
+		Connection connection = null;
+		Statement getRes = null;
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
+		try {
+			DataSource ds = (DataSource) new InitialContext()
+					.lookup("java:/comp/env/jdbc/HealthPort");
+
+			connection = ds.getConnection();
+			getRes = connection.createStatement();
+			// System.out.println("reading from OBSERVATION: "+Ids.size());
+			for (String resId : Ids) {
+				String SQL_STATEMENT = "SELECT * FROM " + tableName
+						+ " WHERE ID='" + resId + "'";
+				ResultSet rs = getRes.executeQuery(SQL_STATEMENT);
+				if (rs.next()) {
+					// Create observations
+					if (tableName.equals(OBSERVATION)) {
+						String theId = rs.getString("ID");
+						String nameUri = rs.getString("NAMEURI");
+						String nameCode = rs.getString("NAMECODING");
+						String nameDisp = rs.getString("NAMEDISPLAY");
+						String theValue = rs.getString("QUANTITY");
+						String theUnit = rs.getString("UNIT");
+						String textBlock = rs.getString("NARRATIVE");
+						Timestamp issuedTS = rs.getTimestamp("ISSUED");
+						java.util.Date issuedDate = null;
+						if (issuedTS != null) {
+							issuedDate = new Date(issuedTS.getTime());
+						}
+						Timestamp appliedTS = rs.getTimestamp("APPLIES");
+						java.util.Date appliedDate = null;
+						if (appliedTS != null) {
+							appliedDate = new Date(appliedTS.getTime());
+						}
+
+						Observation obs = new Observation();
+						obs.setId(new IdDt(theId));
+
+						// Observation Name
+						CodingDt nameCoding = new CodingDt(nameUri, nameCode);
+						nameCoding.setDisplay(nameDisp);
+
+						ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+						codingList.add(nameCoding);
+						CodeableConceptDt nameDt = new CodeableConceptDt();
+						nameDt.setCoding(codingList);
+
+						obs.setName(nameDt);
+
+						// Observation Value[x], x=Quantity, value=double
+						if (theValue != null && !theValue.isEmpty()) {
+							// Remove any commas
+							theValue = theValue.replace(",", "");
+							QuantityDt qDt = new QuantityDt(
+									Double.parseDouble(theValue));
+							if (!theUnit.isEmpty()) {
+								qDt.setUnits(theUnit);
+								// qDt.setSystem(vUri); These are optional...
+								// qDt.setCode(vCode);
+							}
+
+							obs.setValue(qDt);
+						}
+						// Observation Status
+						if (rs.getString("STATUS").equalsIgnoreCase("AMENDED")) {
+							obs.setStatus(ObservationStatusEnum.AMENDED);
+						} else if (rs.getString("STATUS").equalsIgnoreCase(
+								"CANCELLED")) {
+							obs.setStatus(ObservationStatusEnum.CANCELLED);
+						} else if (rs.getString("STATUS").equalsIgnoreCase(
+								"ENTERED_IN_ERROR")) {
+							obs.setStatus(ObservationStatusEnum.ENTERED_IN_ERROR);
+						} else if (rs.getString("STATUS").equalsIgnoreCase(
+								"PRELIMINARY")) {
+							obs.setStatus(ObservationStatusEnum.PRELIMINARY);
+						} else if (rs.getString("STATUS").equalsIgnoreCase(
+								"REGISTERED")) {
+							obs.setStatus(ObservationStatusEnum.REGISTERED);
+						} else {
+							obs.setStatus(ObservationStatusEnum.FINAL);
+						}
+
+						// Reliability
+						if (rs.getString("RELIABILITY").equalsIgnoreCase(
+								"CALIBRATING")) {
+							obs.setReliability(ObservationReliabilityEnum.CALIBRATING);
+						} else if (rs.getString("RELIABILITY")
+								.equalsIgnoreCase("EARLY")) {
+							obs.setReliability(ObservationReliabilityEnum.EARLY);
+						} else if (rs.getString("RELIABILITY")
+								.equalsIgnoreCase("ERROR")) {
+							obs.setReliability(ObservationReliabilityEnum.ERROR);
+						} else if (rs.getString("RELIABILITY")
+								.equalsIgnoreCase("ONGOING")) {
+							obs.setReliability(ObservationReliabilityEnum.ONGOING);
+						} else if (rs.getString("RELIABILITY")
+								.equalsIgnoreCase("QUESTIONABLE")) {
+							obs.setReliability(ObservationReliabilityEnum.QUESTIONABLE);
+						} else if (rs.getString("RELIABILITY")
+								.equalsIgnoreCase("UNKNOWN")) {
+							obs.setReliability(ObservationReliabilityEnum.UNKNOWN);
+						} else {
+							obs.setReliability(ObservationReliabilityEnum.OK);
+						}
+
+						if (issuedDate != null) {
+							// System.out.println("ISSUED DATE:"+issuedDate);
+							obs.setIssuedWithMillisPrecision(issuedDate);
+						}
+
+						if (appliedDate != null) {
+							obs.setApplies(new DateTimeDt(appliedDate));
+						}
+
+						// Human Readable Section
+						if (rs.getString("TEXTSTATUS").equalsIgnoreCase(
+								"ADDITIONAL")) {
+							obs.getText().setStatus(
+									NarrativeStatusEnum.ADDITIONAL);
+						} else if (rs.getString("TEXTSTATUS").equalsIgnoreCase(
+								"EMPTY")) {
+							obs.getText().setStatus(NarrativeStatusEnum.EMPTY);
+						} else if (rs.getString("TEXTSTATUS").equalsIgnoreCase(
+								"EXTENSIONS")) {
+							obs.getText().setStatus(
+									NarrativeStatusEnum.EXTENSIONS);
+						} else {
+							obs.getText().setStatus(
+									NarrativeStatusEnum.GENERATED);
+						}
+						obs.getText().setDiv(textBlock);
+
+						retVal.add(obs);
+					}
+				}
+			}
+		} catch (NamingException | SQLException e) {
+			e.printStackTrace();
+		} finally {
+			connection.close();
+		}
+
+		return retVal;
+	}
+
+	public static String findIdFromTag(String tag) throws SQLException {
 		// read organization id that this tag is assigned to.
 
 		String retVal = null;
@@ -70,9 +294,11 @@ public class HealthPortInfo {
 			if (resultSet.next()) {
 				retVal = resultSet.getString("ID");
 			}
-			connection.close();
+
 		} catch (NamingException | SQLException e) {
 			e.printStackTrace();
+		} finally {
+			connection.close();
 		}
 		return retVal;
 	}
@@ -82,7 +308,6 @@ public class HealthPortInfo {
 			dataSource = (DataSource) new InitialContext()
 					.lookup("java:/comp/env/" + jndiName);
 		} catch (NamingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -91,7 +316,6 @@ public class HealthPortInfo {
 		try {
 			return dataSource.getConnection();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
 		}
