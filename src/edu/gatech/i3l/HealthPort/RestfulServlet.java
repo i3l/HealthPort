@@ -6,13 +6,16 @@ import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
+import ca.uhn.fhir.rest.server.FifoMemoryPagingProvider;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
-import edu.gatech.i3l.HealthPort.ConditionResourceProvider;
-import edu.gatech.i3l.HealthPort.ObservationResourceProvider;
-import edu.gatech.i3l.HealthPort.PatientResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.ConditionResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.MedicationPrescrResource;
+import edu.gatech.i3l.HealthPort.providers.ObservationResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.PatientResourceProvider;
 
 import org.slf4j.LoggerFactory;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 
@@ -33,6 +36,15 @@ public class RestfulServlet extends RestfulServer {
 		System.out.println("FHIR Servlet Debug Enabled?:"+logger.isDebugEnabled());
 		
 		this.setServerName("I3L ExactData and HealthVault FHIR Server");
+		
+		/*
+         * Set a paging provider. Here a simple in-memory implementation
+         * is used, but you may create your own.
+         */
+        FifoMemoryPagingProvider pp = new FifoMemoryPagingProvider(10);
+        pp.setDefaultPageSize(50);
+        pp.setMaximumPageSize(100);
+        setPagingProvider(pp);
 	}
 	
 	/**
