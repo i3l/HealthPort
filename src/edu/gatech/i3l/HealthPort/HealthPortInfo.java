@@ -102,8 +102,13 @@ public class HealthPortInfo {
 				retVal.add(rs.getString("ID"));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		return retVal;
@@ -128,8 +133,13 @@ public class HealthPortInfo {
 				retVal.add(rs.getString("ID"));
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return retVal;
@@ -153,6 +163,12 @@ public class HealthPortInfo {
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return retVal;
@@ -275,8 +291,6 @@ public class HealthPortInfo {
 				pstmt.clearParameters();
 				pstmt.close();
 
-			} else {
-				return;
 			}
 		} catch (NamingException | SQLException e) {
 			e.printStackTrace();
@@ -730,11 +744,15 @@ public class HealthPortInfo {
 				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
 			}
 
-			connection.close();
-
 		} catch (Exception e) {
 			e.printStackTrace();
 			resetInformation();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -758,20 +776,22 @@ public class HealthPortInfo {
 				// System.out.println("[HealthPortUserInfo]"+userId);
 				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
 			}
-
-			connection.close();
-
 		} catch (Exception e) {
 			e.printStackTrace();
 			resetInformation();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	public String getOrgID(String Tag) {
 		String orgID = null;
-
+		Connection connection = getConnection();
 		try {
-			Connection connection = getConnection();
 			Statement statement = connection.createStatement();
 			String SQL_STATEMENT = "SELECT * FROM ORGANIZATION WHERE TAG='"
 					+ Tag + "'";
@@ -783,11 +803,17 @@ public class HealthPortInfo {
 				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
 			}
 
-			connection.close();
-
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 			resetInformation();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		return orgID;

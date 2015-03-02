@@ -99,7 +99,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 
 			@Override
 			public List<IResource> getResources(int theFromIndex, int theToIndex) {
-				int end = Math.min(theToIndex, matchingResourceIds.size() - 1);
+				int end = Math.min(theToIndex, matchingResourceIds.size());
 				// System.out.println("From:"+theFromIndex+" To:"+theToIndex+" Total:"+matchingResourceIds.size());
 				List<String> idsToReturn = matchingResourceIds.subList(
 						theFromIndex, end);
@@ -194,7 +194,7 @@ public class ObservationResourceProvider implements IResourceProvider {
 
 			@Override
 			public List<IResource> getResources(int theFromIndex, int theToIndex) {
-				int end = Math.min(theToIndex, matchingResourceIds.size() - 1);
+				int end = Math.min(theToIndex, matchingResourceIds.size());
 				// System.out.println("From:"+theFromIndex+" To:"+theToIndex+" Total:"+matchingResourceIds.size());
 				List<String> idsToReturn = matchingResourceIds.subList(
 						theFromIndex, end);

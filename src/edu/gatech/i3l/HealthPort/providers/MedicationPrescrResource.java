@@ -27,21 +27,21 @@ import edu.gatech.i3l.HealthPort.ports.HealthVaultPort;
 import edu.gatech.i3l.HealthPort.ports.ExactDataPort;
 
 public class MedicationPrescrResource implements IResourceProvider {
-	private ExactDataPort syntheticEHRPort;
-	private HealthVaultPort healthvaultPort;
-	private GreenwayPort greenwayPort;
+//	private ExactDataPort syntheticEHRPort;
+//	private HealthVaultPort healthvaultPort;
+//	private GreenwayPort greenwayPort;
 	private HealthPortInfo healthPortUser;
-	private ExactDataPort syntheticCancerPort;
+//	private ExactDataPort syntheticCancerPort;
 
 	// Constructor
 	public MedicationPrescrResource() {
-		syntheticEHRPort = new ExactDataPort("jdbc/ExactDataSample",
-				ExactDataPort.SyntheticEHR);
-		healthvaultPort = new HealthVaultPort();
-		greenwayPort = new GreenwayPort();
+//		syntheticEHRPort = new ExactDataPort("jdbc/ExactDataSample",
+//				ExactDataPort.SyntheticEHR);
+//		healthvaultPort = new HealthVaultPort();
+//		greenwayPort = new GreenwayPort();
 		healthPortUser = new HealthPortInfo("jdbc/HealthPort");
-		syntheticCancerPort = new ExactDataPort("jdbc/ExactDataCancer",
-				ExactDataPort.SyntheticCancer);
+//		syntheticCancerPort = new ExactDataPort("jdbc/ExactDataCancer",
+//				ExactDataPort.SyntheticCancer);
 	}
 
 	/*
@@ -104,7 +104,7 @@ public class MedicationPrescrResource implements IResourceProvider {
 
 			@Override
 			public List<IResource> getResources(int theFromIndex, int theToIndex) {
-				int end = Math.min(theToIndex, matchingResourceIds.size() - 1);
+				int end = Math.min(theToIndex, matchingResourceIds.size());
 				// System.out.println("From:"+theFromIndex+" To:"+theToIndex+" Total:"+matchingResourceIds.size());
 				List<String> idsToReturn = matchingResourceIds.subList(
 						theFromIndex, end);
