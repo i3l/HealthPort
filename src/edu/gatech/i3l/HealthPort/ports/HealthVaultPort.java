@@ -1,42 +1,34 @@
 package edu.gatech.i3l.HealthPort.ports;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.eclipse.emf.common.util.EList;
-import org.openhealthtools.mdht.uml.cda.EntryRelationship;
-import org.openhealthtools.mdht.uml.cda.ccd.CCDPackage;
-import org.openhealthtools.mdht.uml.cda.ccd.ContinuityOfCareDocument;
-import org.openhealthtools.mdht.uml.cda.ccd.ProblemAct;
-import org.openhealthtools.mdht.uml.cda.ccd.ProblemSection;
-import org.openhealthtools.mdht.uml.cda.ccd.ResultObservation;
-import org.openhealthtools.mdht.uml.cda.ccd.ResultOrganizer;
-import org.openhealthtools.mdht.uml.cda.ccd.ResultsSection;
-import org.openhealthtools.mdht.uml.cda.ccd.VitalSignsOrganizer;
-import org.openhealthtools.mdht.uml.cda.ccd.VitalSignsSection;
-import org.openhealthtools.mdht.uml.cda.util.CDAUtil;
-import org.openhealthtools.mdht.uml.hl7.datatypes.CD;
-import org.openhealthtools.mdht.uml.hl7.datatypes.CE;
-import org.openhealthtools.mdht.uml.hl7.datatypes.PQ;
-import org.openhealthtools.mdht.uml.hl7.datatypes.ST;
+//import org.eclipse.emf.common.util.EList;
+//import org.openhealthtools.mdht.uml.cda.EntryRelationship;
+//import org.openhealthtools.mdht.uml.cda.ccd.CCDPackage;
+//import org.openhealthtools.mdht.uml.cda.ccd.ContinuityOfCareDocument;
+//import org.openhealthtools.mdht.uml.cda.ccd.ProblemAct;
+//import org.openhealthtools.mdht.uml.cda.ccd.ProblemSection;
+//import org.openhealthtools.mdht.uml.cda.ccd.ResultObservation;
+//import org.openhealthtools.mdht.uml.cda.ccd.ResultOrganizer;
+//import org.openhealthtools.mdht.uml.cda.ccd.ResultsSection;
+//import org.openhealthtools.mdht.uml.cda.ccd.VitalSignsOrganizer;
+//import org.openhealthtools.mdht.uml.cda.ccd.VitalSignsSection;
+//import org.openhealthtools.mdht.uml.cda.util.CDAUtil;
+//import org.openhealthtools.mdht.uml.hl7.datatypes.CD;
+//import org.openhealthtools.mdht.uml.hl7.datatypes.CE;
+//import org.openhealthtools.mdht.uml.hl7.datatypes.PQ;
+//import org.openhealthtools.mdht.uml.hl7.datatypes.ST;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
@@ -49,16 +41,12 @@ import ca.uhn.fhir.model.dstu.composite.CodingDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
-import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
-import ca.uhn.fhir.model.primitive.BoundCodeDt;
-import ca.uhn.fhir.narrative.CustomThymeleafNarrativeGenerator;
-import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 
 import com.microsoft.hsg.ConnectionFactory;
 import com.microsoft.hsg.HVAccessor;
@@ -84,7 +72,6 @@ public class HealthVaultPort implements PortIf {
 		try {
 			this.id = HealthPortInfo.findIdFromTag(tag);
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -126,7 +113,6 @@ public class HealthVaultPort implements PortIf {
 				// System.out.print(c);
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
 		}
@@ -177,7 +163,6 @@ public class HealthVaultPort implements PortIf {
 				// System.out.print(c);
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
 		}
@@ -191,7 +176,7 @@ public class HealthVaultPort implements PortIf {
 			return null;
 		}
 		// System.out.println(thing_id);
-		String id = "a712ca78-68b5-4df2-8f3e-0f94b6e7fb61";
+//		String id = "a712ca78-68b5-4df2-8f3e-0f94b6e7fb61";
 		StringBuilder requestXml = new StringBuilder();
 		requestXml.append("<info><group>");
 		requestXml.append("<id>" + thing_id + "</id>");
@@ -222,7 +207,6 @@ public class HealthVaultPort implements PortIf {
 				// System.out.print(c);
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
 		}
@@ -232,7 +216,6 @@ public class HealthVaultPort implements PortIf {
 
 	// Get Observation by Id
 	public Observation getObservation(String resourceId) {
-		Observation obs = new Observation();
 		String responseStr = null;
 		ArrayList<String> retList = new ArrayList<String>();
 		ArrayList<Observation> retVal = new ArrayList<Observation>();
@@ -412,7 +395,6 @@ public class HealthVaultPort implements PortIf {
 
 	// Get Condition by Id
 	public Condition getCondition(String resourceId) {
-		Condition cond = new Condition();
 		String responseStr = null;
 		ArrayList<String> retList = new ArrayList<String>();
 		ArrayList<Condition> retVal = new ArrayList<Condition>();
@@ -623,7 +605,6 @@ public class HealthVaultPort implements PortIf {
 				String[] parsedDate = retList.get(i + 1).split("T");
 				date = formatter.parse(parsedDate[0]);
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
@@ -684,7 +665,6 @@ public class HealthVaultPort implements PortIf {
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
 				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -766,7 +746,6 @@ public class HealthVaultPort implements PortIf {
 				String[] parsedDate = retList.get(i + 1).split("T");
 				date = formatter.parse(parsedDate[0]);
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
@@ -824,7 +803,6 @@ public class HealthVaultPort implements PortIf {
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
 				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -910,7 +888,6 @@ public class HealthVaultPort implements PortIf {
 				String[] parsedDate = retList.get(i + 1).split("T");
 				date = formatter.parse(parsedDate[0]);
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
@@ -980,7 +957,6 @@ public class HealthVaultPort implements PortIf {
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
 				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -1041,7 +1017,6 @@ public class HealthVaultPort implements PortIf {
 	public ArrayList<Observation> setBloodGlucoseObservation(String userId,
 			ArrayList<String> retList, ArrayList<Observation> retVal) {
 		int count = 0;
-		FhirContext ctx = new FhirContext();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i = i + 5) {
 			Observation obs = new Observation();
@@ -1066,7 +1041,6 @@ public class HealthVaultPort implements PortIf {
 				String[] parsedDate = retList.get(i + 1).split("T");
 				date = formatter.parse(parsedDate[0]);
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
@@ -1124,7 +1098,6 @@ public class HealthVaultPort implements PortIf {
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
 				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -1178,7 +1151,6 @@ public class HealthVaultPort implements PortIf {
 	public ArrayList<Observation> setCholesterolObservation(String userId,
 			ArrayList<String> retList, ArrayList<Observation> retVal) {
 		int count = 0;
-		FhirContext ctx = new FhirContext();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < retList.size(); i = i + 4) {
 			Observation obs = new Observation();
@@ -1201,12 +1173,10 @@ public class HealthVaultPort implements PortIf {
 				String[] parsedDate = retList.get(i + 1).split("T");
 				date = formatter.parse(parsedDate[0]);
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
-			NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
 			StringBuffer buffer_narrative = new StringBuffer();
@@ -1260,7 +1230,6 @@ public class HealthVaultPort implements PortIf {
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
 				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -1322,8 +1291,6 @@ public class HealthVaultPort implements PortIf {
 	public ArrayList<Observation> setLabObservation(String userId,
 			ArrayList<String> retList, ArrayList<Observation> retVal) {
 		int count = 0;
-		FhirContext ctx = new FhirContext();
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 		for (int i = 0; i < retList.size(); i = i + 5) {
 			Observation obs = new Observation();
 			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
@@ -1343,8 +1310,7 @@ public class HealthVaultPort implements PortIf {
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
 
-			NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			// buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
@@ -1396,7 +1362,6 @@ public class HealthVaultPort implements PortIf {
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
 				retVal.add(obs.ID);
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -1451,7 +1416,6 @@ public class HealthVaultPort implements PortIf {
 	public ArrayList<Condition> setConditionObservation(String userId,
 			ArrayList<String> conditionList, ArrayList<Condition> retVal) {
 		int count = 0;
-		FhirContext ctx = new FhirContext();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < conditionList.size(); i = i + 4) {
 			Condition cond = new Condition();
@@ -1499,13 +1463,11 @@ public class HealthVaultPort implements PortIf {
 				String[] parsedDate = conditionList.get(i + 1).split("T");
 				date = formatter.parse(parsedDate[0]);
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			cond.setDateAssertedWithDayPrecision(date);
 
-			NarrativeStatusEnum narrative = null;
-			cond.getText().setStatus(narrative.GENERATED);
+			cond.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">"
@@ -1578,7 +1540,6 @@ public class HealthVaultPort implements PortIf {
 				HealthPortInfo.storeResource(HealthPortInfo.CONDITION, cond);
 				retVal.add(cond.ID);
 			} catch (SQLException | ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -1650,7 +1611,6 @@ public class HealthVaultPort implements PortIf {
 	public ArrayList<MedicationPrescription> setMedicationObservation(
 			String userId, ArrayList<String> retList,
 			ArrayList<MedicationPrescription> retVal) {
-		FhirContext ctx = new FhirContext();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		int count = 0;
 		for (int i = 0; i < retList.size(); i = i + 3) {
@@ -1660,7 +1620,6 @@ public class HealthVaultPort implements PortIf {
 																				// object
 																				// resource
 																				// ID.
-			String nameCode = "0000";
 			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"
 					+ userId);
 			med.setPatient(subj);
@@ -1672,7 +1631,6 @@ public class HealthVaultPort implements PortIf {
 				String[] parsedDate = retList.get(i + 1).split("T");
 				date = formatter.parse(parsedDate[0]);
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			med.setDateWrittenWithSecondsPrecision(date);
@@ -1701,8 +1659,6 @@ public class HealthVaultPort implements PortIf {
 	public List<String> setMedicationObservation(String userId,
 			ArrayList<String> retList) {
 		List<String> retVal = new ArrayList<String>();
-		FhirContext ctx = new FhirContext();
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		int count = 0;
 		for (int i = 0; i < retList.size(); i = i + 3) {
 			MedicationPrescriptionSerializable med = new MedicationPrescriptionSerializable();
@@ -1776,7 +1732,6 @@ public class HealthVaultPort implements PortIf {
 	 */
 	@Override
 	public String getTag() {
-		// TODO Auto-generated method stub
 		return tag;
 	}
 
@@ -1787,7 +1742,6 @@ public class HealthVaultPort implements PortIf {
 	 */
 	@Override
 	public String getId() {
-		// TODO Auto-generated method stub
 		return id;
 	}
 
