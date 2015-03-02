@@ -56,42 +56,118 @@ public class UpdateFHIRdB extends HttpServlet {
 		Connection connection = null;
 		Statement statement = null;
 
+		res = res.replaceAll("\"", "");
 		System.out.println("Update FHIR DB Request: " + res);
 
-		String ccd = null;
-		try {
-			connection = healthPortInfo.getConnection();
-			statement = connection.createStatement();
-			String sql = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)"
-					+ "WHERE ORG.TAG='"
-					+ GreenwayPort.GREENWAY
-					+ "' OR ORG.TAG='" + HealthVaultPort.HEALTHVAULT + "'";
-			ResultSet resultSet = statement.executeQuery(sql);
+		if (res.equalsIgnoreCase(HealthPortInfo.OBSERVATION)) {
+			String ccd = null;
+			try {
+				connection = healthPortInfo.getConnection();
+				statement = connection.createStatement();
+				String sql = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)"
+						+ "WHERE ORG.TAG='"
+						+ GreenwayPort.GREENWAY
+						+ "' OR ORG.TAG='" + HealthVaultPort.HEALTHVAULT + "'";
+				ResultSet resultSet = statement.executeQuery(sql);
 
-			while (resultSet.next()) {
-				healthPortInfo.setRSInformation(resultSet);
-				if (healthPortInfo.orgID.equals(greenwayPort.getId())) {
-					ccd = GreenwayPort.getCCD(healthPortInfo.personId);
-				} else if (healthPortInfo.orgID.equals(healthvaultPort.getId())) {
-					healthvaultPort.getAllObservations(healthPortInfo);
+				while (resultSet.next()) {
+					healthPortInfo.setRSInformation(resultSet);
+					if (healthPortInfo.orgID.equals(greenwayPort.getId())) {
+						ccd = GreenwayPort.getCCD(healthPortInfo.personId);
+					} else if (healthPortInfo.orgID.equals(healthvaultPort
+							.getId())) {
+						healthvaultPort.getAllObservations(healthPortInfo);
 
+					}
+				}
+
+				syntheticEHRPort.getObservations();
+				syntheticCancerPort.getObservations();
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
-
-			syntheticEHRPort.getObservations();
-			syntheticCancerPort.getObservations();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
+		} else if (res.equalsIgnoreCase(HealthPortInfo.CONDITION)) {
+			String ccd = null;
 			try {
-				connection.close();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
+				connection = healthPortInfo.getConnection();
+				statement = connection.createStatement();
+				String sql = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)"
+						+ "WHERE ORG.TAG='"
+						+ GreenwayPort.GREENWAY
+						+ "' OR ORG.TAG='" + HealthVaultPort.HEALTHVAULT + "'";
+				ResultSet resultSet = statement.executeQuery(sql);
+
+				while (resultSet.next()) {
+					healthPortInfo.setRSInformation(resultSet);
+					if (healthPortInfo.orgID.equals(greenwayPort.getId())) {
+						ccd = GreenwayPort.getCCD(healthPortInfo.personId);
+					} else if (healthPortInfo.orgID.equals(healthvaultPort
+							.getId())) {
+						healthvaultPort.getAllConditions(healthPortInfo);
+
+					}
+				}
+
+				syntheticEHRPort.getConditions();
+				syntheticCancerPort.getConditions();
+
+			} catch (Exception e) {
 				e.printStackTrace();
+			} finally {
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} else if (res.equalsIgnoreCase(HealthPortInfo.MEDICATIONPRESCRIPTION)) {
+			String ccd = null;
+
+			try {
+				connection = healthPortInfo.getConnection();
+				statement = connection.createStatement();
+				String sql = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)"
+						+ "WHERE ORG.TAG='"
+						+ GreenwayPort.GREENWAY
+						+ "' OR ORG.TAG='" + HealthVaultPort.HEALTHVAULT + "'";
+
+				ResultSet resultSet = statement.executeQuery(sql);
+				while (resultSet.next()) {
+					healthPortInfo.setRSInformation(resultSet);
+
+					if (healthPortInfo.orgID.equals(greenwayPort.getId())) {
+						ccd = GreenwayPort.getCCD(healthPortInfo.personId);
+						// System.out.println(ccd);
+					} else if (healthPortInfo.orgID.equals(healthvaultPort
+							.getId())) {
+						healthvaultPort
+								.getAllMedicationPrescriptions(healthPortInfo);
+					}
+				}
+
+				syntheticEHRPort.getMedicationPrescriptions();
+				syntheticCancerPort.getMedicationPrescriptions();
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
-
 	}
 
 	/**

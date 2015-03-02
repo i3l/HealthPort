@@ -38,7 +38,9 @@ import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.IdDt;
+import edu.gatech.i3l.HealthPort.ConditionSerializable;
 import edu.gatech.i3l.HealthPort.HealthPortInfo;
+import edu.gatech.i3l.HealthPort.MedicationPrescriptionSerializable;
 import edu.gatech.i3l.HealthPort.ObservationSerializable;
 import edu.gatech.i3l.HealthPort.PortIf;
 
@@ -171,7 +173,7 @@ public class ExactDataPort implements PortIf {
 				if (ts != null) {
 					dateTime = new Date(ts.getTime());
 				}
-				
+
 				// Height.
 				String height = rs.getString("Height");
 				if (!height.isEmpty()) {
@@ -276,304 +278,6 @@ public class ExactDataPort implements PortIf {
 		return retVal;
 	}
 
-	/*
-	 * Observation from HealthPort DB
-	 */
-	private ObservationSerializable createObsSz(String theId, String nameUri,
-			String nameCode, String nameDisp, String theValue, String theUnit,
-			java.util.Date date, String narrative, String patientId) {
-		ObservationSerializable obs = new ObservationSerializable();
-
-		obs.ID = theId;
-		obs.NAMEURI = nameUri;
-		obs.NAMECODING = nameCode;
-		obs.NAMEDISPLAY = nameDisp;
-		obs.QUANTITY = theValue;
-		obs.UNIT = theUnit;
-		obs.SUBJECT = patientId;
-		obs.STATUS = "FINAL";
-		obs.RELIABILITY = "OK";
-		obs.APPLIES = date;
-		obs.TEXTSTATUS = "GENERATED";
-		obs.NARRATIVE = narrative;
-
-		return obs;
-	}
-
-	public List<String> getVitalSignIds(ResultSet rs) {
-		List<String> retVal = new ArrayList<String>();
-
-		try {
-			while (rs.next()) {
-//				long longDate = rs.getDate("Encounter_Date").getTime();
-//				Date dateTime = new Date(longDate);
-				java.util.Date dateTime = null;
-				Timestamp ts = rs.getTimestamp("Encounter_Date");
-				if (ts != null) {
-					dateTime = new java.util.Date(ts.getTime());
-				}
-
-				
-				String patientId = "Patient/" + id + "." + rs.getString("Member_ID");
-				
-				String height = rs.getString("Height");
-				if (!height.isEmpty()) {
-					String obsId = id + "." + rs.getString("ID") + "-" + Height;
-					String heightUnit = rs.getString("Height_Units");
-					String nameDisp = "Body Height";
-					String narrative = dateTime.toString() + " " + nameDisp + "="
-							+ height + " " + heightUnit;
-					narrative = StringEscapeUtils.escapeHtml4(narrative);
-
-					ObservationSerializable obs = createObsSz(obsId,
-							"http://loinc.org", heightLOINC, nameDisp,
-							height, heightUnit, dateTime,
-							narrative, patientId);
-
-					try {
-						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-						retVal.add(obsId);
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-
-				// Weight.
-				String weight = rs.getString("Weight");
-				if (!weight.isEmpty()) {
-					String weightUnit = rs.getString("Weight_Units");
-					String obsId = id + "." + rs.getString("ID") + "-" + Weight;
-					String nameDisp = "Body Weight";
-					String narrative = dateTime.toString() + " " + nameDisp + "="
-							+ weight + " " + weightUnit;
-					narrative = StringEscapeUtils.escapeHtml4(narrative);
-
-					ObservationSerializable obs = createObsSz(obsId,
-							"http://loinc.org", weightLOINC, nameDisp,
-							weight, weightUnit, dateTime,
-							narrative, patientId);
-
-					try {
-						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-						retVal.add(obsId);
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-
-				// Respiration
-				String respiration = rs.getString("Respiration");
-				if (!respiration.isEmpty()) {
-					String obsId = id + "." + rs.getString("ID") + "-"
-							+ Respiration;
-					String nameDisp = "Respiration Rate";
-					String narrative = dateTime.toString() + " " + nameDisp + "="
-							+ respiration;
-					narrative = StringEscapeUtils.escapeHtml4(narrative);
-
-					ObservationSerializable obs = createObsSz(obsId,
-							"http://loinc.org", respirationLOINC, nameDisp,
-							respiration, "", dateTime,
-							narrative, patientId);
-
-					try {
-						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-						retVal.add(obsId);
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-
-				// Pulse
-				String pulse = rs.getString("Pulse");
-				if (!pulse.isEmpty()) {
-					String obsId = id + "." + rs.getString("ID") + "-" + Pulse;
-					String nameDisp = "Heart Beat";
-					String narrative = dateTime.toString() + " " + nameDisp + "="
-							+ pulse;
-					narrative = StringEscapeUtils.escapeHtml4(narrative);
-
-					ObservationSerializable obs = createObsSz(obsId,
-							"http://loinc.org", pulseLOINC, nameDisp,
-							pulse, "", dateTime, narrative, patientId);
-
-					try {
-						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-						retVal.add(obsId);
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-
-				// Systolic BP
-				String systolicBP = rs.getString("SystolicBP");
-				if (!systolicBP.isEmpty()) {
-					String obsId = id + "." + rs.getString("ID") + "-"
-							+ SystolicBP;
-					String nameDisp = "Systolic BP";
-					String narrative = dateTime.toString() + " " + nameDisp + "="
-							+ systolicBP;
-					narrative = StringEscapeUtils.escapeHtml4(narrative);
-
-					ObservationSerializable obs = createObsSz(obsId,
-							"http://loinc.org", systolicBPLOINC, nameDisp,
-							systolicBP, "mm[Hg]", dateTime, narrative, patientId);
-
-					try {
-						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-						retVal.add(obsId);
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-
-				// Diastolic BP
-				String diastolicBP = rs.getString("DiastolicBP");
-				if (!diastolicBP.isEmpty()) {
-					String obsId = id + "." + rs.getString("ID") + "-"
-							+ DiastolicBP;
-					String nameDisp = "Diastolic BP";
-					String narrative = dateTime.toString() + " " + nameDisp + "="
-							+ diastolicBP;
-					narrative = StringEscapeUtils.escapeHtml4(narrative);
-
-					ObservationSerializable obs = createObsSz(obsId,
-							"http://loinc.org", diastolicBPLOINC, nameDisp,
-							diastolicBP, "mm[Hg]", dateTime, narrative, patientId);
-
-					try {
-						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-						retVal.add(obsId);
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-
-				// Temperature
-				String temp = rs.getString("Temperature");
-				if (!temp.isEmpty()) {
-					String tempUnit = rs.getString("Temperature_Units");
-					String obsId = id + "." + rs.getString("ID") + "-"
-							+ Temperature;
-					String nameDisp = "Body Temperature";
-					String narrative = dateTime.toString() + " " + nameDisp + "="
-							+ temp;
-					narrative = StringEscapeUtils.escapeHtml4(narrative);
-
-					ObservationSerializable obs = createObsSz(obsId,
-							"http://loinc.org", temperatureLOINC, nameDisp,
-							temp, tempUnit, dateTime, narrative, patientId);
-					
-					try {
-						HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-						retVal.add(obsId);
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return retVal;
-	}
-
-		
-	/******************************************************************************/
-	
-	
-	public ArrayList<Observation> getLabs(ResultSet rs) {
-		ArrayList<Observation> retVal = new ArrayList<Observation>();
-
-		try {
-			while (rs.next()) {
-				Date dateTime = new Date(rs.getDate("Date_Resulted").getTime());
-				Observation obs = createObs(id + "." + rs.getString("ID") + "-"
-						+ Lab_Results, "http://loinc.org",
-						rs.getString("Result_LOINC"),
-						rs.getString("Result_Name"),
-						rs.getString("Numeric_Result"), rs.getString("Units"),
-						dateTime, rs.getString("Result_Description"));
-
-				// Observation Reference to Patient
-				obs.setSubject(new ResourceReferenceDt("Patient/" + id + "."
-						+ rs.getString("Member_ID")));
-				retVal.add(obs);
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return retVal;
-	}
-
-	public List<String> getLabIds(ResultSet rs) {
-		List<String> retVal = new ArrayList<String>();
-
-		try {
-			while (rs.next()) {
-				String obsId = id + "." + rs.getString("ID") + "-"
-						+ Lab_Results;
-				long longDate = rs.getDate("Date_Resulted").getTime();
-				Date dateTime = new Date(longDate);
-				String value = rs.getString("Numeric_Result");
-				String valueUnit = rs.getString("Units");
-				String nameDisp = rs.getString("Result_Name");
-				String narrative = dateTime.toString() + " " + nameDisp + "="
-						+ value + " " + rs.getString("Result_Description");
-				narrative = StringEscapeUtils.escapeHtml4(narrative);
-
-				ObservationSerializable obs = createObsSz(obsId,
-						"http://loinc.org", rs.getString("Result_LOINC"), nameDisp,
-						value, valueUnit, dateTime, narrative, "Patient/" + id + "." + rs.getString("Member_ID"));
-				
-				try {
-					HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-					retVal.add(obsId);
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return retVal;
-	}
-
-	public List<String> getObservations() throws SQLException {
-		List<String> retVal = new ArrayList<String>();
-		List<String> obsIds;
-		// Get all Observations
-		Connection conn = null;
-		Statement stmt = null;
-
-		try {
-			conn = dataSource.getConnection();
-			stmt = conn.createStatement();
-
-			// Get Vital Sign for this patient.
-			String sql = "SELECT * FROM vital_sign";
-			ResultSet rs = stmt.executeQuery(sql);
-			obsIds = getVitalSignIds(rs);
-			if (obsIds != null && !obsIds.isEmpty()) {
-				retVal.addAll(obsIds);
-			}
-
-			// Get Lab Result
-			sql = "SELECT * FROM lab_results";
-			rs = stmt.executeQuery(sql);
-			obsIds = getLabIds(rs);
-			if (obsIds != null && !obsIds.isEmpty()) {
-				retVal.addAll(obsIds);
-			}
-		} catch (SQLException se) {
-			se.printStackTrace();
-		} finally {
-			conn.close();
-		}
-
-		return retVal;
-	}
-
 	public ArrayList<Observation> getObservationByPatient(String memberID)
 			throws SQLException {
 		ArrayList<Observation> retVal = new ArrayList<Observation>();
@@ -651,7 +355,8 @@ public class ExactDataPort implements PortIf {
 				sql = "SELECT * FROM lab_results WHERE ID=" + Ids[0];
 				rs = stmt.executeQuery(sql);
 				while (rs.next()) {
-					Date dateTime = new Date(rs.getDate("Date_Resulted").getTime());
+					Date dateTime = new Date(rs.getDate("Date_Resulted")
+							.getTime());
 					obs = createObs(id + "." + rs.getInt("ID") + "-" + Ids[1],
 							"http://loinc.org", rs.getString("Result_LOINC"),
 							rs.getString("Result_Name"),
@@ -667,7 +372,8 @@ public class ExactDataPort implements PortIf {
 				sql = "SELECT * FROM vital_sign WHERE ID=" + Ids[0];
 				rs = stmt.executeQuery(sql);
 				while (rs.next()) {
-					Date dateTime = new Date(rs.getDate("Encounter_Date").getTime());
+					Date dateTime = new Date(rs.getDate("Encounter_Date")
+							.getTime());
 					String Units = "";
 					String Value = "";
 					String DispName = "";
@@ -771,7 +477,8 @@ public class ExactDataPort implements PortIf {
 				ResultSet rs = stmt.executeQuery(sql);
 				while (rs.next()) {
 					String ID = rs.getString("ID");
-					Date dateTime = new Date(rs.getDate("Encounter_Date").getTime());
+					Date dateTime = new Date(rs.getDate("Encounter_Date")
+							.getTime());
 					if (code.equalsIgnoreCase(heightLOINC)) {
 						String height = rs.getString("Height");
 						if (!height.isEmpty()) {
@@ -877,7 +584,8 @@ public class ExactDataPort implements PortIf {
 						+ code + "'";
 				ResultSet rs = stmt.executeQuery(sql);
 				while (rs.next()) {
-					Date dateTime = new Date(rs.getDate("Date_Resulted").getTime());
+					Date dateTime = new Date(rs.getDate("Date_Resulted")
+							.getTime());
 					Observation obs = createObs(id + "." + rs.getInt("ID")
 							+ "-" + Lab_Results, "http://loinc.org",
 							rs.getString("Result_LOINC"),
@@ -900,6 +608,280 @@ public class ExactDataPort implements PortIf {
 		return retVal;
 	}
 
+	public ArrayList<Observation> getLabs(ResultSet rs) {
+		ArrayList<Observation> retVal = new ArrayList<Observation>();
+
+		try {
+			while (rs.next()) {
+				Date dateTime = new Date(rs.getDate("Date_Resulted").getTime());
+				Observation obs = createObs(id + "." + rs.getString("ID") + "-"
+						+ Lab_Results, "http://loinc.org",
+						rs.getString("Result_LOINC"),
+						rs.getString("Result_Name"),
+						rs.getString("Numeric_Result"), rs.getString("Units"),
+						dateTime, rs.getString("Result_Description"));
+
+				// Observation Reference to Patient
+				obs.setSubject(new ResourceReferenceDt("Patient/" + id + "."
+						+ rs.getString("Member_ID")));
+				retVal.add(obs);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return retVal;
+	}
+
+	/*
+	 * Observation from HealthPort DB
+	 */
+	private ObservationSerializable createObsSz(String theId, String nameUri,
+			String nameCode, String nameDisp, String theValue, String theUnit,
+			java.util.Date date, String narrative, String patientId) {
+		ObservationSerializable obs = new ObservationSerializable();
+
+		obs.ID = theId;
+		obs.NAMEURI = nameUri;
+		obs.NAMECODING = nameCode;
+		obs.NAMEDISPLAY = nameDisp;
+		obs.QUANTITY = theValue;
+		obs.UNIT = theUnit;
+		obs.SUBJECT = patientId;
+		obs.STATUS = "FINAL";
+		obs.RELIABILITY = "OK";
+		obs.APPLIES = date;
+		obs.TEXTSTATUS = "GENERATED";
+		obs.NARRATIVE = narrative;
+
+		return obs;
+	}
+
+	public List<String> getObservations() throws SQLException {
+		List<String> retVal = new ArrayList<String>();
+		List<String> obsIds;
+		// Get all Observations
+		Connection conn = null;
+		Statement stmt = null;
+
+		try {
+			conn = dataSource.getConnection();
+			stmt = conn.createStatement();
+
+			// Get Vital Sign for this patient.
+			String sql = "SELECT * FROM vital_sign";
+			ResultSet rs = stmt.executeQuery(sql);
+			obsIds = getVitalSignIds(rs);
+			if (obsIds != null && !obsIds.isEmpty()) {
+				retVal.addAll(obsIds);
+			}
+
+			// Get Lab Result
+			sql = "SELECT * FROM lab_results";
+			rs = stmt.executeQuery(sql);
+			obsIds = getLabIds(rs);
+			if (obsIds != null && !obsIds.isEmpty()) {
+				retVal.addAll(obsIds);
+			}
+		} catch (SQLException se) {
+			se.printStackTrace();
+		} finally {
+			conn.close();
+		}
+
+		return retVal;
+	}
+
+	public List<String> getVitalSignIds(ResultSet rs) {
+		List<String> retVal = new ArrayList<String>();
+
+		try {
+			while (rs.next()) {
+				// long longDate = rs.getDate("Encounter_Date").getTime();
+				// Date dateTime = new Date(longDate);
+				java.util.Date dateTime = null;
+				Timestamp ts = rs.getTimestamp("Encounter_Date");
+				if (ts != null) {
+					dateTime = new java.util.Date(ts.getTime());
+				}
+
+				String patientId = "Patient/" + id + "."
+						+ rs.getString("Member_ID");
+
+				String height = rs.getString("Height");
+				if (!height.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-" + Height;
+					String heightUnit = rs.getString("Height_Units");
+					String nameDisp = "Body Height";
+					String narrative = dateTime.toString() + " " + nameDisp
+							+ "=" + height + " " + heightUnit;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", heightLOINC, nameDisp, height,
+							heightUnit, dateTime, narrative, patientId);
+
+					HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION,
+							obs);
+					retVal.add(obsId);
+				}
+
+				// Weight.
+				String weight = rs.getString("Weight");
+				if (!weight.isEmpty()) {
+					String weightUnit = rs.getString("Weight_Units");
+					String obsId = id + "." + rs.getString("ID") + "-" + Weight;
+					String nameDisp = "Body Weight";
+					String narrative = dateTime.toString() + " " + nameDisp
+							+ "=" + weight + " " + weightUnit;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", weightLOINC, nameDisp, weight,
+							weightUnit, dateTime, narrative, patientId);
+
+					HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION,
+							obs);
+					retVal.add(obsId);
+				}
+
+				// Respiration
+				String respiration = rs.getString("Respiration");
+				if (!respiration.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-"
+							+ Respiration;
+					String nameDisp = "Respiration Rate";
+					String narrative = dateTime.toString() + " " + nameDisp
+							+ "=" + respiration;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", respirationLOINC, nameDisp,
+							respiration, "", dateTime, narrative, patientId);
+
+					HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION,
+							obs);
+					retVal.add(obsId);
+				}
+
+				// Pulse
+				String pulse = rs.getString("Pulse");
+				if (!pulse.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-" + Pulse;
+					String nameDisp = "Heart Beat";
+					String narrative = dateTime.toString() + " " + nameDisp
+							+ "=" + pulse;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", pulseLOINC, nameDisp, pulse,
+							"", dateTime, narrative, patientId);
+
+					HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION,
+							obs);
+					retVal.add(obsId);
+				}
+
+				// Systolic BP
+				String systolicBP = rs.getString("SystolicBP");
+				if (!systolicBP.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-"
+							+ SystolicBP;
+					String nameDisp = "Systolic BP";
+					String narrative = dateTime.toString() + " " + nameDisp
+							+ "=" + systolicBP;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", systolicBPLOINC, nameDisp,
+							systolicBP, "mm[Hg]", dateTime, narrative,
+							patientId);
+
+					HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION,
+							obs);
+					retVal.add(obsId);
+				}
+
+				// Diastolic BP
+				String diastolicBP = rs.getString("DiastolicBP");
+				if (!diastolicBP.isEmpty()) {
+					String obsId = id + "." + rs.getString("ID") + "-"
+							+ DiastolicBP;
+					String nameDisp = "Diastolic BP";
+					String narrative = dateTime.toString() + " " + nameDisp
+							+ "=" + diastolicBP;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", diastolicBPLOINC, nameDisp,
+							diastolicBP, "mm[Hg]", dateTime, narrative,
+							patientId);
+
+					HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION,
+							obs);
+					retVal.add(obsId);
+				}
+
+				// Temperature
+				String temp = rs.getString("Temperature");
+				if (!temp.isEmpty()) {
+					String tempUnit = rs.getString("Temperature_Units");
+					String obsId = id + "." + rs.getString("ID") + "-"
+							+ Temperature;
+					String nameDisp = "Body Temperature";
+					String narrative = dateTime.toString() + " " + nameDisp
+							+ "=" + temp;
+					narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+					ObservationSerializable obs = createObsSz(obsId,
+							"http://loinc.org", temperatureLOINC, nameDisp,
+							temp, tempUnit, dateTime, narrative, patientId);
+
+					HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION,
+							obs);
+					retVal.add(obsId);
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return retVal;
+	}
+
+	public List<String> getLabIds(ResultSet rs) {
+		List<String> retVal = new ArrayList<String>();
+
+		try {
+			while (rs.next()) {
+				String obsId = id + "." + rs.getString("ID") + "-"
+						+ Lab_Results;
+				long longDate = rs.getDate("Date_Resulted").getTime();
+				Date dateTime = new Date(longDate);
+				String value = rs.getString("Numeric_Result");
+				String valueUnit = rs.getString("Units");
+				String nameDisp = rs.getString("Result_Name");
+				String narrative = dateTime.toString() + " " + nameDisp + "="
+						+ value + " " + rs.getString("Result_Description");
+				narrative = StringEscapeUtils.escapeHtml4(narrative);
+
+				ObservationSerializable obs = createObsSz(obsId,
+						"http://loinc.org", rs.getString("Result_LOINC"),
+						nameDisp, value, valueUnit, dateTime, narrative,
+						"Patient/" + id + "." + rs.getString("Member_ID"));
+
+				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
+				retVal.add(obsId);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return retVal;
+	}
+
+	/******************************************************************************/
+
+	/*
+	 * Conditions from ExactData DB
+	 */
 	private Condition createCondition(String ID, String subjRef,
 			String nameUri, String nameCode, String nameDisp, Date dateTime) {
 		Condition condition = new Condition();
@@ -971,27 +953,6 @@ public class ExactDataPort implements PortIf {
 			e.printStackTrace();
 		}
 
-		return retVal;
-	}
-
-	public ArrayList<Condition> getConditions() {
-		ArrayList<Condition> retVal = new ArrayList<Condition>();
-
-		Connection conn = null;
-		Statement stmt = null;
-		try {
-			conn = dataSource.getConnection();
-			stmt = conn.createStatement();
-			String sql = "SELECT * FROM problem";
-			ResultSet rs = stmt.executeQuery(sql);
-			ArrayList<Condition> conditionList = getConditions(rs);
-			if (conditionList != null && !conditionList.isEmpty()) {
-				retVal.addAll(conditionList);
-			}
-			conn.close();
-		} catch (SQLException se) {
-			se.printStackTrace();
-		}
 		return retVal;
 	}
 
@@ -1093,6 +1054,99 @@ public class ExactDataPort implements PortIf {
 
 	}
 
+	/*
+	 * Condition from HealthPort DB
+	 */
+	private ConditionSerializable createConditionSz(String ID, String subjRef,
+			String nameUri, String nameCode, String nameDisp,
+			java.util.Date dateTime) {
+
+		ConditionSerializable condition = new ConditionSerializable();
+
+		condition.ID = ID;
+		condition.SUBJECT = subjRef;
+		condition.NAMEURI = nameUri;
+		condition.NAMECODING = nameCode;
+		condition.NAMEDISPLAY = StringEscapeUtils.escapeHtml4(nameDisp);
+		condition.STATUS = "CONFIRMED";
+		condition.ONSET = dateTime;
+
+		String textBody = "<table>"
+				+ "<tr><td>Problem</td><td>Onset Date</td><td>ICD-9</td></tr>"
+				+ "<tr><td>" + nameDisp + "</td>" + "<td>"
+				+ dateTime.toString() + "</td>" + "<td>" + nameCode
+				+ "</td></tr></table>";
+		condition.NARRATIVE = textBody;
+		condition.TEXTSTATUS = "GENERATED";
+
+		return condition;
+	}
+
+	public List<String> getConditions() {
+		List<String> retVal = new ArrayList<String>();
+
+		Connection conn = null;
+		Statement stmt = null;
+		try {
+			conn = dataSource.getConnection();
+			stmt = conn.createStatement();
+			String sql = "SELECT * FROM problem";
+			ResultSet rs = stmt.executeQuery(sql);
+			List<String> conditionList = getConditionIds(rs);
+			if (conditionList != null && !conditionList.isEmpty()) {
+				retVal.addAll(conditionList);
+			}
+			conn.close();
+		} catch (SQLException se) {
+			se.printStackTrace();
+		}
+		return retVal;
+	}
+
+	public List<String> getConditionIds(ResultSet rs) {
+		List<String> retVal = new ArrayList<String>();
+		ConditionSerializable condition = null;
+
+		try {
+			while (rs.next()) {
+				// ExactData uses only ICD9 code.
+				String memberID = rs.getString("Member_ID");
+				if (memberID.isEmpty()) {
+					// If Member_ID is empty, we skip. This should not happen
+					// but I noticed empty Member_ID in
+					// the problem CSV file.
+					continue;
+				}
+
+				// Get onset date
+				java.util.Date dateTime = null;
+				Timestamp ts = rs.getTimestamp("Onset_Date");
+				if (ts != null) {
+					dateTime = new java.util.Date(ts.getTime());
+				}
+
+				String condId = id + "." + rs.getInt("ID");
+				condition = createConditionSz(condId, "Patient/" + id + "."
+						+ rs.getString("Member_ID"),
+						"http://hl7.org/fhir/sid/icd-9",
+						rs.getString("Problem_Code"),
+						rs.getString("Problem_Description"), dateTime);
+
+				HealthPortInfo.storeResource(HealthPortInfo.CONDITION,
+						condition);
+
+				retVal.add(condId);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return retVal;
+	}
+
+	/*******************************************************************/
+
+	// MedicationPrescription Resource from ExactData DB
 	private MedicationPrescription createMedPrescript(String ID,
 			String patientRef, String prescriberName, String nameUri,
 			String nameCode, int medId, String nameDisp, String doseQty,
@@ -1210,35 +1264,6 @@ public class ExactDataPort implements PortIf {
 		return retVal;
 	}
 
-	public ArrayList<MedicationPrescription> getMedicationPrescriptions() {
-		ArrayList<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
-		// Context context = null;
-		// DataSource datasource = null;
-
-		Connection conn = null;
-		Statement stmt = null;
-		try {
-			// context = new InitialContext();
-			// datasource = (DataSource) context
-			// .lookup("java:/comp/env/jdbc/ExactDataSample");
-			conn = dataSource.getConnection();
-			stmt = conn.createStatement();
-
-			String sql = "SELECT * FROM medication_orders";
-			ResultSet rs = stmt.executeQuery(sql);
-			ArrayList<MedicationPrescription> medList = getMedicationPrescriptions(rs);
-			if (medList != null && !medList.isEmpty()) {
-				retVal.addAll(medList);
-			}
-
-			conn.close();
-			// } catch (SQLException | NamingException se) {
-		} catch (SQLException se) {
-			se.printStackTrace();
-		}
-		return retVal;
-	}
-
 	public ArrayList<MedicationPrescription> getMedicationPrescriptionByPatient(
 			String memberID) {
 		ArrayList<MedicationPrescription> retVal = new ArrayList<MedicationPrescription>();
@@ -1328,6 +1353,96 @@ public class ExactDataPort implements PortIf {
 			}
 
 			conn.close();
+		} catch (SQLException se) {
+			se.printStackTrace();
+		}
+		return retVal;
+	}
+
+	// MedicationPrescription Resource from ExactData DB
+	private MedicationPrescriptionSerializable createMedPrescriptSz(String ID,
+			String patientRef, String prescriberName, String nameUri,
+			String nameCode, String nameDisp, String doseQty, String doseUnit,
+			String medSig, int medQty, int medRefill, String status,
+			java.util.Date dateTime) {
+
+		MedicationPrescriptionSerializable medicationPrescript = new MedicationPrescriptionSerializable();
+
+		medicationPrescript.ID = ID;
+		medicationPrescript.SUBJECT = patientRef;
+		medicationPrescript.PRESCRIBER = prescriberName;
+		medicationPrescript.NAMEURI = nameUri;
+		medicationPrescript.NAMECODING = nameCode;
+		medicationPrescript.NAMEDISPLAY = nameDisp;
+		medicationPrescript.DOSEQTY = doseQty.trim();
+		medicationPrescript.DOSEUNIT = doseUnit;
+		medicationPrescript.DOSAGEINSTRUCTION = medSig;
+		medicationPrescript.DISPENSEQTY = medQty;
+		medicationPrescript.REFILL = medRefill;
+		medicationPrescript.DATEWRITTEN = dateTime;
+		medicationPrescript.STATUS = status;
+		return medicationPrescript;
+	}
+
+	public List<String> getMedicationPrescriptionIds(ResultSet rs) {
+		List<String> retVal = new ArrayList<String>();
+		MedicationPrescriptionSerializable medPrescript = null;
+
+		try {
+			while (rs.next()) {
+				String memberID = rs.getString("Member_ID").trim();
+				// Get onset date
+				// Date dateTime = new Date(rs.getDate("Order_Date").getTime());
+				java.util.Date dateTime = null;
+				Timestamp ts = rs.getTimestamp("Order_Date");
+				if (ts != null) {
+					dateTime = new java.util.Date(ts.getTime());
+				}
+
+				String medPresId = id + "." + rs.getString("ID");
+				medPrescript = createMedPrescriptSz(medPresId, "Patient/" + id
+						+ "." + memberID, rs.getString("Order_Provider_Name"),
+						"urn:oid:2.16.840.1.113883.6.69",
+						rs.getString("Drug_NDC"), rs.getString("Drug_Name"),
+						rs.getString("Dose"), rs.getString("Units"),
+						rs.getString("Sig"), rs.getInt("Qty_Ordered"),
+						rs.getInt("Refills"), rs.getString("Status"), dateTime);
+
+				HealthPortInfo.storeResource(
+						HealthPortInfo.MEDICATIONPRESCRIPTION, medPrescript);
+
+				retVal.add(medPresId);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return retVal;
+	}
+
+	public List<String> getMedicationPrescriptions() {
+		List<String> retVal = new ArrayList<String>();
+		// Context context = null;
+		// DataSource datasource = null;
+
+		Connection conn = null;
+		Statement stmt = null;
+		try {
+			// context = new InitialContext();
+			// datasource = (DataSource) context
+			// .lookup("java:/comp/env/jdbc/ExactDataSample");
+			conn = dataSource.getConnection();
+			stmt = conn.createStatement();
+
+			String sql = "SELECT * FROM medication_orders";
+			ResultSet rs = stmt.executeQuery(sql);
+			List<String> medList = getMedicationPrescriptionIds(rs);
+			if (medList != null && !medList.isEmpty()) {
+				retVal.addAll(medList);
+			}
+
+			conn.close();
+			// } catch (SQLException | NamingException se) {
 		} catch (SQLException se) {
 			se.printStackTrace();
 		}

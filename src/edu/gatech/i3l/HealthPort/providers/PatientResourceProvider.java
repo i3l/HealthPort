@@ -60,6 +60,9 @@ public class PatientResourceProvider implements IResourceProvider {
     	String Ids[] = theId.getIdPart().split("\\.", 2);
     	String patientID;
     	
+    	if (Ids.length != 2) {
+    		return null;
+    	}
     	if (Ids[0].equals(GWID) ||
     			Ids[0].equals(HVID)) {
     		healthPortUser.setInformation(Ids[1]);

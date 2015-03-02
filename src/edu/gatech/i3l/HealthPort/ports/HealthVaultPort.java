@@ -64,7 +64,9 @@ import com.microsoft.hsg.ConnectionFactory;
 import com.microsoft.hsg.HVAccessor;
 import com.microsoft.hsg.Request;
 
+import edu.gatech.i3l.HealthPort.ConditionSerializable;
 import edu.gatech.i3l.HealthPort.HealthPortInfo;
+import edu.gatech.i3l.HealthPort.MedicationPrescriptionSerializable;
 import edu.gatech.i3l.HealthPort.ObservationSerializable;
 import edu.gatech.i3l.HealthPort.PortIf;
 
@@ -467,6 +469,20 @@ public class HealthVaultPort implements PortIf {
 
 	}
 
+	public List<String> getAllConditions(HealthPortInfo userInfo) {
+		ArrayList<String> conditionList;
+		List<String> retVal = new ArrayList<String>();
+		String response = "temp response";
+
+		conditionList = getConditionRequest(response, userInfo.recordId,
+				userInfo.personId);
+		retVal = setConditionObservation(id + "." + userInfo.userId,
+				conditionList);
+
+		return retVal;
+
+	}
+
 	public MedicationPrescription getMedicationPrescription(String resourceId) {
 		MedicationPrescription med = new MedicationPrescription();
 		String responseStr = null;
@@ -518,6 +534,17 @@ public class HealthVaultPort implements PortIf {
 		retList = getMedication(response, userInfo.recordId, userInfo.personId);
 		retVal = setMedicationObservation(id + "." + userInfo.userId, retList,
 				retVal);
+
+		return retVal;
+	}
+
+	public List<String> getAllMedicationPrescriptions(HealthPortInfo userInfo) {
+		List<String> retVal = new ArrayList<String>();
+		ArrayList<String> retList = new ArrayList<String>();
+		String response = "temp response";
+
+		retList = getMedication(response, userInfo.recordId, userInfo.personId);
+		retVal = setMedicationObservation(id + "." + userInfo.userId, retList);
 
 		return retVal;
 	}
@@ -655,7 +682,7 @@ public class HealthVaultPort implements PortIf {
 						+ "	</tbody>" + "</table>" + "</div>";
 
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-				retVal.add(userId);
+				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -719,10 +746,10 @@ public class HealthVaultPort implements PortIf {
 		for (int i = 0; i < retList.size(); i = i + 4) {
 			Observation obs = new Observation();
 			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
-																				// is
-																				// object
-																				// resource
-																				// ID.
+																	// is
+																	// object
+																	// resource
+																	// ID.
 			String nameCode = "8302-2";
 			obs.setName(new CodeableConceptDt("http://loinc.org", nameCode));
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList
@@ -795,7 +822,7 @@ public class HealthVaultPort implements PortIf {
 						+ "	</tbody>" + "</table>" + "</div>";
 
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-				retVal.add(userId);
+				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -862,10 +889,10 @@ public class HealthVaultPort implements PortIf {
 		for (int i = 0; i < retList.size(); i = i + 6) {
 			Observation obs = new Observation();
 			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
-																				// is
-																				// object
-																				// resource
-																				// ID.
+																	// is
+																	// object
+																	// resource
+																	// ID.
 			String nameCode = "0000";
 			obs.setName(new CodeableConceptDt("http://loinc.org", nameCode));
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList
@@ -951,7 +978,7 @@ public class HealthVaultPort implements PortIf {
 				}
 
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-				retVal.add(userId);
+				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1019,10 +1046,10 @@ public class HealthVaultPort implements PortIf {
 		for (int i = 0; i < retList.size(); i = i + 5) {
 			Observation obs = new Observation();
 			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
-																				// is
-																				// object
-																				// resource
-																				// ID.
+																	// is
+																	// object
+																	// resource
+																	// ID.
 			String nameCode = "49134-0";
 			obs.setName(new CodeableConceptDt("http://loinc.org", nameCode));
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList
@@ -1095,7 +1122,7 @@ public class HealthVaultPort implements PortIf {
 						+ "	</tbody>" + "</table>" + "</div>";
 
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-				retVal.add(userId);
+				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1156,10 +1183,10 @@ public class HealthVaultPort implements PortIf {
 		for (int i = 0; i < retList.size(); i = i + 4) {
 			Observation obs = new Observation();
 			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
-																				// is
-																				// object
-																				// resource
-																				// ID.
+																	// is
+																	// object
+																	// resource
+																	// ID.
 			String nameCode = "11054-4";
 			obs.setName(new CodeableConceptDt("http://loinc.org", nameCode));
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList
@@ -1231,7 +1258,7 @@ public class HealthVaultPort implements PortIf {
 						+ "	</tbody>" + "</table>" + "</div>";
 
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-				retVal.add(userId);
+				retVal.add(obs.ID);
 			} catch (SQLException | ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1300,10 +1327,10 @@ public class HealthVaultPort implements PortIf {
 		for (int i = 0; i < retList.size(); i = i + 5) {
 			Observation obs = new Observation();
 			obs.setId(userId + "-" + count + "-" + retList.get(i)); // This
-																				// is
-																				// object
-																				// resource
-																				// ID.
+																	// is
+																	// object
+																	// resource
+																	// ID.
 			String nameCode = "0000";
 			obs.setName(new CodeableConceptDt("http://loinc.org", nameCode));
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList
@@ -1367,7 +1394,7 @@ public class HealthVaultPort implements PortIf {
 
 			try {
 				HealthPortInfo.storeResource(HealthPortInfo.OBSERVATION, obs);
-				retVal.add(userId);
+				retVal.add(obs.ID);
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1428,8 +1455,7 @@ public class HealthVaultPort implements PortIf {
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < conditionList.size(); i = i + 4) {
 			Condition cond = new Condition();
-			cond.setId(id + "." + userId + "-" + count + "-"
-					+ conditionList.get(i));
+			cond.setId(userId + "-" + count + "-" + conditionList.get(i));
 			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"
 					+ userId);
 			cond.setSubject(subj);
@@ -1497,6 +1523,64 @@ public class HealthVaultPort implements PortIf {
 			String output = buffer_narrative.toString();
 			cond.getText().setDiv(output);
 			retVal.add(cond);
+		}
+		return retVal;
+	}
+
+	public List<String> setConditionObservation(String userId,
+			ArrayList<String> conditionList) {
+		List<String> retVal = new ArrayList<String>();
+		int count = 0;
+		for (int i = 0; i < conditionList.size(); i = i + 4) {
+			ConditionSerializable cond = new ConditionSerializable();
+			cond.ID = userId + "-" + count + "-" + conditionList.get(i);
+			cond.SUBJECT = "Patient/" + userId;
+			// cond.NARRATIVE = conditionList.get(i + 2);
+			cond.NAMECODING = "0000";
+			cond.NAMEURI = "http://snomed.info/sct";
+			cond.NAMEDISPLAY = conditionList.get(i + 2);
+			if (conditionList.get(i + 3).equals("active")) {
+				// Active
+				cond.STATUS = "CONFIRMED";
+			} else if (conditionList.get(i + 3).equals("inactive")) {
+				// Inactive
+				cond.STATUS = "REFUTED";
+			} else if (conditionList.get(i + 3).equals("chronic")) {
+				// Chronic
+				cond.STATUS = "CONFIRMED";
+			} else if (conditionList.get(i + 3).equals("intermittent")) {
+				// Intermittent
+				cond.STATUS = "WORKING";
+			} else if (conditionList.get(i + 3).equals("recurrent")) {
+				// Recurrent
+				cond.STATUS = "WORKING";
+			} else if (conditionList.get(i + 3).equals("rule out")) {
+				// Rule out
+				cond.STATUS = "REFUTED";
+			} else if (conditionList.get(i + 3).equals("ruled out")) {
+				// Ruled out
+				cond.STATUS = "REFUTED";
+			} else if (conditionList.get(i + 3).equals("resolved")) {
+				// Resolved
+				cond.STATUS = "CONFIRMED";
+			}
+
+			try {
+				SimpleDateFormat format = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:SS");
+				Date parsed = format.parse(conditionList.get(i + 1));
+				cond.DATEASSERTED = new java.sql.Date(parsed.getTime());
+				cond.TEXTSTATUS = "GENERATED";
+				cond.NARRATIVE = "<div><div>" + conditionList.get(i + 2)
+						+ "</div>" + "<table><tbody><tr><td>Status</td><td>"
+						+ cond.STATUS + "</td></tr></tbody></table></div>";
+
+				HealthPortInfo.storeResource(HealthPortInfo.CONDITION, cond);
+				retVal.add(cond.ID);
+			} catch (SQLException | ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return retVal;
 	}
@@ -1592,8 +1676,7 @@ public class HealthVaultPort implements PortIf {
 				e.printStackTrace();
 			}
 			med.setDateWrittenWithSecondsPrecision(date);
-			NarrativeStatusEnum narrative = null;
-			med.getText().setStatus(narrative.GENERATED);
+			med.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">"
@@ -1610,6 +1693,44 @@ public class HealthVaultPort implements PortIf {
 			String output = buffer_narrative.toString();
 			med.getText().setDiv(output);
 			retVal.add(med);
+		}
+
+		return retVal;
+	}
+
+	public List<String> setMedicationObservation(String userId,
+			ArrayList<String> retList) {
+		List<String> retVal = new ArrayList<String>();
+		FhirContext ctx = new FhirContext();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		int count = 0;
+		for (int i = 0; i < retList.size(); i = i + 3) {
+			MedicationPrescriptionSerializable med = new MedicationPrescriptionSerializable();
+			med.ID = userId + "-" + count + "-" + retList.get(i); // This
+																	// is
+																	// object
+																	// resource
+																	// ID.
+			med.NAMECODING = "0000";
+			med.SUBJECT = "Patient/" + userId;
+			med.NAMEDISPLAY = retList.get(i + 2);
+			SimpleDateFormat format = new SimpleDateFormat(
+					"yyyy-MM-dd'T'HH:mm:SS");
+			Date parsed;
+			try {
+				parsed = format.parse(retList.get(i + 1));
+				med.DATEWRITTEN = new java.sql.Date(parsed.getTime());
+				med.TEXTSTATUS = "GENERATED";
+				med.NARRATIVE = "<div><div>" + med.NAMEDISPLAY
+						+ "</div><table><tbody></tbody></table></div>";
+
+				HealthPortInfo.storeResource(
+						HealthPortInfo.MEDICATIONPRESCRIPTION, med);
+				retVal.add(med.ID);
+
+			} catch (ParseException | SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return retVal;

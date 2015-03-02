@@ -53,28 +53,42 @@ public class ObservationResourceProvider implements IResourceProvider {
 
 	@Read()
 	public Observation getResourceById(@IdParam IdDt theId) {
-		Observation obs = null;
-		String[] Ids = theId.getIdPart().split("\\.", 2);
+		List<String> Ids = new ArrayList<String>();
+		Ids.add(theId.getIdPart());
 
-		// System.out.println(location);
-		if (Ids[0].equals(greenwayPort.getId())) {
-			System.out.println("Greenway");
-		} else if (Ids[0].equals(syntheticEHRPort.getId())) {
-			obs = syntheticEHRPort.getObservation(Ids[1]);
-		} else if (Ids[0].equals(healthvaultPort.getId())) {
-			obs = healthvaultPort.getObservation(Ids[1]);
-		} else if (Ids[0].equals(syntheticCancerPort.getId())) {
-			obs = syntheticCancerPort.getObservation(Ids[1]);
+		List<IResource> resourceList = null;
+		try {
+			resourceList = healthPortUser.getResourceList(
+					HealthPortInfo.OBSERVATION, Ids);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
-		return obs;
+		if (resourceList == null || resourceList.isEmpty())
+			return null;
+		return (Observation) resourceList.get(0);
+
+		// // System.out.println(location);
+		// if (Ids[0].equals(greenwayPort.getId())) {
+		// System.out.println("Greenway");
+		// } else if (Ids[0].equals(syntheticEHRPort.getId())) {
+		// obs = syntheticEHRPort.getObservation(Ids[1]);
+		// } else if (Ids[0].equals(healthvaultPort.getId())) {
+		// obs = healthvaultPort.getObservation(Ids[1]);
+		// } else if (Ids[0].equals(syntheticCancerPort.getId())) {
+		// obs = syntheticCancerPort.getObservation(Ids[1]);
+		// }
+		//
+		// return obs;
 	}
 
 	@Search
 	// public List<Observation> getAllObservations() {
 	public IBundleProvider getAllObservations() {
 		final InstantDt searchTime = InstantDt.withCurrentTime();
-		final List<String> matchingResourceIds = getAllObsIds();
+		final List<String> matchingResourceIds = healthPortUser
+				.getAllResourceIds(HealthPortInfo.OBSERVATION);
 
 		return new IBundleProvider() {
 
@@ -89,7 +103,16 @@ public class ObservationResourceProvider implements IResourceProvider {
 				// System.out.println("From:"+theFromIndex+" To:"+theToIndex+" Total:"+matchingResourceIds.size());
 				List<String> idsToReturn = matchingResourceIds.subList(
 						theFromIndex, end);
-				return loadResourcesByIds(idsToReturn);
+				List<IResource> retVal = null;
+				try {
+					retVal = healthPortUser.getResourceList(
+							HealthPortInfo.OBSERVATION, idsToReturn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				return retVal;
 			}
 
 			@Override
@@ -97,63 +120,53 @@ public class ObservationResourceProvider implements IResourceProvider {
 				return searchTime;
 			}
 		};
-
-		// Connection connection = null;
-		// Statement statement = null;
-		// String ccd = null;
-		//
-		// ArrayList<Observation> finalRetVal = new ArrayList<Observation>();
-		// ArrayList<Observation> retVal = null;
-		//
-		// try {
-		// connection = healthPortUser.getConnection();
-		// statement = connection.createStatement();
-		// String sql =
-		// "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)"
-		// + "WHERE ORG.TAG='"
-		// + GreenwayPort.GREENWAY
-		// + "' OR ORG.TAG='" + HealthVaultPort.HEALTHVAULT + "'";
-		// ResultSet resultSet = statement.executeQuery(sql);
-		//
-		// while (resultSet.next()) {
-		// healthPortUser.setRSInformation(resultSet);
-		// if (healthPortUser.orgID.equals(greenwayPort.getId())) {
-		// ccd = GreenwayPort.getCCD(healthPortUser.personId);
-		// } else if (healthPortUser.orgID
-		// .equals(healthvaultPort.getId())) {
-		// retVal = healthvaultPort.getObservations(healthPortUser);
-		// if (retVal != null && !retVal.isEmpty()) {
-		// finalRetVal.addAll(retVal);
-		// }
-		// }
-		// retVal = null;
-		// }
-		//
-		// connection.close();
-		// retVal = syntheticEHRPort.getObservations();
-		// if (retVal != null && !retVal.isEmpty()) {
-		// finalRetVal.addAll(retVal);
-		// }
-		// retVal = syntheticCancerPort.getObservations();
-		// if (retVal != null && !retVal.isEmpty()) {
-		// finalRetVal.addAll(retVal);
-		// }
-		//
-		// } catch (Exception e) {
-		// e.printStackTrace();
-		// }
-
-		// return finalRetVal;
-
 	}
 
-	@Search()
-	public List<Observation> getObservationsbyPatient(
-			@RequiredParam(name = Observation.SP_SUBJECT) ReferenceParam theSubject) {
-		String ccd = null;
+	// private List<String> getAllObsIds() {
+	// List<String> finalRetVal = new ArrayList<String>();
+	//
+	// Connection connection = null;
+	// Statement statement = null;
+	//
+	// String SQL_STATEMENT = "SELECT ID FROM OBSERVATION";
+	//
+	// connection = healthPortUser.getConnection();
+	// try {
+	// statement = connection.createStatement();
+	// ResultSet rs = statement.executeQuery(SQL_STATEMENT);
+	//
+	// while (rs.next()) {
+	// finalRetVal.add(rs.getString("ID"));
+	// }
+	// } catch (SQLException e) {
+	// // TODO Auto-generated catch block
+	// e.printStackTrace();
+	// }
+	//
+	// return finalRetVal;
+	// }
 
-		ArrayList<Observation> retVal = null;
-		String PatientID;
+	// private List<IResource> loadResourcesByIds(List<String> Ids) {
+	// List<IResource> retVal = new ArrayList<IResource>();
+	//
+	// try {
+	// retVal = healthPortUser.getResourceList(HealthPortInfo.OBSERVATION,
+	// Ids);
+	// } catch (SQLException e) {
+	// // TODO Auto-generated catch block
+	// e.printStackTrace();
+	// }
+	//
+	// return retVal;
+	// }
+
+	@Search()
+	// public List<Observation> getObservationsbyPatient(
+	public IBundleProvider getObservationsbyPatient(
+			@RequiredParam(name = Observation.SP_SUBJECT) ReferenceParam theSubject) {
+
+		final InstantDt searchTime = InstantDt.withCurrentTime();
+		String patientID;
 
 		if (theSubject.hasResourceType()) {
 			String resourceType = theSubject.getResourceType();
@@ -162,78 +175,103 @@ public class ObservationResourceProvider implements IResourceProvider {
 						"Invalid resource type for parameter 'subject': "
 								+ resourceType);
 			} else {
-				PatientID = theSubject.getIdPart();
+				patientID = theSubject.getIdPart();
 			}
 		} else {
 			throw new InvalidRequestException(
 					"Need resource type for parameter 'subject'");
 		}
 
-		String Ids[] = PatientID.split("\\.", 2);
-		try {
+		final List<String> matchingResourceIds = healthPortUser
+				.getResourceIdsByPatient(HealthPortInfo.OBSERVATION, patientID);
 
-			if (Ids[0].equals(greenwayPort.getId())
-					|| Ids[0].equals(healthvaultPort.getId())) {
-				healthPortUser.setInformation(Ids[1]);
-				if (healthPortUser.source == null)
-					return retVal;
+		return new IBundleProvider() {
 
-				if (healthPortUser.orgID.equals(greenwayPort.getId())) {
-					ccd = GreenwayPort.getCCD(healthPortUser.personId);
-					// System.out.println(ccd);
-				} else if (healthPortUser.orgID.equals(healthvaultPort.getId())) {
-					retVal = healthvaultPort.getObservations(healthPortUser);
+			@Override
+			public int size() {
+				return matchingResourceIds.size();
+			}
+
+			@Override
+			public List<IResource> getResources(int theFromIndex, int theToIndex) {
+				int end = Math.min(theToIndex, matchingResourceIds.size() - 1);
+				// System.out.println("From:"+theFromIndex+" To:"+theToIndex+" Total:"+matchingResourceIds.size());
+				List<String> idsToReturn = matchingResourceIds.subList(
+						theFromIndex, end);
+				List<IResource> retVal = null;
+				try {
+					retVal = healthPortUser.getResourceList(
+							HealthPortInfo.OBSERVATION, idsToReturn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 
-			} else if (Ids[0].equals(syntheticEHRPort.getId())) {
-				retVal = syntheticEHRPort.getObservationByPatient(Ids[1]);
-
-			} else if (Ids[0].equals(syntheticCancerPort.getId())) {
-				retVal = syntheticCancerPort.getObservationByPatient(Ids[1]);
+				return retVal;
 			}
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return retVal;
+
+			@Override
+			public InstantDt getPublished() {
+				return searchTime;
+			}
+		};
+
+		// String ccd = null;
+		//
+		// ArrayList<Observation> retVal = null;
+		// String PatientID;
+		//
+		// if (theSubject.hasResourceType()) {
+		// String resourceType = theSubject.getResourceType();
+		// if ("Patient".equals(resourceType) == false) {
+		// throw new InvalidRequestException(
+		// "Invalid resource type for parameter 'subject': "
+		// + resourceType);
+		// } else {
+		// PatientID = theSubject.getIdPart();
+		// }
+		// } else {
+		// throw new InvalidRequestException(
+		// "Need resource type for parameter 'subject'");
+		// }
+		//
+		// String Ids[] = PatientID.split("\\.", 2);
+		// try {
+		//
+		// if (Ids[0].equals(greenwayPort.getId())
+		// || Ids[0].equals(healthvaultPort.getId())) {
+		// healthPortUser.setInformation(Ids[1]);
+		// if (healthPortUser.source == null)
+		// return retVal;
+		//
+		// if (healthPortUser.orgID.equals(greenwayPort.getId())) {
+		// ccd = GreenwayPort.getCCD(healthPortUser.personId);
+		// // System.out.println(ccd);
+		// } else if (healthPortUser.orgID.equals(healthvaultPort.getId())) {
+		// retVal = healthvaultPort.getObservations(healthPortUser);
+		// }
+		//
+		// } else if (Ids[0].equals(syntheticEHRPort.getId())) {
+		// retVal = syntheticEHRPort.getObservationByPatient(Ids[1]);
+		//
+		// } else if (Ids[0].equals(syntheticCancerPort.getId())) {
+		// retVal = syntheticCancerPort.getObservationByPatient(Ids[1]);
+		// }
+		// } catch (SQLException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+		// return retVal;
 	}
 
-	@Search()
-	public List<Observation> searchByName(
-			@RequiredParam(name = Observation.SP_NAME) TokenParam theName) {
-		// This is search by Observation.name - codeableconcept.
-		// Observation in FHIR supports LOINC. And, the data we have in the
-		// Synthetic EHR has only LOINC in observation data.
-		String systemName = theName.getSystem();
-		String codeName = theName.getValue();
-		// System.out.println(identifierSystem);
-		// System.out.println(systemName + ":" + codeName);
-
-		List<Observation> retVal = new ArrayList<Observation>();
-		List<Observation> portRet = null;
-
-		portRet = syntheticEHRPort.getObservationsByCodeSystem(systemName,
-				codeName);
-		if (portRet != null && !portRet.isEmpty()) {
-			retVal.addAll(portRet);
-		}
-
-		portRet = syntheticCancerPort.getObservationsByCodeSystem(systemName,
-				codeName);
-		if (portRet != null && !portRet.isEmpty()) {
-			retVal.addAll(portRet);
-		}
-
-		return retVal;
-	}
-
-	private List<String> getAllObsIds() {
+	List<String> getObsIdsByPatient(String patientId) {
 		List<String> finalRetVal = new ArrayList<String>();
 
 		Connection connection = null;
 		Statement statement = null;
 
-		String SQL_STATEMENT = "SELECT ID FROM OBSERVATION";
+		String SQL_STATEMENT = "SELECT ID FROM OBSERVATION WHERE SUBJECT = 'Patient/"
+				+ patientId + "'";
 
 		connection = healthPortUser.getConnection();
 		try {
@@ -247,70 +285,79 @@ public class ObservationResourceProvider implements IResourceProvider {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		return finalRetVal;
 
-		// String ccd = null;
-		//
-		// List<String> retVal = null;
-		//
-		// try {
-		// connection = healthPortUser.getConnection();
-		// statement = connection.createStatement();
-		// String sql =
-		// "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID)"
-		// + "WHERE ORG.TAG='"
-		// + GreenwayPort.GREENWAY
-		// + "' OR ORG.TAG='" + HealthVaultPort.HEALTHVAULT + "'";
-		// ResultSet resultSet = statement.executeQuery(sql);
-		//
-		// while (resultSet.next()) {
-		// healthPortUser.setRSInformation(resultSet);
-		// if (healthPortUser.orgID.equals(greenwayPort.getId())) {
-		// ccd = GreenwayPort.getCCD(healthPortUser.personId);
-		// } else if (healthPortUser.orgID.equals(healthvaultPort.getId())) {
-		// retVal = healthvaultPort.getAllObservations(healthPortUser);
-		// if (retVal != null && !retVal.isEmpty()) {
-		// finalRetVal.addAll(retVal);
-		// }
-		// }
-		// retVal = null;
-		// }
-		// retVal = syntheticEHRPort.getObservations();
-		// if (retVal != null && !retVal.isEmpty()) {
-		// finalRetVal.addAll(retVal);
-		// }
-		// retVal = syntheticCancerPort.getObservations();
-		// if (retVal != null && !retVal.isEmpty()) {
-		// finalRetVal.addAll(retVal);
-		// }
-		//
-		// } catch (Exception e) {
-		// e.printStackTrace();
-		// } finally {
-		// try {
-		// connection.close();
-		// } catch (SQLException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-		// }
-		//
-		// return finalRetVal;
+		return finalRetVal;
 	}
 
-	private List<IResource> loadResourcesByIds(List<String> Ids) {
-		List<IResource> retVal = new ArrayList<IResource>();
+	@Search()
+	public IBundleProvider searchByName(
+			@RequiredParam(name = Observation.SP_NAME) TokenParam theName) {
+		// This is search by Observation.name - codeableconcept.
+		// Observation in FHIR supports LOINC. And, the data we have in the
+		// Synthetic EHR has only LOINC in observation data.
 
-		try {
-			retVal = HealthPortInfo.getResourceList(HealthPortInfo.OBSERVATION,
-					Ids);
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		final InstantDt searchTime = InstantDt.withCurrentTime();
+
+		String systemName = theName.getSystem();
+		String codeName = theName.getValue();
+		
+		if (systemName != null
+				&& !systemName.isEmpty()
+				&& !systemName.equalsIgnoreCase("http://loinc.org")
+				&& !systemName
+						.equalsIgnoreCase("urn:oid:2.16.840.1.113883.6.1")) {
+			// SyntheticEHR only has LOINC code name for observation data. But,
+			// pass system name anyway just in case.
+			return null;
 		}
 
-		return retVal;
-	}
+		final List<String> matchingResourceIds = healthPortUser.getResourceIdsByCodeSystem(HealthPortInfo.OBSERVATION, systemName, codeName);
 
+		return new IBundleProvider() {
+
+			@Override
+			public int size() {
+				return matchingResourceIds.size();
+			}
+
+			@Override
+			public List<IResource> getResources(int theFromIndex, int theToIndex) {
+				int end = Math.min(theToIndex, matchingResourceIds.size());
+				// System.out.println("From:"+theFromIndex+" To:"+theToIndex+" Total:"+matchingResourceIds.size());
+				List<String> idsToReturn = matchingResourceIds.subList(
+						theFromIndex, end);
+				List<IResource> retVal = null;
+				try {
+					retVal = healthPortUser.getResourceList(
+							HealthPortInfo.OBSERVATION, idsToReturn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				return retVal;
+			}
+
+			@Override
+			public InstantDt getPublished() {
+				return searchTime;
+			}
+		};
+
+		// List<Observation> portRet = null;
+		//
+		// portRet = syntheticEHRPort.getObservationsByCodeSystem(systemName,
+		// codeName);
+		// if (portRet != null && !portRet.isEmpty()) {
+		// retVal.addAll(portRet);
+		// }
+		//
+		// portRet = syntheticCancerPort.getObservationsByCodeSystem(systemName,
+		// codeName);
+		// if (portRet != null && !portRet.isEmpty()) {
+		// retVal.addAll(portRet);
+		// }
+		//
+		// return retVal;
+	}
 }
