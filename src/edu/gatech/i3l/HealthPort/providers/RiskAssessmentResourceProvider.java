@@ -57,10 +57,10 @@ import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
  *
  */
 public class RiskAssessmentResourceProvider implements IResourceProvider {
-	public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
-	public static final String patientFile = "/Users/ameliahenderson/Desktop/persons_id.txt";
-	//public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
-	//public static final String patientFile = "/home/localadmin/dev/predictive_system/data/person_ids.txt";
+	//public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
+	//public static final String patientFile = "/Users/ameliahenderson/Desktop/persons_id.txt";
+	public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
+	public static final String patientFile = "/home/localadmin/dev/predictive_system/data/person_ids.txt";
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -248,13 +248,14 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				e.printStackTrace();
 			}
 		}
-		
+		System.out.println("patient Ids written to file");
 		Process p = null;
 		int ret = 0;
 		StringBuilder sb = new StringBuilder();
 		try {
 			String pbCommand[] = { "python", predictModel};
 			//ProcessBuilder pb = new ProcessBuilder(pbCommand);
+			System.out.println("Running the python script");
 			Process pb = Runtime.getRuntime().exec(pbCommand);
 			 BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.getInputStream()));
 			 //BufferedReader stdError = new BufferedReader(new InputStreamReader(pb.getErrorStream()));
@@ -269,7 +270,8 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//System.out.println(sb);
+		System.out.println("Script ran");
+		System.out.println(sb);
 		String finalString = sb.toString();
 		
 		JSONObject obj;
