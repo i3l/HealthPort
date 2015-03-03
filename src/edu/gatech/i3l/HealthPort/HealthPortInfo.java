@@ -306,10 +306,11 @@ public class HealthPortInfo {
 		Statement getRes = null;
 
 		try {
-			DataSource ds = (DataSource) new InitialContext()
-					.lookup("java:/comp/env/jdbc/HealthPort");
-
-			connection = ds.getConnection();
+//			DataSource ds = (DataSource) new InitialContext()
+//					.lookup("java:/comp/env/jdbc/HealthPort");
+//
+//			connection = ds.getConnection();
+			connection = getConnection();
 			getRes = connection.createStatement();
 			// System.out.println("reading from OBSERVATION: "+Ids.size());
 			for (String resId : Ids) {
@@ -646,7 +647,7 @@ public class HealthPortInfo {
 					}
 				}
 			}
-		} catch (NamingException | SQLException e) {
+		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
 			connection.close();

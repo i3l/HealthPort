@@ -29,8 +29,8 @@ public class RestfulServlet extends RestfulServer {
 	private static final long serialVersionUID = 1L;
 	
 	public RestfulServlet () {
-		Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-		root.setLevel(Level.ERROR);
+//		Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+//		root.setLevel(Level.ERROR);
 
 		org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RestfulServlet.class);
 		System.out.println("FHIR Servlet Debug Enabled?:"+logger.isDebugEnabled());
