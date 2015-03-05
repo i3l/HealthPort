@@ -16,6 +16,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -29,6 +30,7 @@ import org.json.JSONObject;
 
 import ca.uhn.fhir.model.api.IDatatype;
 import ca.uhn.fhir.model.api.IResource;
+import ca.uhn.fhir.model.dev.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dev.resource.Condition;
 import ca.uhn.fhir.model.dev.resource.Observation;
 import ca.uhn.fhir.model.dev.resource.OperationOutcome;
@@ -57,10 +59,10 @@ import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
  *
  */
 public class RiskAssessmentResourceProvider implements IResourceProvider {
-	//public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
-	//public static final String patientFile = "/Users/ameliahenderson/Desktop/persons_id.txt";
-	public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
-	public static final String patientFile = "/home/localadmin/dev/predictive_system/data/person_ids.txt";
+	public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
+	public static final String patientFilePath = "/Users/ameliahenderson/Desktop/";
+	//public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
+	//public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -139,6 +141,9 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		int numIds = count +1;
 		String patientId = null;
 		Double score = null;
+		Double runtime = null;
+		String method = null;
+		String dataSource = null;
 		
 		
 		String[] Ids = theID.getValue().split("\\-", numIds);
@@ -156,14 +161,16 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 				connection = datasource.getConnection();
 				statement = connection.createStatement();
-				String SQL_Count = "SELECT PATIENTID, SCORE FROM RISKASSESSMENT WHERE ID='"+ Ids[i] +"'";
+				String SQL_Count = "SELECT PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE FROM RISKASSESSMENT WHERE ID='"+ Ids[i] +"'";
 				ResultSet check_ret = statement.executeQuery(SQL_Count);
 				check_ret.next();
 				patientId = check_ret.getString(1);
 				score = check_ret.getDouble(2);
+				runtime = check_ret.getDouble(3);
+				method = check_ret.getString(4);
+				dataSource = check_ret.getString(5);
 				//score = Double.toString(tempScore);
-				//System.out.println(check_ret.getString(1));
-				//System.out.println(check_ret.getDouble(2));
+				
 			} catch (NamingException | SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -172,6 +179,18 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 			risk.setId(Ids[i]);
 			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+patientId);
 			risk.setSubject(subj);
+			String databaseName = null;
+			if(dataSource.equals("ExactData")){
+				databaseName = "omop_v4_exactdata";
+			}
+			if(dataSource.equals("MIMIC2")){
+				databaseName = "omop_v4_mimic2";
+			}
+			
+			CodeableConceptDt methodInformation = new CodeableConceptDt();
+			methodInformation.setText(method+","+dataSource+","+databaseName);
+			risk.setMethod(methodInformation);
+			
 			
 			DecimalDt dec = new DecimalDt();
 			dec.setValue(BigDecimal.valueOf(score));
@@ -179,6 +198,9 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 			IDatatype theValue = null;
 			risk.addPrediction();
 			risk.getPrediction().get(0).setProbability(dec);
+			risk.getPrediction().get(0).setRationale("runtime = "+runtime.toString());
+			
+			
 			//risk.getPrediction().get(0).setProbability(String.format("%.1f", new BigDecimal(tempScore)));
 			retV.add(risk);
 			
@@ -212,22 +234,24 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		int size = theRisk.getBasis().size();
 		String PatientId = null;
 		int count = 0;
-		/*while(count !=size){
-			PatientId = theRisk.getBasis().get(count).getReference().getIdPart();
-			//System.out.println(theRisk.getBasis().get(count).getReference().getIdPart());
-			count = count+1;
-		}*/
-		//System.out.println(size);
-		//System.out.println(theRisk.getBasis().get(0).getReference().getIdPart());
+		String method = theRisk.getMethod().getText();
+		String patientFile = null;
 		
-		//int tempNum = 4;
+		String[] methodInfo = method.split(",");
+		String algorithmName = methodInfo[0];
+		String dataSet = methodInfo[1];
 		
 
 		BufferedWriter out = null;
 		try  
 		{
+			patientFile = patientFilePath + UUID.randomUUID().toString() +".txt";
 		    FileWriter fstream = new FileWriter(patientFile, false); //true tells to append data.
 		    out = new BufferedWriter(fstream);
+		    //method = theRisk.getMethod().getText();
+		    out.write(method);
+		    out.write("\n");
+			
 		    while(count !=size){
 		    	PatientId = theRisk.getBasis().get(count).getReference().getIdPart();
 		    	out.write(PatientId);
@@ -253,7 +277,8 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		int ret = 0;
 		StringBuilder sb = new StringBuilder();
 		try {
-			String pbCommand[] = { "python", predictModel};
+			String pbCommand[] = { "python", predictModel, " "+ patientFile};
+			//String pbCommand[] = { "python", predictModel," "+tempNum};
 			//ProcessBuilder pb = new ProcessBuilder(pbCommand);
 			System.out.println("Running the python script");
 			Process pb = Runtime.getRuntime().exec(pbCommand);
@@ -276,9 +301,12 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		
 		JSONObject obj;
 		JSONObject objPatient = null;
+		Double objRuntime = null;
 		try {
 			obj = new JSONObject(finalString);
 			JSONArray arr = obj.getJSONArray("prediction");
+			objRuntime = obj.getDouble("runtime");
+			//System.out.println(objRuntime);
 			for (int i = 0; i < arr.length(); i++){
 				objPatient = new JSONObject(arr.getString(i));
 				String personId = objPatient.getString("person_id");
@@ -288,19 +316,19 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 				connection = datasource.getConnection();
 				statement = connection.createStatement();
-				String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score+"'";
+				String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"'";
 				ResultSet check_ret = statement.executeQuery(SQL_Count);
 				check_ret.next();
-				
+				//System.out.println(objRuntime);
 				String SQL_Statement = null;
 				if (check_ret.getInt(1) == 0) {
-					SQL_Statement = "INSERT INTO RISKASSESSMENT (PATIENTID, SCORE) VALUES ('"+personId+ "', '"+score+"')";
+					SQL_Statement = "INSERT INTO RISKASSESSMENT (PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE) VALUES ('"+personId+ "', '"+score+"', '"+objRuntime+"', '"+algorithmName+"', '"+dataSet+"')";
 					statement.executeUpdate(SQL_Statement);
 				} 
 			
 				//statement.executeUpdate(SQL_Statement);
 				
-				SQL_Statement = "SELECT ID FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score+"'";
+				SQL_Statement = "SELECT ID FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score+"' AND RUNTIME='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"'";
 				check_ret = statement.executeQuery(SQL_Statement);
 				check_ret.next();
 				//System.out.println(check_ret.getInt(1));
