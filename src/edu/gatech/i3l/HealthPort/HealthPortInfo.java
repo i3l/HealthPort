@@ -178,7 +178,7 @@ public class HealthPortInfo {
 			}
 		}
 
-		System.out.println ("HealthPortInfo: getResourceIdsByCodeSystem: done");
+		System.out.println ("HealthPortInfo: getAllResoureIds: done");
 		return retVal;
 	}
 
