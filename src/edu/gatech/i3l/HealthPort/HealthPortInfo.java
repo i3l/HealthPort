@@ -93,6 +93,7 @@ public class HealthPortInfo {
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName
 				+ " WHERE SUBJECT = 'Patient/" + patientId + "'";
 
+		System.out.println ("HealthPortInfo: getResourceIdsByPatient: "+tableName+" for Patient "+patientId);
 		connection = getConnection();
 		try {
 			statement = connection.createStatement();
@@ -111,6 +112,8 @@ public class HealthPortInfo {
 			}
 		}
 
+		System.out.println ("HealthPortInfo: getResourceIdsByPatient: Done");
+
 		return retVal;
 	}
 
@@ -124,7 +127,9 @@ public class HealthPortInfo {
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName
 				+ " WHERE NAMECODING = '" + code + "'";
 
+		System.out.println ("HealthPortInfo: getResourceIdsByCodeSystem: "+tableName+" for codesys/code "+codeSystem+"/"+code);
 		connection = getConnection();
+
 		try {
 			statement = connection.createStatement();
 			ResultSet rs = statement.executeQuery(SQL_STATEMENT);
@@ -141,6 +146,7 @@ public class HealthPortInfo {
 				e.printStackTrace();
 			}
 		}
+		System.out.println ("HealthPortInfo: getResourceIdsByCodeSystem: done");
 
 		return retVal;
 	}
@@ -153,6 +159,7 @@ public class HealthPortInfo {
 
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName;
 
+		System.out.println ("HealthPortInfo: getAllResoureIds: "+tableName);
 		connection = getConnection();
 		try {
 			statement = connection.createStatement();
@@ -171,6 +178,7 @@ public class HealthPortInfo {
 			}
 		}
 
+		System.out.println ("HealthPortInfo: getResourceIdsByCodeSystem: done");
 		return retVal;
 	}
 

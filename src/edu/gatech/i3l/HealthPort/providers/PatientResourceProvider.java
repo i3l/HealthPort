@@ -61,7 +61,7 @@ public class PatientResourceProvider implements IResourceProvider {
     	String patientID;
     	
     	if (Ids.length != 2) {
-    		return null;
+    		return patient;
     	}
     	if (Ids[0].equals(GWID) ||
     			Ids[0].equals(HVID)) {
