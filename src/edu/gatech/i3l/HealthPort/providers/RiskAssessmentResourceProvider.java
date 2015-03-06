@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -59,10 +60,10 @@ import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
  *
  */
 public class RiskAssessmentResourceProvider implements IResourceProvider {
-	public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
-	public static final String patientFilePath = "/Users/ameliahenderson/Desktop/";
-	//public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
-	//public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
+	//public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
+	//public static final String patientFilePath = "/Users/ameliahenderson/Desktop/";
+	public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
+	public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -225,6 +226,8 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 	public MethodOutcome createRiskAssessment(@ResourceParam RiskAssessment theRisk){
 		validateResource(theRisk);
 		
+		DecimalFormat newFormat = new DecimalFormat("#.###");
+		DecimalFormat newFormat2 = new DecimalFormat("#.##");
 		DataSource datasource = null;
 		Connection connection = null;
 		Statement statement = null;
@@ -277,9 +280,10 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		int ret = 0;
 		StringBuilder sb = new StringBuilder();
 		try {
-			String pbCommand[] = { "python", predictModel, " "+ patientFile};
+			System.out.println(patientFile);
+			String pbCommand[] = { "python", predictModel, patientFile};
 			//String pbCommand[] = { "python", predictModel," "+tempNum};
-			//ProcessBuilder pb = new ProcessBuilder(pbCommand);
+			System.out.println(pbCommand[0]+pbCommand[1]+pbCommand[2]);
 			System.out.println("Running the python script");
 			Process pb = Runtime.getRuntime().exec(pbCommand);
 			 BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.getInputStream()));
@@ -306,17 +310,22 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 			obj = new JSONObject(finalString);
 			JSONArray arr = obj.getJSONArray("prediction");
 			objRuntime = obj.getDouble("runtime");
+			objRuntime = Double.valueOf(newFormat.format(objRuntime));
+			System.out.println(objRuntime);
+			
+			
 			//System.out.println(objRuntime);
 			for (int i = 0; i < arr.length(); i++){
 				objPatient = new JSONObject(arr.getString(i));
 				String personId = objPatient.getString("person_id");
 				Double score = objPatient.getDouble("score");
+				score = Double.valueOf(newFormat2.format(score));
 				
 				context = new InitialContext();
 				datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 				connection = datasource.getConnection();
 				statement = connection.createStatement();
-				String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"'";
+				String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score +"' AND RUNTIME ='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"'";
 				ResultSet check_ret = statement.executeQuery(SQL_Count);
 				check_ret.next();
 				//System.out.println(objRuntime);
