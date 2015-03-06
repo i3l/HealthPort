@@ -53,6 +53,7 @@ import ca.uhn.fhir.rest.param.ReferenceParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IBundleProvider;
 import ca.uhn.fhir.rest.server.IResourceProvider;
+import ca.uhn.fhir.rest.server.exceptions.InvalidRequestException;
 import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
 
 /**
@@ -133,13 +134,28 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 	
 	@Search()
 	public List<RiskAssessment> getRiskAssessmentbyID(
-			@RequiredParam(name = RiskAssessment.SP_IDENTIFIER) TokenParam theID) {
+			@RequiredParam(name = RiskAssessment.SP_SUBJECT) ReferenceParam theSubject) {
 		ArrayList<RiskAssessment> retV = new ArrayList<RiskAssessment>();
-		String resourceId = theID.getValue();
+		String groupId = null;
+		
+		if (theSubject.hasResourceType()) {
+			String resourceType = theSubject.getResourceType();
+			if ("Group".equals(resourceType) == false) {
+				throw new InvalidRequestException(
+						"Invalid resource type for parameter 'subject': "
+								+ resourceType);
+			} else {
+				groupId = theSubject.getIdPart();
+			}
+		} else {
+			throw new InvalidRequestException(
+					"Need resource type for parameter 'subject'");
+		}
+		//String resourceId = theSubject.getValue();
 		//System.out.println(resourceId);
 		
-		int count = StringUtils.countMatches(resourceId, "-");
-		int numIds = count +1;
+		//int count = StringUtils.countMatches(resourceId, "-");
+		//int numIds = count +1;
 		String patientId = null;
 		Double score = null;
 		Double runtime = null;
@@ -147,7 +163,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		String dataSource = null;
 		
 		
-		String[] Ids = theID.getValue().split("\\-", numIds);
+		//String[] Ids = theID.getValue().split("\\-", numIds);
 		//System.out.println(Ids[0]);
 		
 		DataSource datasource = null;
@@ -155,15 +171,68 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		Statement statement = null;
 		Context context = null;
 		
-		for(int i=0; i < numIds; i++){
+		
+		/*String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE GROUPID='"+ groupId +"'";
+		ResultSet check_ret = statement.executeQuery(SQL_Count);
+		check_ret.next();
+		int numIds = check_ret.getInt(1);*/
+		
+		try {
+			context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+			connection = datasource.getConnection();
+			statement = connection.createStatement();
+			String SQL_Count = "SELECT PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE FROM RISKASSESSMENT WHERE GROUPID='"+ groupId +"'";
+			ResultSet check_ret = statement.executeQuery(SQL_Count);
+			while (check_ret.next()) {
+				RiskAssessment risk = new RiskAssessment();
+				
+				patientId = check_ret.getString(1);
+				score = check_ret.getDouble(2);
+				runtime = check_ret.getDouble(3);
+				method = check_ret.getString(4);
+				dataSource = check_ret.getString(5);
+				risk.setId(patientId);
+				ResourceReferenceDt subj = new ResourceReferenceDt("Group/"+groupId);
+				risk.setSubject(subj);
+				String databaseName = null;
+				if(dataSource.equals("ExactData")){
+					databaseName = "omop_v4_exactdata";
+				}
+				if(dataSource.equals("MIMIC2")){
+					databaseName = "omop_v4_mimic2";
+				}
+				
+				CodeableConceptDt methodInformation = new CodeableConceptDt();
+				methodInformation.setText(method+","+dataSource+","+databaseName);
+				risk.setMethod(methodInformation);
+				
+				
+				DecimalDt dec = new DecimalDt();
+				dec.setValue(BigDecimal.valueOf(score));
+				
+				IDatatype theValue = null;
+				risk.addPrediction();
+				risk.getPrediction().get(0).setProbability(dec);
+				risk.getPrediction().get(0).setRationale("runtime = "+runtime.toString());
+
+				retV.add(risk);
+			}
+		} catch (NamingException | SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+
+		/*for(int i=0; i < numIds; i++){
 			RiskAssessment risk = new RiskAssessment();
 			try {
 				context = new InitialContext();
 				datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 				connection = datasource.getConnection();
 				statement = connection.createStatement();
-				String SQL_Count = "SELECT PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE FROM RISKASSESSMENT WHERE ID='"+ Ids[i] +"'";
-				ResultSet check_ret = statement.executeQuery(SQL_Count);
+				String SQL_Count2 = "SELECT PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE FROM RISKASSESSMENT WHERE GROUPID='"+ groupId +"'";
+				ResultSet check_ret2 = statement.executeQuery(SQL_Count);
 				check_ret.next();
 				patientId = check_ret.getString(1);
 				score = check_ret.getDouble(2);
@@ -204,8 +273,9 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 			
 			//risk.getPrediction().get(0).setProbability(String.format("%.1f", new BigDecimal(tempScore)));
 			retV.add(risk);
-			
-		}
+			}
+			*/
+
 		
 		
 		
@@ -243,6 +313,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		String[] methodInfo = method.split(",");
 		String algorithmName = methodInfo[0];
 		String dataSet = methodInfo[1];
+		String groupId = theRisk.getSubject().getReference().getIdPart();
 		
 
 		BufferedWriter out = null;
@@ -325,23 +396,23 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 				connection = datasource.getConnection();
 				statement = connection.createStatement();
-				String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score +"' AND RUNTIME ='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"'";
+				String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score +"' AND RUNTIME ='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"' AND GROUPID='"+groupId+"'";
 				ResultSet check_ret = statement.executeQuery(SQL_Count);
 				check_ret.next();
 				//System.out.println(objRuntime);
 				String SQL_Statement = null;
 				if (check_ret.getInt(1) == 0) {
-					SQL_Statement = "INSERT INTO RISKASSESSMENT (PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE) VALUES ('"+personId+ "', '"+score+"', '"+objRuntime+"', '"+algorithmName+"', '"+dataSet+"')";
+					SQL_Statement = "INSERT INTO RISKASSESSMENT (PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE, GROUPID) VALUES ('"+personId+ "', '"+score+"', '"+objRuntime+"', '"+algorithmName+"', '"+dataSet+"', '"+groupId+"')";
 					statement.executeUpdate(SQL_Statement);
 				} 
 			
 				//statement.executeUpdate(SQL_Statement);
 				
-				SQL_Statement = "SELECT ID FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score+"' AND RUNTIME='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"'";
+				/*SQL_Statement = "SELECT GROUPID FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score+"' AND RUNTIME='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"'";
 				check_ret = statement.executeQuery(SQL_Statement);
 				check_ret.next();
 				//System.out.println(check_ret.getInt(1));
-				idList.add(check_ret.getInt(1));
+				idList.add(check_ret.getInt(1));*/
 				
 				connection.close();
 			    //System.out.println(personId);
@@ -353,13 +424,14 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 			e.printStackTrace();
 		}
 		
-		String finalId = idList.get(0).toString();
+		/*String finalId = idList.get(0).toString();
 		int sizeId = idList.size();
 		for (int j =1; j <sizeId;j++ ){
 			finalId = finalId + "-"+idList.get(j).toString();
-		}
+		}*/
 		
-		//System.out.println(finalId);
+		String finalId = groupId;
+		System.out.println(finalId);
 		return new MethodOutcome(new IdDt(finalId));
 		
 	}
