@@ -217,13 +217,15 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				risk.getPrediction().get(0).setRationale("runtime = "+runtime.toString());
 
 				retV.add(risk);
+				
 			}
+			connection.close();
 		} catch (NamingException | SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-
+		
 		/*for(int i=0; i < numIds; i++){
 			RiskAssessment risk = new RiskAssessment();
 			try {
