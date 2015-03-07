@@ -61,10 +61,23 @@ import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
  *
  */
 public class RiskAssessmentResourceProvider implements IResourceProvider {
-	//public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
-	//public static final String patientFilePath = "/Users/ameliahenderson/Desktop/";
-	public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
-	public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
+	public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
+	public static final String patientFilePath = "/Users/ameliahenderson/Desktop/";
+	//public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
+	//public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
+	
+	private Context context;
+	private DataSource datasource;
+	
+	public RiskAssessmentResourceProvider () {
+		try {
+			context = new InitialContext();
+			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+		} catch (NamingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+	}
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -169,7 +182,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		DataSource datasource = null;
 		Connection connection = null;
 		Statement statement = null;
-		Context context = null;
+		//Context context = null;
 		
 		
 		/*String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE GROUPID='"+ groupId +"'";
@@ -178,8 +191,8 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		int numIds = check_ret.getInt(1);*/
 		
 		try {
-			context = new InitialContext();
-			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+			//context = new InitialContext();
+			//datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 			connection = datasource.getConnection();
 			statement = connection.createStatement();
 			String SQL_Count = "SELECT PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE FROM RISKASSESSMENT WHERE GROUPID='"+ groupId +"'";
@@ -219,10 +232,17 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				retV.add(risk);
 				
 			}
-			connection.close();
-		} catch (NamingException | SQLException e) {
+			
+		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}finally{
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		
@@ -303,7 +323,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		DataSource datasource = null;
 		Connection connection = null;
 		Statement statement = null;
-		Context context = null;
+		//Context context = null;
 		ArrayList<Integer> idList = new ArrayList<Integer>();
 
 		int size = theRisk.getBasis().size();
@@ -394,8 +414,8 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				Double score = objPatient.getDouble("score");
 				score = Double.valueOf(newFormat2.format(score));
 				
-				context = new InitialContext();
-				datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
+				//context = new InitialContext();
+				//datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 				connection = datasource.getConnection();
 				statement = connection.createStatement();
 				String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score +"' AND RUNTIME ='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"' AND GROUPID='"+groupId+"'";
@@ -416,14 +436,21 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				//System.out.println(check_ret.getInt(1));
 				idList.add(check_ret.getInt(1));*/
 				
-				connection.close();
+				
 			    //System.out.println(personId);
 				//System.out.println(score);
 			}
 
-		} catch (JSONException | NamingException | SQLException e) {
+		} catch (JSONException | SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally{
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		/*String finalId = idList.get(0).toString();
