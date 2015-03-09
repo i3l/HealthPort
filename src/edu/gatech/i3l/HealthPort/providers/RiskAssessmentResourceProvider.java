@@ -65,6 +65,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 	//public static final String patientFilePath = "/Users/ameliahenderson/Desktop/";
 	public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
 	public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -183,7 +184,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		//DataSource datasource = null;
 		Connection connection = null;
 		Statement statement = null;
-		Context context = null;
+		//Context context = null;
 		
 		
 		/*String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE GROUPID='"+ groupId +"'";
@@ -237,6 +238,13 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}finally{
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		
