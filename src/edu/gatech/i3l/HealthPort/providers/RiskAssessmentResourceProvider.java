@@ -61,10 +61,10 @@ import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
  *
  */
 public class RiskAssessmentResourceProvider implements IResourceProvider {
-	public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
-	public static final String patientFilePath = "/Users/ameliahenderson/Desktop/";
-	//public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
-	//public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
+	//public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
+	//public static final String patientFilePath = "/Users/ameliahenderson/Desktop/";
+	public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
+	public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
 	
 	private Context context;
 	private DataSource datasource;
@@ -179,7 +179,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		//String[] Ids = theID.getValue().split("\\-", numIds);
 		//System.out.println(Ids[0]);
 		
-		DataSource datasource = null;
+		//DataSource datasource = null;
 		Connection connection = null;
 		Statement statement = null;
 		//Context context = null;
@@ -320,11 +320,11 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		
 		DecimalFormat newFormat = new DecimalFormat("#.###");
 		DecimalFormat newFormat2 = new DecimalFormat("#.##");
-		DataSource datasource = null;
+		//DataSource datasource = null;
 		Connection connection = null;
 		Statement statement = null;
 		//Context context = null;
-		ArrayList<Integer> idList = new ArrayList<Integer>();
+		//ArrayList<Integer> idList = new ArrayList<Integer>();
 
 		int size = theRisk.getBasis().size();
 		String PatientId = null;
