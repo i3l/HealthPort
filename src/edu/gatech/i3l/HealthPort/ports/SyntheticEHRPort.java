@@ -20,10 +20,10 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dev.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dev.composite.CodingDt;
-import ca.uhn.fhir.model.dev.composite.ContainedDt;
+
 //import ca.uhn.fhir.model.dev.composite.ContainedDt;
 import ca.uhn.fhir.model.dev.composite.QuantityDt;
-import ca.uhn.fhir.model.dev.composite.ResourceReferenceDt;
+
 //import ca.uhn.fhir.model.dev.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dev.resource.Condition;
 import ca.uhn.fhir.model.dev.resource.Medication;
@@ -33,10 +33,13 @@ import ca.uhn.fhir.model.dev.resource.MedicationPrescription.DosageInstruction;
 import ca.uhn.fhir.model.dev.resource.Observation;
 import ca.uhn.fhir.model.dev.valueset.ConditionStatusEnum;
 import ca.uhn.fhir.model.dev.valueset.MedicationPrescriptionStatusEnum;
-import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
+
 //import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dev.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dev.valueset.ObservationStatusEnum;
+import ca.uhn.fhir.model.dstu.composite.ContainedDt;
+import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
+import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.IdDt;

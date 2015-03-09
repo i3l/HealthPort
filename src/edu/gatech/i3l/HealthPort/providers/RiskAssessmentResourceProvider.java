@@ -38,7 +38,7 @@ import ca.uhn.fhir.model.dev.resource.OperationOutcome;
 import ca.uhn.fhir.model.dev.resource.Patient;
 import ca.uhn.fhir.model.dev.resource.RiskAssessment;
 import ca.uhn.fhir.model.dev.valueset.IssueSeverityEnum;
-import ca.uhn.fhir.model.dev.composite.ResourceReferenceDt;
+import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.primitive.DecimalDt;
 import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.model.primitive.InstantDt;
@@ -176,6 +176,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		Double runtime = null;
 		String method = null;
 		String dataSource = null;
+		Double featConstructRuntime = null;
 		
 		
 		//String[] Ids = theID.getValue().split("\\-", numIds);
@@ -197,7 +198,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 //			datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 			connection = datasource.getConnection();
 			statement = connection.createStatement();
-			String SQL_Count = "SELECT PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE FROM RISKASSESSMENT WHERE GROUPID='"+ groupId +"'";
+			String SQL_Count = "SELECT PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE, FCRUNTIME FROM RISKASSESSMENT WHERE GROUPID='"+ groupId +"'";
 			ResultSet check_ret = statement.executeQuery(SQL_Count);
 			while (check_ret.next()) {
 				RiskAssessment risk = new RiskAssessment();
@@ -207,6 +208,8 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				runtime = check_ret.getDouble(3);
 				method = check_ret.getString(4);
 				dataSource = check_ret.getString(5);
+				featConstructRuntime = check_ret.getDouble(6);
+				
 				risk.setId(patientId);
 				ResourceReferenceDt subj = new ResourceReferenceDt("Group/"+groupId);
 				risk.setSubject(subj);
@@ -229,7 +232,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				IDatatype theValue = null;
 				risk.addPrediction();
 				risk.getPrediction().get(0).setProbability(dec);
-				risk.getPrediction().get(0).setRationale("runtime = "+runtime.toString());
+				risk.getPrediction().get(0).setRationale("runtime = "+runtime.toString() + " ," + "feature construction runtime = "+featConstructRuntime);
 
 				retV.add(risk);
 				
@@ -401,13 +404,16 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		JSONObject obj;
 		JSONObject objPatient = null;
 		Double objRuntime = null;
+		Double featConstrRuntime = null;
 		try {
 			obj = new JSONObject(finalString);
 			JSONArray arr = obj.getJSONArray("prediction");
 			objRuntime = obj.getDouble("runtime");
 			objRuntime = Double.valueOf(newFormat.format(objRuntime));
+			featConstrRuntime = obj.getDouble("feature_construction_runtime");
+			featConstrRuntime = Double.valueOf(newFormat.format(featConstrRuntime));
 			System.out.println(objRuntime);
-			
+			System.out.println(featConstrRuntime);
 			
 			//System.out.println(objRuntime);
 			for (int i = 0; i < arr.length(); i++){
@@ -420,13 +426,13 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 //				datasource = (DataSource) context.lookup("java:/comp/env/jdbc/HealthPort");
 				connection = datasource.getConnection();
 				statement = connection.createStatement();
-				String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score +"' AND RUNTIME ='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"' AND GROUPID='"+groupId+"'";
+				String SQL_Count = "SELECT COUNT(*) FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score +"' AND RUNTIME ='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"' AND GROUPID='"+groupId+"' AND FCRUNTIME='"+featConstrRuntime+"'";
 				ResultSet check_ret = statement.executeQuery(SQL_Count);
 				check_ret.next();
 				//System.out.println(objRuntime);
 				String SQL_Statement = null;
 				if (check_ret.getInt(1) == 0) {
-					SQL_Statement = "INSERT INTO RISKASSESSMENT (PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE, GROUPID) VALUES ('"+personId+ "', '"+score+"', '"+objRuntime+"', '"+algorithmName+"', '"+dataSet+"', '"+groupId+"')";
+					SQL_Statement = "INSERT INTO RISKASSESSMENT (PATIENTID, SCORE, RUNTIME, METHOD, DATASOURCE, GROUPID, FCRUNTIME) VALUES ('"+personId+ "', '"+score+"', '"+objRuntime+"', '"+algorithmName+"', '"+dataSet+"', '"+groupId+"', '"+featConstrRuntime+"')";
 					statement.executeUpdate(SQL_Statement);
 				} 
 			
