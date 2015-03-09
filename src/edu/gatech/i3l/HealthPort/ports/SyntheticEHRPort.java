@@ -20,8 +20,10 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dev.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dev.composite.CodingDt;
+import ca.uhn.fhir.model.dev.composite.ContainedDt;
 //import ca.uhn.fhir.model.dev.composite.ContainedDt;
 import ca.uhn.fhir.model.dev.composite.QuantityDt;
+import ca.uhn.fhir.model.dev.composite.ResourceReferenceDt;
 //import ca.uhn.fhir.model.dev.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dev.resource.Condition;
 import ca.uhn.fhir.model.dev.resource.Medication;
@@ -31,6 +33,7 @@ import ca.uhn.fhir.model.dev.resource.MedicationPrescription.DosageInstruction;
 import ca.uhn.fhir.model.dev.resource.Observation;
 import ca.uhn.fhir.model.dev.valueset.ConditionStatusEnum;
 import ca.uhn.fhir.model.dev.valueset.MedicationPrescriptionStatusEnum;
+import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
 //import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dev.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dev.valueset.ObservationStatusEnum;
@@ -126,7 +129,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		}
 
 		// Human Readable Section
-		obs.getText().setStatus(ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum.GENERATED);
+		obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 		String textBody = date.toString() + " " + nameDisp + "=" + theValue
 				+ " " + theUnit + " " + desc;
 		textBody = StringEscapeUtils.escapeHtml4(textBody);
@@ -171,7 +174,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 							height, heightUnit, dateTime, "");
 
 					// Observation Reference to Patient
-					obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+					obs.setSubject(new ResourceReferenceDt("Patient/"
 							+ userInfo.userId));
 					retVal.add(obs);
 				}
@@ -186,7 +189,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 							weight, weightUnit, dateTime, "");
 
 					// Observation Reference to Patient
-					obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+					obs.setSubject(new ResourceReferenceDt("Patient/"
 							+ userInfo.userId));
 					retVal.add(obs);
 				}
@@ -200,7 +203,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 							"Respiration Rate", respiration, "", dateTime, "");
 
 					// Observation Reference to Patient
-					obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+					obs.setSubject(new ResourceReferenceDt("Patient/"
 							+ userInfo.userId));
 					retVal.add(obs);
 				}
@@ -214,7 +217,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 							pulse, "", dateTime, "");
 
 					// Observation Reference to Patient
-					obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+					obs.setSubject(new ResourceReferenceDt("Patient/"
 							+ userInfo.userId));
 					retVal.add(obs);
 				}
@@ -228,7 +231,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 							systolicBP, "mm[Hg]", dateTime, "");
 
 					// Observation Reference to Patient
-					obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+					obs.setSubject(new ResourceReferenceDt("Patient/"
 							+ userInfo.userId));
 					retVal.add(obs);
 				}
@@ -242,7 +245,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 							"Diastolic BP", diastolicBP, "mm[Hg]", dateTime, "");
 
 					// Observation Reference to Patient
-					obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+					obs.setSubject(new ResourceReferenceDt("Patient/"
 							+ userInfo.userId));
 					retVal.add(obs);
 				}
@@ -257,7 +260,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 							"Body Temperature", temp, tempUnit, dateTime, "");
 
 					// Observation Reference to Patient
-					obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+					obs.setSubject(new ResourceReferenceDt("Patient/"
 							+ userInfo.userId));
 					retVal.add(obs);
 				}
@@ -278,7 +281,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 						dateTime, rs.getString("Result_Description"));
 
 				// Observation Reference to Patient
-				obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+				obs.setSubject(new ResourceReferenceDt("Patient/"
 						+ userInfo.userId));
 				retVal.add(obs);
 			}
@@ -344,7 +347,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 							rs.getString("Result_Description"));
 
 					// Observation Reference to Patient
-					obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/" + Ids[0]));
+					obs.setSubject(new ResourceReferenceDt("Patient/" + Ids[0]));
 				}
 			} else {
 				sql = "SELECT * FROM vital_sign WHERE Encounter_ID='" + Ids[2]
@@ -398,7 +401,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 								Value, Units, dateTime, "");
 
 						// Observation Reference to Patient
-						obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+						obs.setSubject(new ResourceReferenceDt("Patient/"
 								+ Ids[0]));
 					}
 				}
@@ -488,7 +491,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 										dateTime, "");
 
 								// Observation Reference to Patient
-								obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+								obs.setSubject(new ResourceReferenceDt("Patient/"
 										+ hpUserID));
 								retVal.add(obs);
 							}
@@ -503,7 +506,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 										dateTime, "");
 
 								// Observation Reference to Patient
-								obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+								obs.setSubject(new ResourceReferenceDt("Patient/"
 										+ hpUserID));
 								retVal.add(obs);
 							}
@@ -518,7 +521,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 										dateTime, "");
 
 								// Observation Reference to Patient
-								obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+								obs.setSubject(new ResourceReferenceDt("Patient/"
 										+ hpUserID));
 								retVal.add(obs);
 							}
@@ -531,7 +534,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 										"Heart Beat", pulse, "", dateTime, "");
 
 								// Observation Reference to Patient
-								obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+								obs.setSubject(new ResourceReferenceDt("Patient/"
 										+ hpUserID));
 								retVal.add(obs);
 							}
@@ -546,7 +549,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 										dateTime, "");
 
 								// Observation Reference to Patient
-								obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+								obs.setSubject(new ResourceReferenceDt("Patient/"
 										+ hpUserID));
 								retVal.add(obs);
 							}
@@ -561,7 +564,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 										dateTime, "");
 
 								// Observation Reference to Patient
-								obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+								obs.setSubject(new ResourceReferenceDt("Patient/"
 										+ hpUserID));
 								retVal.add(obs);
 							}
@@ -577,7 +580,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 										dateTime, "");
 
 								// Observation Reference to Patient
-								obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+								obs.setSubject(new ResourceReferenceDt("Patient/"
 										+ hpUserID));
 								retVal.add(obs);
 							}
@@ -629,7 +632,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 							rs.getString("Result_Description"));
 
 					// Observation Reference to Patient
-					obs.setSubject(new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"
+					obs.setSubject(new ResourceReferenceDt("Patient/"
 							+ hpUserID));
 					retVal.add(obs);
 				}
@@ -651,7 +654,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		condition.setId(ID);
 
 		// Set subject reference to Patient
-		ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt subj = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt(subjRef);
+		ResourceReferenceDt subj = new ResourceReferenceDt(subjRef);
 		condition.setSubject(subj);
 
 		// Set Code
@@ -678,7 +681,7 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 				+ dateTime.toString() + "</td>" + "<td>" + nameCode
 				+ "</td></tr></table>";
 		condition.getText().setDiv(textBody);
-		condition.getText().setStatus(ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum.GENERATED);
+		condition.getText().setStatus(NarrativeStatusEnum.GENERATED);
 
 		return condition;
 	}
@@ -877,11 +880,11 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		medicationPrescript.setId(ID);
 
 		// Set Patient whom this prescription is for
-		ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt patientRefDt = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt(patientRef);
+		ResourceReferenceDt patientRefDt = new ResourceReferenceDt(patientRef);
 		medicationPrescript.setPatient(patientRefDt);
 
 		// Prescriber. We don't have Prescriber resource yet. Just display it.
-		ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt providerRefDt = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt();
+		ResourceReferenceDt providerRefDt = new ResourceReferenceDt();
 		providerRefDt.setDisplay(prescriberName);
 		medicationPrescript.setPrescriber(providerRefDt);
 
@@ -900,12 +903,12 @@ public class SyntheticEHRPort implements HealthPortFHIRIntf {
 		medResource.setId(String.valueOf(medId));
 		ArrayList<IResource> medResList = new ArrayList<IResource>();
 		medResList.add(medResource);
-		ca.uhn.fhir.model.dstu.composite.ContainedDt medContainedDt = new ca.uhn.fhir.model.dstu.composite.ContainedDt();
+		ContainedDt medContainedDt = new ContainedDt();
 		medContainedDt.setContainedResources(medResList);
 		medicationPrescript.setContained(medContainedDt);
 
 		// Medication reference. This should point to the contained resource.
-		ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt medRefDt = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("#" + medId);
+		ResourceReferenceDt medRefDt = new ResourceReferenceDt("#" + medId);
 		medRefDt.setDisplay(nameDisp);
 		medicationPrescript.setMedication(medRefDt);
 

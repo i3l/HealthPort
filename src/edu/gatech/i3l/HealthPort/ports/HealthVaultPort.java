@@ -40,12 +40,14 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dev.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dev.composite.CodingDt;
 import ca.uhn.fhir.model.dev.composite.QuantityDt;
+import ca.uhn.fhir.model.dev.composite.ResourceReferenceDt;
 //import ca.uhn.fhir.model.dev.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dev.resource.Condition;
 import ca.uhn.fhir.model.dev.resource.Medication;
 import ca.uhn.fhir.model.dev.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dev.resource.Observation;
 import ca.uhn.fhir.model.dev.valueset.ConditionStatusEnum;
+import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
 //import ca.uhn.fhir.model.dev.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dev.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dev.valueset.ObservationStatusEnum;
@@ -474,7 +476,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 		obs.setValue(quantity);
 		obs.setComments("Body Weight");
-		ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt subj = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"+userId);
+		ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 		obs.setSubject(subj);
 		obs.setStatus(ObservationStatusEnum.FINAL);
 		obs.setReliability(ObservationReliabilityEnum.OK);
@@ -490,8 +492,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		
 		StringBuffer buffer_narrative = new StringBuffer();
 		
-		ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum narrative = null;
-		obs.getText().setStatus(narrative.GENERATED);
+		obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 		buffer_narrative.append("<div>\n");
 		buffer_narrative.append("<div class=\"hapiHeaderText\">Body Weight</div>\n");
 		buffer_narrative.append("<table class=\"hapiPropertyTable\">\n");
@@ -566,7 +567,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 			obs.setValue(quantity);
 			obs.setComments("Height");
-			ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt subj = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"+userId);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
@@ -580,8 +581,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			}
 			obs.setIssuedWithMillisPrecision(date);
 			
-			ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Height</div>\n");
@@ -655,7 +655,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+3))).setUnits(retList.get(i+4));
 			obs.setValue(quantity);
 			obs.setComments(retList.get(i+2) + ", Overall:"+ retList.get(i+5));
-			ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt subj = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"+userId);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
@@ -668,8 +668,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
-			ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + retList.get(i+2)+ "</div>\n");
@@ -750,7 +749,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 			obs.setValue(quantity);
 			obs.setComments("Glucose in " + retList.get(i+4));
-			ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt subj = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"+userId);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
@@ -763,8 +762,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
-			ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">Glucose in " + retList.get(i+4)+ "</div>\n");
@@ -835,7 +833,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+2))).setUnits(retList.get(i+3));
 			obs.setValue(quantity);
 			obs.setComments("Cholesterol");
-			ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt subj = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"+userId);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			obs.setSubject(subj);
 			Date date = new Date();
 			try {
@@ -846,8 +844,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				e.printStackTrace();
 			}
 			obs.setIssuedWithMillisPrecision(date);
-			ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
 			StringBuffer buffer_narrative = new StringBuffer();
@@ -925,13 +922,12 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			QuantityDt quantity = new QuantityDt(Double.parseDouble(retList.get(i+3))).setUnits(retList.get(i+4));
 			obs.setValue(quantity);
 			obs.setComments(retList.get(i+2)+" from: "+retList.get(i+1));
-			ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt subj = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"+userId);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			obs.setSubject(subj);
 			obs.setStatus(ObservationStatusEnum.FINAL);
 			obs.setReliability(ObservationReliabilityEnum.OK);
 
-			ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum narrative = null;
-			obs.getText().setStatus(narrative.GENERATED);
+			obs.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			//buffer_narrative.append("<status value=\"generated\"/>\n");
 			buffer_narrative.append("<div>\n");
@@ -996,7 +992,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 		for (int i = 0; i < conditionList.size(); i=i+4) {
 			Condition cond = new Condition();
 			cond.setId(userId+"-"+count+"-"+conditionList.get(i));
-			ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt subj = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"+userId);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			cond.setSubject(subj);
 			CodeableConceptDt value = new CodeableConceptDt();
 			value.setText(conditionList.get(i+2));
@@ -1043,8 +1039,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			}
 			cond.setDateAssertedWithDayPrecision(date);
 			
-			ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum narrative = null;
-			cond.getText().setStatus(narrative.GENERATED);
+			cond.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + cond.getCode().getText()+ "</div>\n");
@@ -1124,9 +1119,9 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 			MedicationPrescription med = new MedicationPrescription();
 			med.setId(userId+"-"+count+"-"+retList.get(i)); // This is object resource ID. 
 			String nameCode = "0000";
-			ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt subj = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt("Patient/"+userId);
+			ResourceReferenceDt subj = new ResourceReferenceDt("Patient/"+userId);
 			med.setPatient(subj);
-			ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt medicationName = new ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt();
+			ResourceReferenceDt medicationName = new ResourceReferenceDt();
 			medicationName.setDisplay(retList.get(i+2));
 			med.setMedication(medicationName);
 			Date date = new Date();
@@ -1138,8 +1133,7 @@ public class HealthVaultPort implements HealthPortFHIRIntf {
 				e.printStackTrace();
 			}
 			med.setDateWrittenWithSecondsPrecision(date);
-			ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum narrative = null;
-			med.getText().setStatus(narrative.GENERATED);
+			med.getText().setStatus(NarrativeStatusEnum.GENERATED);
 			StringBuffer buffer_narrative = new StringBuffer();
 			buffer_narrative.append("<div>\n");
 			buffer_narrative.append("<div class=\"hapiHeaderText\">" + med.getMedication().getDisplay()+ "</div>\n");
