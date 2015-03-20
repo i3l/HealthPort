@@ -7,6 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.sql.Date;
 import java.util.List;
 
+import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -32,11 +34,13 @@ import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.Medication;
+import ca.uhn.fhir.model.dstu.resource.MedicationDispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.MedicationDispenseStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.MedicationPrescriptionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
@@ -64,6 +68,7 @@ public class HealthPortInfo {
 	public static String OBSERVATION = "OBSERVATION";
 	public static String CONDITION = "CONDITIONS";
 	public static String MEDICATIONPRESCRIPTION = "MEDICATIONPRESCRIPTION";
+	public static String MEDICATIONDISPENSE= "MEDICATIONDISPENSE";
 
 	private DataSource dataSource;
 
@@ -286,6 +291,41 @@ public class HealthPortInfo {
 				pstmt.setString(13, obj.STATUS);
 				pstmt.setString(14, obj.TEXTSTATUS);
 				pstmt.setString(15, obj.NARRATIVE);
+
+				pstmt.executeUpdate();
+				pstmt.clearParameters();
+				pstmt.close();
+
+			} else if (tableName.equals(MEDICATIONDISPENSE)) {
+				MedicationDispenseSerializable obj = (MedicationDispenseSerializable) obj0;
+				SQL_STATEMENT = "REPLACE INTO "
+						+ tableName
+						+ " (ID,SUMMARY,STATUS,QTYVALUE,QTYUNIT,QTYCODE,WHENPREPARED,WHENHANDED,SUBSTCODE,SUBSTDISPLAY) VALUES "
+						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				PreparedStatement pstmt = connection
+						.prepareStatement(SQL_STATEMENT);
+
+				// set input parameters
+				pstmt.setString(1, obj.ID);
+				pstmt.setString(2, obj.SUMMARY);
+				pstmt.setString(3, obj.STATUS);
+				pstmt.setInt(4, obj.QTYVALUE);
+				pstmt.setString(5, obj.QTYUNIT);
+				pstmt.setString(6, obj.QTYCODE);
+				if (obj.DATEPREPARED != null) {
+					Timestamp ts = new Timestamp(obj.DATEPREPARED.getTime());
+					pstmt.setTimestamp(7, ts);
+				} else {
+					pstmt.setTimestamp(7, null);
+				}
+				if (obj.DATEHANDED != null) {
+					Timestamp ts = new Timestamp(obj.DATEHANDED.getTime());
+					pstmt.setTimestamp(8, ts);
+				} else {
+					pstmt.setTimestamp(8, null);
+				}
+				pstmt.setString(9, obj.SUBSTCODE);
+				pstmt.setString(10, obj.SUBSTDISPLAY);
 
 				pstmt.executeUpdate();
 				pstmt.clearParameters();
@@ -644,6 +684,95 @@ public class HealthPortInfo {
 						}
 						retVal.add(medicationPrescript);
 					}
+					 else if (tableName.equals(MEDICATIONDISPENSE)) {
+						 // TODO SAM:
+							String ID = rs.getString("ID");
+							String summary = rs.getString("SUMMARY");
+							String status = rs.getString("STATUS");
+							String patientRef = rs.getString("SUBJECT");
+							String dispenserRef = rs.getString("DISPENSERREF");
+							String authPrescRef = rs.getString("AUTHPRESCREF");
+							double qtyValue = rs.getDouble("QTYVALUE");
+							String qtyUnit = rs.getString("QTYUNIT");
+							String qtySystem = rs.getString("QTYSYSTEM");
+							String qtyCode = rs.getString("QTYCODE");
+							String medRef = rs.getString("MEDREF");
+
+							Timestamp datePreparedTS = rs
+									.getTimestamp("DATEPREPARED");
+							java.util.Date datePrepared = null;
+							if (datePreparedTS != null) {
+								datePrepared = new Date(datePreparedTS.getTime());
+							}
+							Timestamp dateHandedTS = rs
+									.getTimestamp("DATEHANDED");
+							java.util.Date dateHanded = null;
+							if (dateHandedTS != null) {
+								dateHanded = new Date(dateHandedTS.getTime());
+
+							String substSystem = rs.getString("SUBSTSYSTEM");
+							String substCode = rs.getString("SUBSTCODE");
+							String substDisplay = rs.getString("SUBSTDISPLAY");
+
+							MedicationDispense medicationDispense = new MedicationDispense();
+							medicationDispense.setId(ID);
+
+							// Set Patient whom this prescription is for
+							ResourceReferenceDt patientRefDt = new ResourceReferenceDt(
+									patientRef);
+							medicationDispense.setPatient(patientRefDt);
+							
+							// Set dispenser
+							ResourceReferenceDt dispenserRefDt = new ResourceReferenceDt(
+									dispenserRef);
+							medicationDispense.setDispenser(dispenserRefDt);
+
+							// Set authorizing prescription
+							List<ResourceReferenceDt> authPrescRefDts = new ArrayList<ResourceReferenceDt>();
+							ResourceReferenceDt authPrescRefDt = new ResourceReferenceDt(
+									authPrescRef);
+							authPrescRefDts.add(authPrescRefDt);
+							medicationDispense.setAuthorizingPrescription(authPrescRefDts);
+
+							// Dispense Qty, Status, Medication, When Prepared & Handed
+							MedicationDispense.Dispense medDispense = new MedicationDispense.Dispense();
+							QuantityDt qty = new QuantityDt(qtyValue);
+							qty.setUnits(qtyUnit);
+							qty.setCode(qtyCode);
+							qty.setSystem(qtySystem);
+							medDispense.setQuantity(qty);
+							medDispense.setMedication(new ResourceReferenceDt(medRef));
+							medDispense.setWhenHandedOver(new DateTimeDt(dateHanded));
+							medDispense.setWhenPrepared(new DateTimeDt(datePrepared));
+							List<MedicationDispense.Dispense> medDispenses = new ArrayList<MedicationDispense.Dispense>();
+							medDispenses.add(medDispense);
+							medicationDispense.setDispense(medDispenses);
+
+							// Substitution
+							MedicationDispense.Substitution subst = new MedicationDispense.Substitution();
+							CodeableConceptDt substCodeableDt = new CodeableConceptDt(substSystem, substCode);
+							substCodeableDt.setText(substDisplay);
+							subst.setType(substCodeableDt);
+							
+							// Status
+							if (status.equalsIgnoreCase("in_progress")) {
+								medicationDispense
+										.setStatus(MedicationDispenseStatusEnum.IN_PROGRESS);
+							} else if (status.equalsIgnoreCase("completed")) {
+								medicationDispense
+										.setStatus(MedicationDispenseStatusEnum.COMPLETED);
+							} else if (status.equalsIgnoreCase("on_hold")) {
+								medicationDispense
+										.setStatus(MedicationDispenseStatusEnum.ON_HOLD);
+							} else if (status.equalsIgnoreCase("stopped")) {
+								medicationDispense
+										.setStatus(MedicationDispenseStatusEnum.STOPPED);
+							}
+
+							
+							retVal.add(medicationDispense);
+						}
+					 }
 				}
 			}
 		} catch (NamingException | SQLException e) {
@@ -684,8 +813,10 @@ public class HealthPortInfo {
 
 	private void databaseSetup(String jndiName) {
 		try {
-			dataSource = (DataSource) new InitialContext()
+			InitialContext context = new InitialContext();
+			dataSource = (DataSource) context
 					.lookup("java:/comp/env/" + jndiName);
+					//.lookup(jndiName);
 		} catch (NamingException e) {
 			e.printStackTrace();
 		}
