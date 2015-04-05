@@ -3,6 +3,7 @@
 	<name>HealthPort</name>
 	<comment></comment>
 	<projects>
+		<project>spring-web-4.1.1.RELEASE</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

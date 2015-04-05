@@ -83,7 +83,58 @@ public class HealthPortInfo {
 		setInformation(userId);
 	}
 
-	public List<String> getResourceIdsByPatient(String tableName,
+	public List<String> getResourceIdsByPatientCode (String tableName, String patientId, List<String> codes) {
+		List<String> retVal = new ArrayList<String>();
+		Connection connection = null;
+		Statement statement = null;
+
+		if (codes.isEmpty()) {
+			// If list of code is empty, this is basically same as getResourceIdsByPatient
+			return getResourceIdsByPatient(tableName, patientId);
+		}
+		
+		String SQL_STATEMENT = "SELECT ID FROM " + tableName
+				+ " WHERE SUBJECT = 'Patient/" + patientId + "' AND (";
+		if (tableName.equals(OBSERVATION)) {
+			// Use codes as a search filter.
+			boolean start = true;
+			for (String code : codes) {
+				if (start) {
+					SQL_STATEMENT += "NAMECODING = '" + code +"'";
+					start = false; 
+				} else {
+					SQL_STATEMENT += " OR NAMECODING = '" + code +"'";
+				}
+			}
+			SQL_STATEMENT += ")";
+		}
+		
+		System.out.println (SQL_STATEMENT);
+		System.out.println ("HealthPortInfo: getResourceIdsByPatientCode: "+tableName+" for Patient="+patientId+" and Codes");
+		connection = getConnection();
+		try {
+			statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery(SQL_STATEMENT);
+
+			while (rs.next()) {
+				retVal.add(rs.getString("ID"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		System.out.println ("HealthPortInfo: getResourceIdsByPatientCode: Done");
+		
+		return retVal;
+	}
+	
+	public List<String> getResourceIdsByPatient (String tableName,
 			String patientId) {
 		List<String> retVal = new ArrayList<String>();
 

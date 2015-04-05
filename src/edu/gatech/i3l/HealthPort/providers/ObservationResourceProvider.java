@@ -5,17 +5,24 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.model.primitive.InstantDt;
+import ca.uhn.fhir.model.primitive.StringDt;
 import ca.uhn.fhir.rest.annotation.IdParam;
+import ca.uhn.fhir.rest.annotation.OptionalParam;
 import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.RequiredParam;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.param.ReferenceParam;
+import ca.uhn.fhir.rest.param.TokenOrListParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.IBundleProvider;
 import ca.uhn.fhir.rest.server.IResourceProvider;
@@ -160,6 +167,85 @@ public class ObservationResourceProvider implements IResourceProvider {
 	// return retVal;
 	// }
 
+	@Search
+	public IBundleProvider getObservationsbyPatientCode(
+			@RequiredParam(name = Observation.SP_SUBJECT) ReferenceParam theSubject,
+			@RequiredParam(name = Observation.SP_NAME) TokenOrListParam theCode) {
+		
+		final InstantDt searchTime = InstantDt.withCurrentTime();
+
+		String patientID;
+		if (theSubject.hasResourceType()) {
+			String resourceType = theSubject.getResourceType();
+			if ("Patient".equals(resourceType) == false) {
+				throw new InvalidRequestException(
+						"Invalid resource type for parameter 'subject': "
+								+ resourceType);
+			} else {
+				patientID = theSubject.getIdPart();
+			}
+		} else {
+			throw new InvalidRequestException(
+					"Need resource type for parameter 'subject'");
+		}
+		
+		System.out.println ("Subject: "+theSubject.getIdPart());
+		
+		List<TokenParam> lcode = theCode.getValuesAsQueryTokens();
+		List<String> loincValues = new ArrayList<String> ();
+		for (TokenParam codeParameter : lcode) {
+			String systemName = codeParameter.getSystem();
+			if (systemName != null
+					&& !systemName.isEmpty()
+					&& !systemName.equalsIgnoreCase("http://loinc.org")
+					&& !systemName
+							.equalsIgnoreCase("urn:oid:2.16.840.1.113883.6.1")) {
+				// SyntheticEHR only has LOINC code name for observation data. But,
+				// pass system name anyway just in case.
+				continue;
+			}
+
+			String value = codeParameter.getValue().trim();
+			if (value.isEmpty()) continue;
+			
+			loincValues.add(value);
+		}
+		
+		final List<String> matchingResourceIds;
+		matchingResourceIds = healthPortUser.getResourceIdsByPatientCode(HealthPortInfo.OBSERVATION, patientID, loincValues);
+		
+		return new IBundleProvider() {
+
+			@Override
+			public int size() {
+				return matchingResourceIds.size();
+			}
+
+			@Override
+			public List<IResource> getResources(int theFromIndex, int theToIndex) {
+				int end = Math.min(theToIndex, matchingResourceIds.size());
+				// System.out.println("From:"+theFromIndex+" To:"+theToIndex+" Total:"+matchingResourceIds.size());
+				List<String> idsToReturn = matchingResourceIds.subList(
+						theFromIndex, end);
+				List<IResource> retVal = null;
+				try {
+					retVal = healthPortUser.getResourceList(
+							HealthPortInfo.OBSERVATION, idsToReturn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				return retVal;
+			}
+
+			@Override
+			public InstantDt getPublished() {
+				return searchTime;
+			}
+		};
+	}
+	
 	@Search()
 	// public List<Observation> getObservationsbyPatient(
 	public IBundleProvider getObservationsbyPatient(
