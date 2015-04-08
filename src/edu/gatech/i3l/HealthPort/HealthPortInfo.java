@@ -34,12 +34,14 @@ import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.Medication;
+import ca.uhn.fhir.model.dstu.resource.MedicationAdministration;
 import ca.uhn.fhir.model.dstu.resource.MedicationDispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.MedicationAdministrationStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.MedicationDispenseStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.MedicationPrescriptionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
@@ -69,6 +71,7 @@ public class HealthPortInfo {
 	public static String CONDITION = "CONDITIONS";
 	public static String MEDICATIONPRESCRIPTION = "MEDICATIONPRESCRIPTION";
 	public static String MEDICATIONDISPENSE= "MEDICATIONDISPENSE";
+	public static String MEDICATIONADMINISTRATION= "MEDICATIONADMINISTRATION";
 
 	private DataSource dataSource;
 
@@ -326,6 +329,29 @@ public class HealthPortInfo {
 				}
 				pstmt.setString(9, obj.SUBSTCODE);
 				pstmt.setString(10, obj.SUBSTDISPLAY);
+
+				pstmt.executeUpdate();
+				pstmt.clearParameters();
+				pstmt.close();
+
+			} else if (tableName.equals(MEDICATIONADMINISTRATION)) {
+				MedicationAdministrationSerializable obj = (MedicationAdministrationSerializable) obj0;
+				SQL_STATEMENT = "REPLACE INTO "
+						+ tableName
+						+ " (ID,STATUS,SUBJECT,MEDICATION,DEVICEID,DEVICEDISPLAY,QTYVALUE,QTYUNIT) VALUES "
+						+ " (?, ?, ?, ?, ?, ?, ?, ?)";
+				PreparedStatement pstmt = connection
+						.prepareStatement(SQL_STATEMENT);
+
+				// set input parameters
+				pstmt.setString(1, obj.ID);
+				pstmt.setString(2, obj.STATUS);
+				pstmt.setString(3, obj.SUBJECT);
+				pstmt.setString(4, obj.MEDICATION);
+				pstmt.setString(5, obj.DEVICEID);
+				pstmt.setString(6, obj.DEVICEDISPLAY);
+				pstmt.setInt(7, obj.QTYVALUE);
+				pstmt.setString(8, obj.QTYUNIT);
 
 				pstmt.executeUpdate();
 				pstmt.clearParameters();
@@ -684,8 +710,59 @@ public class HealthPortInfo {
 						}
 						retVal.add(medicationPrescript);
 					}
-					 else if (tableName.equals(MEDICATIONDISPENSE)) {
-						 // TODO SAM:
+					else if (tableName.equals(MEDICATIONADMINISTRATION)) {
+						String ID = rs.getString("ID");
+						String statusA = rs.getString("STATUS");
+						String patientA = rs.getString("SUBJECT");
+						String medication = rs.getString("MEDICATION");
+						String deviceId = rs.getString("DEVICEID");
+						String deviceDisplay = rs.getString("DEVICEDISPLAY");
+						double qtyValue1 = rs.getDouble("QTYVALUE");
+						String qtyUnit1 = rs.getString("QTYUNIT");
+
+						MedicationAdministration medicationAdministration = new MedicationAdministration();
+						medicationAdministration.setId(ID);
+						
+						// Set Patient whom this medication is for
+						ResourceReferenceDt patientRefDt = new ResourceReferenceDt(
+								patientA);
+						medicationAdministration.setPatient(patientRefDt);								
+						
+						ResourceReferenceDt medRefDt = new ResourceReferenceDt(
+								medication);
+						medRefDt.setDisplay(medication);
+						medicationAdministration.setMedication(medRefDt);
+						
+						MedicationAdministration.Dosage dosage = medicationAdministration.addDosage();
+						QuantityDt medQtyDt = new QuantityDt(qtyValue1);
+						medQtyDt.setUnits(qtyUnit1);
+						
+						dosage.setQuantity(medQtyDt);
+						
+						List<ResourceReferenceDt> devices = new ArrayList<ResourceReferenceDt>();
+						ResourceReferenceDt deviceRef = new ResourceReferenceDt(
+								deviceId);
+						deviceRef.setDisplay(deviceDisplay);
+						devices.add(deviceRef);
+						medicationAdministration.setDevice(devices);
+						
+						// Status
+						if (statusA.equalsIgnoreCase("in_progress")) {
+							medicationAdministration
+									.setStatus(MedicationAdministrationStatusEnum.IN_PROGRESS);
+						} else if (statusA.equalsIgnoreCase("completed")) {
+							medicationAdministration
+									.setStatus(MedicationAdministrationStatusEnum.COMPLETED);
+						} else if (statusA.equalsIgnoreCase("on_hold")) {
+							medicationAdministration
+									.setStatus(MedicationAdministrationStatusEnum.ON_HOLD);
+						} else if (statusA.equalsIgnoreCase("stopped")) {
+							medicationAdministration.setStatus(MedicationAdministrationStatusEnum.STOPPED);								
+						}
+						
+						retVal.add(medicationAdministration);
+					}
+					else if (tableName.equals(MEDICATIONDISPENSE)) {
 							String ID = rs.getString("ID");
 							String summary = rs.getString("SUMMARY");
 							String status = rs.getString("STATUS");
