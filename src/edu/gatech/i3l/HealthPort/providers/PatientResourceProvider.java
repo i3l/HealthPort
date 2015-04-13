@@ -6,21 +6,16 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.naming.Context;
-import javax.sql.DataSource;
-
-import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dstu.resource.Patient;
+import ca.uhn.fhir.model.dstu.valueset.AdministrativeGenderCodesEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.model.primitive.UriDt;
-import ca.uhn.fhir.narrative.DefaultThymeleafNarrativeGenerator;
 import ca.uhn.fhir.rest.annotation.IdParam;
 import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.Search;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import edu.gatech.i3l.HealthPort.HealthPortInfo;
-import edu.gatech.i3l.HealthPort.ports.ExactDataPort;
 import edu.gatech.i3l.HealthPort.ports.GreenwayPort;
 import edu.gatech.i3l.HealthPort.ports.HealthVaultPort;
 
@@ -161,8 +156,8 @@ public class PatientResourceProvider implements IResourceProvider {
 				// String output =
 				// ctx.newXmlParser().setPrettyPrint(true).encodeResourceToString(patient);
 				patient.getText().setStatus(NarrativeStatusEnum.GENERATED);
-				String textBody = "<table>" + "<tr><td>Name</td><td>"
-						+ fullName + "</td></tr></table>";
+				String textBody = "<table><tr><td>Name</td><td>" + fullName
+						+ "</td></tr></table>";
 				patient.getText().setDiv(textBody);
 				retVal.add(patient);
 			}
