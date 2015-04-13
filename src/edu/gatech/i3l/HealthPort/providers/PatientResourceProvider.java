@@ -150,6 +150,19 @@ public class PatientResourceProvider implements IResourceProvider {
 							+ userName[2];
 				}
 
+				// Gender
+				if (null == healthPortUser.gender) {
+					// Null check: Unknown gender
+					patient.setGender(AdministrativeGenderCodesEnum.UN);
+				} else if (healthPortUser.gender.equalsIgnoreCase("female")) {
+					patient.setGender(AdministrativeGenderCodesEnum.F);
+				} else if (healthPortUser.gender.equalsIgnoreCase("male")) {
+					patient.setGender(AdministrativeGenderCodesEnum.M);
+				} else {
+					// Unknown gender for all other values
+					patient.setGender(AdministrativeGenderCodesEnum.UN);
+				}
+
 				// ctx.setNarrativeGenerator(new
 				// DefaultThymeleafNarrativeGenerator());
 				// Encode the output, including the narrative
