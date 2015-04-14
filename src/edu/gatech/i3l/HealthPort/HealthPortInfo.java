@@ -54,6 +54,13 @@ public class HealthPortInfo {
 	public String gender = null;
 	public String contact = null;
 	public String address = null;
+	public Date dob = null;
+	public String ethnicity = null;
+	public String maritalStatus = null;
+	public String bloodType = null;
+	public String job = null;
+	public String advanceDirective = null;
+	public String organDonor = null;
 
 	// Database Paging Resource Names
 	public static String OBSERVATION = "OBSERVATION";
@@ -762,13 +769,20 @@ public class HealthPortInfo {
 
 	public void resetInformation() {
 		userId = null;
-		name = null;
+		name = "";
 		recordId = null;
 		personId = null;
 		source = null;
 		gender = null;
 		contact = null;
 		address = null;
+		dob = null;
+		ethnicity = null;
+		maritalStatus = null;
+		bloodType = null;
+		job = null;
+		advanceDirective = null;
+		organDonor = null;
 	}
 
 	public void setRSInformation(ResultSet rs) throws SQLException {
@@ -781,27 +795,34 @@ public class HealthPortInfo {
 		gender = rs.getString("GENDER");
 		contact = rs.getString("CONTACT");
 		address = rs.getString("ADDRESS");
+		dob = rs.getDate("DOB");
+		ethnicity = rs.getString("ETHNICITY");
+		maritalStatus = rs.getString("MARITAL_STATUS");
+		bloodType = rs.getString("BLOOD_TYPE");
+		job = rs.getString("JOB");
+		advanceDirective = rs.getString("ADVANCE_DIRECTIVE");
+		organDonor = rs.getString("ORGAN_DONOR");
 	}
 
-	public void setInformation(String userId) {
+	public void setInformation(String qPersonId) {
 		Connection connection = null;
-		Statement statement = null;
-		// Context context = null;
-		// DataSource datasource = null;
 
-		this.userId = userId;
+		this.personId = qPersonId;
 
 		try {
 			connection = getConnection();
-			statement = connection.createStatement();
-			String SQL_STATEMENT = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) WHERE U1.ID="
-					+ userId;
-			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
+			final String SQL_STATEMENT = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS, U1.DOB, U1.ETHNICITY, U1.MARITAL_STATUS, U1.BLOOD_TYPE, U1.JOB, U1.ADVANCE_DIRECTIVE, U1.ORGAN_DONOR FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) "
+					+ " WHERE U1.ID=?;";
+			PreparedStatement psPatientId = connection
+					.prepareStatement(SQL_STATEMENT);
+			psPatientId.setString(1, qPersonId);
+			ResultSet resultSet = psPatientId.executeQuery();
 
 			if (resultSet.next()) {
 				setRSInformation(resultSet);
-				// System.out.println("[HealthPortUserInfo]"+userId);
-				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
+			} else {
+				// No record found, reset the record
+				resetInformation();
 			}
 
 		} catch (Exception e) {
@@ -816,25 +837,25 @@ public class HealthPortInfo {
 		}
 	}
 
-	public void setInformationPersonID(String Id, String OrgID) {
+	public void setInformationPersonID(String qPersonId, String qOrgId) {
 		Connection connection = null;
-		Statement statement = null;
-		// Context context = null;
-		// DataSource datasource = null;
-
-		this.personId = Id;
 
 		try {
 			connection = getConnection();
-			statement = connection.createStatement();
-			String SQL_STATEMENT = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) WHERE U1.PERSONID='"
-					+ Id + "' AND U1.ORGANIZATIONID='" + OrgID + "'";
-			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
+
+			final String SQL_STATEMENT = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS, U1.DOB, U1.ETHNICITY, U1.MARITAL_STATUS, U1.BLOOD_TYPE, U1.JOB, U1.ADVANCE_DIRECTIVE, U1.ORGAN_DONOR FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) "
+					+ " WHERE U1.PERSONID=? AND U1.ORGANIZATIONID=?;";
+			PreparedStatement psPatient = connection
+					.prepareStatement(SQL_STATEMENT);
+			psPatient.setString(1, qPersonId);
+			psPatient.setString(2, qOrgId);
+			ResultSet resultSet = psPatient.executeQuery();
 
 			if (resultSet.next()) {
 				setRSInformation(resultSet);
-				// System.out.println("[HealthPortUserInfo]"+userId);
-				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
+			} else {
+				// No record found, reset the record
+				resetInformation();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
