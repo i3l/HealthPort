@@ -3,19 +3,14 @@
  */
 package edu.gatech.i3l.HealthPort;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.sql.Date;
 import java.util.List;
 
 import javax.naming.InitialContext;
@@ -33,9 +28,9 @@ import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
-import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
+import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.MedicationPrescriptionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
@@ -83,16 +78,18 @@ public class HealthPortInfo {
 		setInformation(userId);
 	}
 
-	public List<String> getResourceIdsByPatientCode (String tableName, String patientId, List<String> codes) {
+	public List<String> getResourceIdsByPatientCode(String tableName,
+			String patientId, List<String> codes) {
 		List<String> retVal = new ArrayList<String>();
 		Connection connection = null;
 		Statement statement = null;
 
 		if (codes.isEmpty()) {
-			// If list of code is empty, this is basically same as getResourceIdsByPatient
+			// If list of code is empty, this is basically same as
+			// getResourceIdsByPatient
 			return getResourceIdsByPatient(tableName, patientId);
 		}
-		
+
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName
 				+ " WHERE SUBJECT = 'Patient/" + patientId + "' AND (";
 		if (tableName.equals(OBSERVATION)) {
@@ -100,17 +97,18 @@ public class HealthPortInfo {
 			boolean start = true;
 			for (String code : codes) {
 				if (start) {
-					SQL_STATEMENT += "NAMECODING = '" + code +"'";
-					start = false; 
+					SQL_STATEMENT += "NAMECODING = '" + code + "'";
+					start = false;
 				} else {
-					SQL_STATEMENT += " OR NAMECODING = '" + code +"'";
+					SQL_STATEMENT += " OR NAMECODING = '" + code + "'";
 				}
 			}
 			SQL_STATEMENT += ")";
 		}
-		
-		System.out.println (SQL_STATEMENT);
-		System.out.println ("HealthPortInfo: getResourceIdsByPatientCode: "+tableName+" for Patient="+patientId+" and Codes");
+
+		System.out.println(SQL_STATEMENT);
+		System.out.println("HealthPortInfo: getResourceIdsByPatientCode: "
+				+ tableName + " for Patient=" + patientId + " and Codes");
 		connection = getConnection();
 		try {
 			statement = connection.createStatement();
@@ -124,17 +122,17 @@ public class HealthPortInfo {
 		} finally {
 			try {
 				connection.close();
-			} catch (SQLException e) {				// TODO Auto-generated catch block
+			} catch (SQLException e) { // TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 
-		System.out.println ("HealthPortInfo: getResourceIdsByPatientCode: Done");
-		
+		System.out.println("HealthPortInfo: getResourceIdsByPatientCode: Done");
+
 		return retVal;
 	}
-	
-	public List<String> getResourceIdsByPatient (String tableName,
+
+	public List<String> getResourceIdsByPatient(String tableName,
 			String patientId) {
 		List<String> retVal = new ArrayList<String>();
 
@@ -144,7 +142,8 @@ public class HealthPortInfo {
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName
 				+ " WHERE SUBJECT = 'Patient/" + patientId + "'";
 
-		System.out.println ("HealthPortInfo: getResourceIdsByPatient: "+tableName+" for Patient "+patientId);
+		System.out.println("HealthPortInfo: getResourceIdsByPatient: "
+				+ tableName + " for Patient " + patientId);
 		connection = getConnection();
 		try {
 			statement = connection.createStatement();
@@ -158,12 +157,12 @@ public class HealthPortInfo {
 		} finally {
 			try {
 				connection.close();
-			} catch (SQLException e) {				// TODO Auto-generated catch block
+			} catch (SQLException e) { // TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 
-		System.out.println ("HealthPortInfo: getResourceIdsByPatient: Done");
+		System.out.println("HealthPortInfo: getResourceIdsByPatient: Done");
 
 		return retVal;
 	}
@@ -178,7 +177,8 @@ public class HealthPortInfo {
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName
 				+ " WHERE NAMECODING = '" + code + "'";
 
-		System.out.println ("HealthPortInfo: getResourceIdsByCodeSystem: "+tableName+" for codesys/code "+codeSystem+"/"+code);
+		System.out.println("HealthPortInfo: getResourceIdsByCodeSystem: "
+				+ tableName + " for codesys/code " + codeSystem + "/" + code);
 		connection = getConnection();
 
 		try {
@@ -197,7 +197,7 @@ public class HealthPortInfo {
 				e.printStackTrace();
 			}
 		}
-		System.out.println ("HealthPortInfo: getResourceIdsByCodeSystem: done");
+		System.out.println("HealthPortInfo: getResourceIdsByCodeSystem: done");
 
 		return retVal;
 	}
@@ -210,7 +210,7 @@ public class HealthPortInfo {
 
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName;
 
-		System.out.println ("HealthPortInfo: getAllResoureIds: "+tableName);
+		System.out.println("HealthPortInfo: getAllResoureIds: " + tableName);
 		connection = getConnection();
 		try {
 			statement = connection.createStatement();
@@ -229,7 +229,7 @@ public class HealthPortInfo {
 			}
 		}
 
-		System.out.println ("HealthPortInfo: getAllResoureIds: done");
+		System.out.println("HealthPortInfo: getAllResoureIds: done");
 		return retVal;
 	}
 
@@ -365,10 +365,10 @@ public class HealthPortInfo {
 		Statement getRes = null;
 
 		try {
-//			DataSource ds = (DataSource) new InitialContext()
-//					.lookup("java:/comp/env/jdbc/HealthPort");
-//
-//			connection = ds.getConnection();
+			// DataSource ds = (DataSource) new InitialContext()
+			// .lookup("java:/comp/env/jdbc/HealthPort");
+			//
+			// connection = ds.getConnection();
 			connection = getConnection();
 			getRes = connection.createStatement();
 			// System.out.println("reading from OBSERVATION: "+Ids.size());
@@ -863,7 +863,6 @@ public class HealthPortInfo {
 				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
 			}
 
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 			resetInformation();
