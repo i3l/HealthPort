@@ -30,6 +30,11 @@
 		<resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
 	</resource-env-ref>
 	<resource-env-ref>
+		<description>MIMIC2 Patient Database</description>
+		<resource-env-ref-name>jdbc/omop_v4_mimic2</resource-env-ref-name>
+		<resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>
+	</resource-env-ref>
+	<resource-env-ref>
 		<description>SyntheticSample Database</description>
 		<resource-env-ref-name>jdbc/ExactDataSample</resource-env-ref-name>
 		<resource-env-ref-type>javax.sql.DataSource</resource-env-ref-type>

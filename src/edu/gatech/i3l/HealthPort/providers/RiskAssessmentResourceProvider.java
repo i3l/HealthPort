@@ -5,6 +5,8 @@ package edu.gatech.i3l.HealthPort.providers;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -63,8 +65,13 @@ import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
 public class RiskAssessmentResourceProvider implements IResourceProvider {
 	//public static final String predictModel = "/Users/ameliahenderson/Desktop/predict.py";
 	//public static final String patientFilePath = "/Users/ameliahenderson/Desktop/";
-	public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
-	public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
+	//public static final String resultFilePath = "/Users/ameliahenderson/Desktop/results.txt";
+	
+	public static final String patientFilePath = "/home/amelia/BigData-Project/data/";
+	public static final String resultFilePath = "/home/amelia/BigData-Project/results/results.txt";
+	public static final String shellFilePath = "/home/amelia/bootstrap.sh";
+	//public static final String predictModel = "/home/localadmin/dev/predictive_system/predict_mortality.py";
+	//public static final String patientFilePath = "/home/localadmin/dev/predictive_system/data/";
 	
 	/*
 	 * (non-Javadoc)
@@ -337,26 +344,43 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		String method = theRisk.getMethod().getText();
 		String patientFile = null;
 		
-		String[] methodInfo = method.split(",");
-		String algorithmName = methodInfo[0];
-		String dataSet = methodInfo[1];
+		String[] methodInfo = method.split(";");
+		String numInstances = methodInfo[0];
+		System.out.println("Number of Instances: " + numInstances);
+		String algorithmName = methodInfo[3];
+		String dataSet = "MIMIC2";
 		String groupId = theRisk.getSubject().getReference().getIdPart();
 		
 
 		BufferedWriter out = null;
 		try  
 		{
-			patientFile = patientFilePath + UUID.randomUUID().toString() +".txt";
+			//patientFile = patientFilePath + UUID.randomUUID().toString() +".txt";
+			patientFile = patientFilePath + "inputs.txt";
 		    FileWriter fstream = new FileWriter(patientFile, false); //true tells to append data.
 		    out = new BufferedWriter(fstream);
 		    //method = theRisk.getMethod().getText();
-		    out.write(method);
+		    //out.write(method);
+		    //out.write("\n");
+		    out.write(methodInfo[0]);
+		    out.write("\n");
+		    out.write(methodInfo[1]);
+		    out.write("\n");
+		    out.write(methodInfo[2]);
+		    out.write("\n");
+		    out.write(methodInfo[3]);
+		    out.write("\n");
+		    out.write(methodInfo[4]);
+		    out.write("\n");
+		    out.write(methodInfo[5]);
 		    out.write("\n");
 			
 		    while(count !=size){
 		    	PatientId = theRisk.getBasis().get(count).getReference().getIdPart();
+		    	if (count >= 1){
+		    		out.write(",");
+		    	}
 		    	out.write(PatientId);
-		    	out.write("\n");
 		    	count = count+1;
 		    }
 		}
@@ -376,32 +400,68 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 		System.out.println("patient Ids written to file");
 		Process p = null;
 		int ret = 0;
-		StringBuilder sb = new StringBuilder();
+		List<String> list = new ArrayList<String>();
 		try {
-			System.out.println(patientFile);
+			File file = new File(resultFilePath);
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			String text = null;
+			while ((text = reader.readLine()) != null) {
+				//System.out.println(text);
+				list.add(text);
+		    }
+			reader.close();
+			
+			String pbCommand[] = {shellFilePath, numInstances};
+			//String pbCommand[] = { "python", predictModel," "+tempNum};
+			System.out.println("Running the shell script");
+			Process pb = Runtime.getRuntime().exec(pbCommand);
+			
+			BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.getInputStream()));
+			
+			/*System.out.println(patientFile);
 			String pbCommand[] = { "python", predictModel, patientFile};
 			//String pbCommand[] = { "python", predictModel," "+tempNum};
 			System.out.println(pbCommand[0]+pbCommand[1]+pbCommand[2]);
 			System.out.println("Running the python script");
 			Process pb = Runtime.getRuntime().exec(pbCommand);
 			 BufferedReader stdInput = new BufferedReader(new InputStreamReader(pb.getInputStream()));
+			 */
 			 //BufferedReader stdError = new BufferedReader(new InputStreamReader(pb.getErrorStream()));
 			// read the output
+			
 
-	            String s;
-				while ((s = stdInput.readLine()) != null) {
-					sb.append(s);
-	            }
+	         
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println("Script ran");
-		System.out.println(sb);
-		String finalString = sb.toString();
+		System.out.println(list);
 		
-		JSONObject obj;
+		int listSize = list.size();
+		System.out.println(listSize);
+		
+		String[] resultsInfo = list.get(0).split(",");
+		
+		
+		
+		String algorithm = resultsInfo[0];
+		String runtime1 = resultsInfo[1];
+		String f1 = resultsInfo[2];
+		String auc = resultsInfo[3];
+		String accuracy = resultsInfo[4];
+		
+		
+		for (int k =1; k < listSize; k++){
+			String[] patientInfo = list.get(k).split(",");
+			System.out.print("Patient:");
+			System.out.print(patientInfo[0]);
+			System.out.print(" Score:");
+			System.out.println(patientInfo[1]);
+		}
+		
+		/*JSONObject obj;
 		JSONObject objPatient = null;
 		Double objRuntime = null;
 		Double featConstrRuntime = null;
@@ -437,17 +497,7 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				} 
 			
 				connection.close();
-				//statement.executeUpdate(SQL_Statement);
 				
-				/*SQL_Statement = "SELECT GROUPID FROM RISKASSESSMENT WHERE PATIENTID='"+ personId +"' AND SCORE='"+score+"' AND RUNTIME='"+objRuntime+"' AND METHOD='"+algorithmName+"' AND DATASOURCE='"+dataSet+"'";
-				check_ret = statement.executeQuery(SQL_Statement);
-				check_ret.next();
-				//System.out.println(check_ret.getInt(1));
-				idList.add(check_ret.getInt(1));*/
-				
-				
-			    //System.out.println(personId);
-				//System.out.println(score);
 			}
 
 		} catch (JSONException | SQLException e) {
@@ -461,12 +511,14 @@ public class RiskAssessmentResourceProvider implements IResourceProvider {
 				e.printStackTrace();
 			}
 		}
+		*/
 		
 		/*String finalId = idList.get(0).toString();
 		int sizeId = idList.size();
 		for (int j =1; j <sizeId;j++ ){
 			finalId = finalId + "-"+idList.get(j).toString();
-		}*/
+		}
+		*/
 		
 		String finalId = groupId;
 		System.out.println(finalId);
