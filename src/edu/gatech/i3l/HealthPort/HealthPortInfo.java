@@ -31,6 +31,7 @@ import ca.uhn.fhir.model.dstu.composite.ContainedDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
+import ca.uhn.fhir.model.dstu.resource.Immunization;
 import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
@@ -64,6 +65,7 @@ public class HealthPortInfo {
 	public static String OBSERVATION = "OBSERVATION";
 	public static String CONDITION = "CONDITIONS";
 	public static String MEDICATIONPRESCRIPTION = "MEDICATIONPRESCRIPTION";
+	public static String IMMUNIZATION = "IMMUNIZATION";
 
 	private DataSource dataSource;
 
@@ -703,6 +705,41 @@ public class HealthPortInfo {
 										NarrativeStatusEnum.EXTENSIONS);
 						}
 						retVal.add(medicationPrescript);
+					}  else if (tableName.equals(IMMUNIZATION)) {
+						String id = rs.getString("ID");
+						String subject = rs.getString("SUBJECT");						
+						String nameURI = rs.getString("NAMEURI");
+						String nameCoding = rs.getString("NAMECODING");
+						String vaccineType = rs.getString("VACCINETYPE");
+						String organization = rs.getString("ORGANIZATION");
+						Timestamp timeStamp = rs.getTimestamp("DATE");
+						
+						ResourceReferenceDt subjectResource = new ResourceReferenceDt(subject);						
+						java.util.Date date = new Date(timeStamp.getTime());
+
+						organization = StringEscapeUtils.escapeHtml4(organization);
+						CodingDt orgCodingDt = new CodingDt("", "");
+						orgCodingDt.setDisplay(vaccineType);
+						ArrayList<CodingDt> orgCodingList = new ArrayList<CodingDt>();
+						orgCodingList.add(orgCodingDt);
+						CodeableConceptDt codeDt = new CodeableConceptDt();
+						codeDt.setCoding(orgCodingList);
+						
+						vaccineType = StringEscapeUtils.escapeHtml4(vaccineType);
+						CodingDt vaccineNameCodingDt = new CodingDt(nameURI, nameCoding);
+						vaccineNameCodingDt.setDisplay(vaccineType);
+						ArrayList<CodingDt> vaccineCodingList = new ArrayList<CodingDt>();
+						vaccineCodingList.add(vaccineNameCodingDt);
+						CodeableConceptDt vaccineCodeDt = new CodeableConceptDt();
+						vaccineCodeDt.setCoding(vaccineCodingList);
+
+						Immunization immunization = new Immunization();
+						immunization.setId(id);
+						immunization.setDate(new DateTimeDt(date))
+									.setSite(codeDt)
+									.setVaccineType(vaccineCodeDt)
+									.setSubject(subjectResource);
+						retVal.add(immunization);
 					}
 				}
 			}
