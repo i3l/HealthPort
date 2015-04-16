@@ -64,6 +64,7 @@ public class HealthPortInfo {
 	public static String OBSERVATION = "OBSERVATION";
 	public static String CONDITION = "CONDITIONS";
 	public static String MEDICATIONPRESCRIPTION = "MEDICATIONPRESCRIPTION";
+	public static String IMMUNIZATION = "IMMUNIZATION";
 
 	private DataSource dataSource;
 
