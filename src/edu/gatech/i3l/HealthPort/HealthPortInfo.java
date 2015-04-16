@@ -31,12 +31,15 @@ import ca.uhn.fhir.model.dstu.composite.ContainedDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
+import ca.uhn.fhir.model.dstu.resource.Immunization;
+import ca.uhn.fhir.model.dstu.resource.Immunization.VaccinationProtocol;
 import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.ImmunizationRouteCodesEnum;
 import ca.uhn.fhir.model.dstu.valueset.MedicationPrescriptionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
@@ -351,6 +354,41 @@ public class HealthPortInfo {
 				pstmt.clearParameters();
 				pstmt.close();
 
+			} else if (tableName.equals(IMMUNIZATION)) {
+				ImmunizationSerializable obj = (ImmunizationSerializable) obj0;
+				SQL_STATEMENT = "REPLACE INTO "
+						+ tableName
+						+ " (ID, NAMEURI, NAMECODING, NAMEDISPLAY, SUBJECT, VACCINATION_DATE, SERIES, MANUFACTURER, LOT_NUMBER, DOSE_QUANTITY, DOSE_UNITS, SITE, ROUTE, PERFORMER_ID, PERFORMER_NAME, ENCOUNTER_ID) VALUES "
+						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				PreparedStatement pstmt = connection
+						.prepareStatement(SQL_STATEMENT);
+
+				// set input parameters
+				pstmt.setString(1, obj.ID);
+				pstmt.setString(2, obj.NAMEURI);
+				pstmt.setString(3, obj.NAMECODING);
+				pstmt.setString(4, obj.NAMEDISPLAY);
+				pstmt.setString(5, obj.SUBJECT);
+				if (obj.VACCINATION_DATE != null) {
+					Timestamp ts = new Timestamp(obj.VACCINATION_DATE.getTime());
+					pstmt.setTimestamp(6, ts);
+				} else {
+					pstmt.setTimestamp(6, null);
+				}
+				pstmt.setString(7, obj.SERIES);
+				pstmt.setString(8, obj.MANUFACTURER);
+				pstmt.setString(9, obj.LOT_NUMBER);
+				pstmt.setString(10, obj.DOSE_QUANTITY);
+				pstmt.setString(11, obj.DOSE_UNITS);
+				pstmt.setString(12, obj.SITE);
+				pstmt.setString(13, obj.ROUTE);
+				pstmt.setString(14, obj.PERFORMER_ID);
+				pstmt.setString(15, obj.PERFORMER_NAME);
+				pstmt.setString(16, obj.ENCOUNTER_ID);
+
+				pstmt.executeUpdate();
+				pstmt.clearParameters();
+				pstmt.close();
 			}
 		} catch (NamingException | SQLException e) {
 			e.printStackTrace();
@@ -704,6 +742,108 @@ public class HealthPortInfo {
 										NarrativeStatusEnum.EXTENSIONS);
 						}
 						retVal.add(medicationPrescript);
+					} else if (tableName.equals(IMMUNIZATION)) {
+						String theId = rs.getString("ID");
+						String nameUri = rs.getString("NAMEURI");
+						String nameCode = rs.getString("NAMECODING");
+						String nameDisp = rs.getString("NAMEDISPLAY");
+						String subject = rs.getString("SUBJECT");
+						Timestamp vdateTS = rs.getTimestamp("VACCINATION_DATE");
+						String series = rs.getString("SERIES");
+						String manu = rs.getString("MANUFACTURER");
+						String lot = rs.getString("LOT_NUMBER");
+						String doseQty = rs.getString("DOSE_QUANTITY");
+						String doseUnits = rs.getString("DOSE_UNITS");
+						String site = rs.getString("SITE");
+						String route = rs.getString("ROUTE");
+						String provId = rs.getString("PERFORMER_ID");
+						String provName = rs.getString("PERFORMER_NAME");
+
+						Immunization immu = new Immunization();
+
+						// set ID
+						immu.setId(theId);
+
+						// set VaccineType
+						nameDisp = StringEscapeUtils.escapeHtml4(nameDisp);
+						CodingDt nameCoding = new CodingDt();
+						nameCoding.setValueSet(new ResourceReferenceDt("http://hl7.org/fhir/vs/vaccinetype"));
+						nameCoding.setSystem(nameUri); // typically "http://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx"
+						nameCoding.setCode(nameCode);
+						nameCoding.setDisplay(nameDisp);
+						ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+						codingList.add(nameCoding);
+						CodeableConceptDt codeDt = new CodeableConceptDt();
+						codeDt.setCoding(codingList);
+						immu.setVaccineType(codeDt);
+
+						// set Subject as reference to Patient
+						ResourceReferenceDt subj = new ResourceReferenceDt(subject);
+						immu.setSubject(subj);
+
+						// set Date
+						java.util.Date vDate = null;
+						if (vdateTS != null)
+							vDate = new Date(vdateTS.getTime());
+						if (vDate != null)
+							immu.setDate(new DateTimeDt(vDate));
+
+						// set VaccinationProtocol.series
+						Immunization.VaccinationProtocol ivp = new Immunization.VaccinationProtocol();
+						ivp.setSeries(series);
+						ArrayList<Immunization.VaccinationProtocol> ivpList = new ArrayList<Immunization.VaccinationProtocol>();
+						ivpList.add(ivp);
+						immu.setVaccinationProtocol(ivpList);
+						
+						// set manufacturer = resource reference
+						if (!manu.equalsIgnoreCase("other"))
+							immu.setManufacturer(new ResourceReferenceDt(manu));
+						
+						// set lot number
+						immu.setLotNumber(lot);
+						
+						// set DoseQuantity, value and units
+						QuantityDt qty = new QuantityDt(new Double(doseQty));
+						qty.setUnits(doseUnits);
+						immu.setDoseQuantity(qty);
+						
+						// set site - setSite(CodeableConceptDt theValue)
+						CodingDt siteCode = new CodingDt();
+						siteCode.setValueSet(new ResourceReferenceDt("http://hl7.org/fhir/vs/immunization-site"));
+						siteCode.setSystem("http://hl7.org/fhir/v3/ActSite");
+						siteCode.setDisplay(site);
+						ArrayList<CodingDt> siteCodeList = new ArrayList<CodingDt>();
+						siteCodeList.add(siteCode);
+						CodeableConceptDt siteConcept = new CodeableConceptDt();
+						siteConcept.setCoding(siteCodeList);
+						
+						// set route - setRoute(ImmunizationRouteCodesEnum theValue)
+						if (route.matches("(?i:im|intramuscular)"))
+							immu.setRoute(ImmunizationRouteCodesEnum.IM);
+						else if (route.matches("(?i:nasinhl|nasal|inhalation)"))
+							immu.setRoute(ImmunizationRouteCodesEnum.NASINHL);
+						else if (route.matches("(?i:po|oral|by mouth)"))
+							immu.setRoute(ImmunizationRouteCodesEnum.PO);
+
+						// set provider, id and display name = resource reference
+						ResourceReferenceDt performer = new ResourceReferenceDt(provId);
+						performer.setDisplay(provName);
+						immu.setPerformer(performer);
+						
+						/*
+						 *  DSTU1 has no option to set encounter_id (resource reference) on the Immunization resource.
+						 *  
+						 *  However, it is likely to be implemented in DSTU2:
+						 *  @see http://hl7.org/fhir/2015May/immunization.html
+						 *  
+						 *  ...and is alreaday in HAPI-FHIR's DSTU-2:
+						 *  @see https://jamesagnew.github.io/hapi-fhir/apidocs-dstu2/ca/uhn/fhir/model/dstu2/resource/Immunization.html
+						 *  
+						 *  DSTU2 example:
+						 *  	immu.setEncounter(new ResourceReferenceDt(rs.getString("ENCOUNTER_ID")));
+						 */
+						
+						retVal.add(immu);
 					}
 				}
 			}
