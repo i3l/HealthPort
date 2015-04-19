@@ -14,7 +14,7 @@ public class ImmunizationSerializable implements Serializable {
 	public String NAMECODING;
 	public String NAMEDISPLAY;
 	public String SUBJECT;
-	java.util.Date VACCINATION_DATE;
+	public java.util.Date VACCINATION_DATE;
 	public String SERIES;
 	public String MANUFACTURER;
 	public String LOT_NUMBER;

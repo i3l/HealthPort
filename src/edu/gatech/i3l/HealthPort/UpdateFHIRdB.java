@@ -156,7 +156,7 @@ public class UpdateFHIRdB extends HttpServlet {
 
 				syntheticEHRPort.getMedicationPrescriptions();
 				syntheticCancerPort.getMedicationPrescriptions();
-
+				
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -167,6 +167,10 @@ public class UpdateFHIRdB extends HttpServlet {
 					e.printStackTrace();
 				}
 			}
+		} else if (res.equalsIgnoreCase(HealthPortInfo.IMMUNIZATION)) {
+			// only ExactDataPort implemented at this time
+			syntheticEHRPort.getImmunizations();
+			syntheticCancerPort.getImmunizations();
 		}
 	}
 

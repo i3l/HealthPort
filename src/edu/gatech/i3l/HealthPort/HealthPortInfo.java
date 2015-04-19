@@ -360,8 +360,7 @@ public class HealthPortInfo {
 						+ tableName
 						+ " (ID, NAMEURI, NAMECODING, NAMEDISPLAY, SUBJECT, VACCINATION_DATE, SERIES, MANUFACTURER, LOT_NUMBER, DOSE_QUANTITY, DOSE_UNITS, SITE, ROUTE, PERFORMER_ID, PERFORMER_NAME, ENCOUNTER_ID) VALUES "
 						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-				PreparedStatement pstmt = connection
-						.prepareStatement(SQL_STATEMENT);
+				PreparedStatement pstmt = connection.prepareStatement(SQL_STATEMENT);
 
 				// set input parameters
 				pstmt.setString(1, obj.ID);
@@ -803,9 +802,11 @@ public class HealthPortInfo {
 						immu.setLotNumber(lot);
 						
 						// set DoseQuantity, value and units
-						QuantityDt qty = new QuantityDt(new Double(doseQty));
-						qty.setUnits(doseUnits);
-						immu.setDoseQuantity(qty);
+						if (!doseQty.isEmpty()) {
+							QuantityDt qty = new QuantityDt(new Double(doseQty));
+							qty.setUnits(doseUnits);
+							immu.setDoseQuantity(qty);
+						}
 						
 						// set site - setSite(CodeableConceptDt theValue)
 						CodingDt siteCode = new CodingDt();

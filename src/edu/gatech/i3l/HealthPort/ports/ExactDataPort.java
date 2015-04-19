@@ -25,12 +25,14 @@ import ca.uhn.fhir.model.dstu.composite.ContainedDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
+import ca.uhn.fhir.model.dstu.resource.Immunization;
 import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.ImmunizationRouteCodesEnum;
 import ca.uhn.fhir.model.dstu.valueset.MedicationPrescriptionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
@@ -40,6 +42,7 @@ import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.IdDt;
 import edu.gatech.i3l.HealthPort.ConditionSerializable;
 import edu.gatech.i3l.HealthPort.HealthPortInfo;
+import edu.gatech.i3l.HealthPort.ImmunizationSerializable;
 import edu.gatech.i3l.HealthPort.MedicationPrescriptionSerializable;
 import edu.gatech.i3l.HealthPort.ObservationSerializable;
 import edu.gatech.i3l.HealthPort.PortIf;
@@ -1443,6 +1446,270 @@ public class ExactDataPort implements PortIf {
 
 			conn.close();
 			// } catch (SQLException | NamingException se) {
+		} catch (SQLException se) {
+			se.printStackTrace();
+		}
+		return retVal;
+	}
+
+
+	/*******************************************************************/
+
+	// create HAPI-FHIR Immunization object
+	private Immunization createImmunization(String id, String nameUri, String nameCode, String nameDisp,
+			 String subjRef, java.util.Date vacDate, String series, String manufacturer, String lot,
+			 String doseQty, String doseUnits, String site, String route, String performerId, String performerName,
+			 String encId) {
+		Immunization immu = new Immunization();
+		
+		// set ID
+		immu.setId(id);
+
+		// set VaccineType
+		nameDisp = StringEscapeUtils.escapeHtml4(nameDisp);
+		CodingDt nameCoding = new CodingDt();
+		nameCoding.setValueSet(new ResourceReferenceDt("http://hl7.org/fhir/vs/vaccinetype"));
+		nameCoding.setSystem(nameUri); // typically "http://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx"
+		nameCoding.setCode(nameCode);
+		nameCoding.setDisplay(nameDisp);
+		ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+		codingList.add(nameCoding);
+		CodeableConceptDt codeDt = new CodeableConceptDt();
+		codeDt.setCoding(codingList);
+		immu.setVaccineType(codeDt);
+
+		// set Subject as reference to Patient
+		ResourceReferenceDt subj = new ResourceReferenceDt(subjRef);
+		immu.setSubject(subj);
+
+		// set Date
+		if (vacDate != null)
+			immu.setDate(new DateTimeDt(vacDate));
+
+		// set VaccinationProtocol.series
+		Immunization.VaccinationProtocol ivp = new Immunization.VaccinationProtocol();
+		ivp.setSeries(series);
+		ArrayList<Immunization.VaccinationProtocol> ivpList = new ArrayList<Immunization.VaccinationProtocol>();
+		ivpList.add(ivp);
+		immu.setVaccinationProtocol(ivpList);
+		
+		// set manufacturer = resource reference
+		if (!manufacturer.equalsIgnoreCase("other"))
+			immu.setManufacturer(new ResourceReferenceDt(manufacturer));
+		
+		// set lot number
+		immu.setLotNumber(lot);
+		
+		// set DoseQuantity, value and units
+		QuantityDt qty = new QuantityDt(new Double(doseQty));
+		qty.setUnits(doseUnits);
+		immu.setDoseQuantity(qty);
+		
+		// set site - setSite(CodeableConceptDt theValue)
+		CodingDt siteCode = new CodingDt();
+		siteCode.setValueSet(new ResourceReferenceDt("http://hl7.org/fhir/vs/immunization-site"));
+		siteCode.setSystem("http://hl7.org/fhir/v3/ActSite");
+		siteCode.setDisplay(site);
+		ArrayList<CodingDt> siteCodeList = new ArrayList<CodingDt>();
+		siteCodeList.add(siteCode);
+		CodeableConceptDt siteConcept = new CodeableConceptDt();
+		siteConcept.setCoding(siteCodeList);
+		
+		// set route - setRoute(ImmunizationRouteCodesEnum theValue)
+		if (route.matches("(?i:im|intramuscular)"))
+			immu.setRoute(ImmunizationRouteCodesEnum.IM);
+		else if (route.matches("(?i:nasinhl|nasal|inhalation)"))
+			immu.setRoute(ImmunizationRouteCodesEnum.NASINHL);
+		else if (route.matches("(?i:po|oral|by mouth)"))
+			immu.setRoute(ImmunizationRouteCodesEnum.PO);
+
+		// set provider, id and display name = resource reference
+		ResourceReferenceDt performer = new ResourceReferenceDt(performerId);
+		performer.setDisplay(performerName);
+		immu.setPerformer(performer);
+		
+		/*
+		 *  DSTU1 has no option to set encounter_id (resource reference) on the Immunization resource.
+		 *  
+		 *  However, it is likely to be implemented in DSTU2:
+		 *  @see http://hl7.org/fhir/2015May/immunization.html
+		 *  
+		 *  ...and is alreaday in HAPI-FHIR's DSTU-2:
+		 *  @see https://jamesagnew.github.io/hapi-fhir/apidocs-dstu2/ca/uhn/fhir/model/dstu2/resource/Immunization.html
+		 *  
+		 *  DSTU2 example:
+		 *  	immu.setEncounter(new ResourceReferenceDt(rs.getString("ENCOUNTER_ID")));
+		 */
+
+		return immu;
+	}
+	
+	// create immunization object in internal serializable form
+	private ImmunizationSerializable createImmunizationSz(String id, String nameUri, String nameCode, String nameDisp,
+			 String subjRef, java.util.Date vacDate, String series, String manufacturer, String lot,
+			 String doseQty, String doseUnits, String site, String route, String performerId, String performerName,
+			 String encId) {
+		ImmunizationSerializable immu = new ImmunizationSerializable();
+		
+		immu.ID = id;
+		immu.NAMEURI = nameUri;
+		immu.NAMECODING = nameCode;
+		immu.NAMEDISPLAY = nameDisp;
+		immu.SUBJECT = subjRef;
+		immu.VACCINATION_DATE = vacDate;
+		immu.MANUFACTURER = manufacturer;
+		immu.LOT_NUMBER = lot;
+		immu.DOSE_QUANTITY = doseQty;
+		immu.DOSE_UNITS = doseUnits;
+		immu.SITE = site;
+		immu.ROUTE = route;
+		immu.PERFORMER_ID = performerId;
+		immu.PERFORMER_NAME = performerName;
+		immu.ENCOUNTER_ID = encId;
+		
+		return immu;
+	}
+	
+	// get all available immunization ids, stored in HealthPort DB as a side-effect
+	public List<String> getImmunizations() {
+		List<String> retVal = new ArrayList<String>();
+
+		Connection conn = null;
+		Statement stmt = null;
+		try {
+			conn = dataSource.getConnection();
+			stmt = conn.createStatement();
+			String sql = "SELECT * FROM immunization";
+			ResultSet rs = stmt.executeQuery(sql);
+			List<String> immuList = getImmunizationIds(rs);
+			if (immuList != null && !immuList.isEmpty()) {
+				retVal.addAll(immuList);
+			}
+			conn.close();
+		} catch (SQLException se) {
+			se.printStackTrace();
+		}
+		return retVal;
+	}
+	
+	// get immunizations ids from a ResultSet, storing them in HealthPort DB as a side-effect
+	public List<String> getImmunizationIds(ResultSet rs) {
+		List<String> retVal = new ArrayList<String>();
+		ImmunizationSerializable immu = null;
+
+		try {
+			while (rs.next()) {
+				String memberID = rs.getString("Member_ID");
+				if (memberID.isEmpty()) {
+					continue;
+				}
+
+				/* prep id -  ExactData's immunization tables do not have ids, so we must create our own
+				 * built from encounter_id + CVX code
+				 * hopefully it's safe to assume you don't get the same vaccine twice on the same visit?
+				 */
+				String immuId = rs.getString("Encounter_ID") + "." + rs.getString("Vaccine_CVX");
+				
+				// prep date
+				java.util.Date vacDate = null;
+				Timestamp ts = rs.getTimestamp("Vaccination_Date");
+				if (ts != null) {
+					vacDate = new java.util.Date(ts.getTime());
+				}
+
+				immu = createImmunizationSz(
+						immuId,
+						rs.getString("Vaccine_CVX"),
+						"http://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx",
+						rs.getString("Vaccine_Name"),
+						"Patient/" + id + "." + rs.getString("Member_ID"),
+						vacDate,
+						rs.getString("Series"),
+						rs.getString("Manufacturer"),
+						rs.getString("Lot_Number"),
+						rs.getString("Dose"),
+						rs.getString("Units"),
+						rs.getString("Site"),
+						rs.getString("Route"),
+						rs.getString("Provider_ID"),
+						rs.getString("Provider_Name"),
+						rs.getString("Encounter_ID")
+						);
+
+				HealthPortInfo.storeResource(HealthPortInfo.IMMUNIZATION, immu);
+
+				retVal.add(immuId);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return retVal;
+	}
+
+	// get specific HAPI-FHIR Immunization objects from a ResultSet, used by getImmunizationsByPatient()
+	public ArrayList<Immunization> getImmunizations(ResultSet rs) {
+		ArrayList<Immunization> retVal = new ArrayList<Immunization>();
+
+		try {
+			while (rs.next()) {
+				String memberID = rs.getString("Member_ID");
+				if (memberID.isEmpty()) {
+					continue;
+				}
+
+				// prep date
+				java.util.Date vacDate = null;
+				Timestamp ts = rs.getTimestamp("Vaccination_Date");
+				if (ts != null) {
+					vacDate = new java.util.Date(ts.getTime());
+				}
+
+				String immuId = id + "." + rs.getInt("ID");
+				Immunization immu = createImmunization(
+						immuId,
+						rs.getString("Vaccine_CVX"),
+						"http://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx",
+						rs.getString("Vaccine_Name"),
+						"Patient/" + id + "." + rs.getString("Member_ID"),
+						vacDate,
+						rs.getString("Series"),
+						rs.getString("Manufacturer"),
+						rs.getString("Lot_Number"),
+						rs.getString("Dose"),
+						rs.getString("Units"),
+						rs.getString("Site"),
+						rs.getString("Route"),
+						rs.getString("Provider_ID"),
+						rs.getString("Provider_Name"),
+						rs.getString("Encounter_ID")
+						);
+				retVal.add(immu);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return retVal;
+	}
+
+	// get HAPI-FHIR Immunization objects for a specific patient, not currently called anywhere
+	public ArrayList<Immunization> getImmunizationsByPatient(String memberID) {
+		ArrayList<Immunization> retVal = new ArrayList<Immunization>();
+
+		Connection conn = null;
+		Statement stmt = null;
+		try {
+			conn = dataSource.getConnection();
+			stmt = conn.createStatement();
+			String sql = "SELECT * FROM immunization WHERE Member_ID='" + memberID + "'";
+			ResultSet rs = stmt.executeQuery(sql);
+
+			ArrayList<Immunization> immuList = getImmunizations(rs);
+			if (immuList != null && !immuList.isEmpty()) {
+				retVal.addAll(immuList);
+			}
+
+			conn.close();
 		} catch (SQLException se) {
 			se.printStackTrace();
 		}
