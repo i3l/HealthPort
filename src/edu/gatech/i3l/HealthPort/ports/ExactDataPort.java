@@ -1619,8 +1619,8 @@ public class ExactDataPort implements PortIf {
 
 				immu = createImmunizationSz(
 						immuId,
-						rs.getString("Vaccine_CVX"),
 						"http://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx",
+						rs.getString("Vaccine_CVX"),
 						rs.getString("Vaccine_Name"),
 						"Patient/" + id + "." + rs.getString("Member_ID"),
 						vacDate,
