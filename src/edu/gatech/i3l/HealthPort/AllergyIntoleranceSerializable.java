@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 /**
  * Bean for AllergyIntolerance data.
- * @author ewall
+ * @author Eric Wallace <ewall@gatech.edu>
  */
 public class AllergyIntoleranceSerializable implements Serializable {
 	private static final long serialVersionUID = 1L;
