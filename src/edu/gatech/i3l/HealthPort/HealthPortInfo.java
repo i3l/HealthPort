@@ -65,6 +65,7 @@ public class HealthPortInfo {
 	public static String CONDITION = "CONDITIONS";
 	public static String MEDICATIONPRESCRIPTION = "MEDICATIONPRESCRIPTION";
 	public static String ALLERGYINTOLERANCE = "ALLERGYINTOLERANCE";
+	public static String SUBSTANCE = "SUBSTANCE";
 
 	private DataSource dataSource;
 
