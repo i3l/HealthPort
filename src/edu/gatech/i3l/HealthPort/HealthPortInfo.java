@@ -379,6 +379,27 @@ public class HealthPortInfo {
 				pstmt.executeUpdate();
 				pstmt.clearParameters();
 				pstmt.close();
+			} else if (tableName.equals(SUBSTANCE)) {
+				SubstanceSerializable obj = (SubstanceSerializable) obj0;
+				SQL_STATEMENT = "REPLACE INTO " + tableName
+						+ " (ID, NAME, TYPE_SYSTEM, TYPE_CODE, TYPE_DISPLAY,"
+						+ " EXTENSION_SYSTEM, EXTENSION_CODE, EXTENSION_DISPLAY) VALUES"
+						+ " (?, ?, ?, ?, ?, ?, ?, ?)";
+				PreparedStatement pstmt = connection.prepareStatement(SQL_STATEMENT);
+
+				// set input parameters
+				pstmt.setString(1, obj.ID);
+				pstmt.setString(2, obj.NAME);
+				pstmt.setString(3, obj.TYPE_SYSTEM);
+				pstmt.setString(4, obj.TYPE_CODE);
+				pstmt.setString(5, obj.TYPE_DISPLAY);
+				pstmt.setString(6, obj.EXTENSION_SYSTEM);
+				pstmt.setString(7, obj.EXTENSION_CODE);
+				pstmt.setString(8, obj.EXTENSION_DISPLAY);
+
+				pstmt.executeUpdate();
+				pstmt.clearParameters();
+				pstmt.close();
 			}
 		} catch (NamingException | SQLException e) {
 			e.printStackTrace();
