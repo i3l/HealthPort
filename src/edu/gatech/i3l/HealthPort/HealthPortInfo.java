@@ -350,7 +350,34 @@ public class HealthPortInfo {
 				pstmt.executeUpdate();
 				pstmt.clearParameters();
 				pstmt.close();
+			} else if (tableName.equals(ALLERGYINTOLERANCE)) {
+				AllergyIntoleranceSerializable obj = (AllergyIntoleranceSerializable) obj0;
+				SQL_STATEMENT = "REPLACE INTO " + tableName
+						+ " (ID, SUBJECT, SUBST_DISPLAY, SUBST_CODE, SUBST_SYSTEM, SENSITIVITY_TYPE,"
+						+ " RECORDED_DATE, REACTION, CRITICALITY, STATUS) VALUES"
+						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				PreparedStatement pstmt = connection.prepareStatement(SQL_STATEMENT);
 
+				// set input parameters
+				pstmt.setString(1, obj.ID);
+				pstmt.setString(2, obj.SUBJECT);
+				pstmt.setString(3, obj.SUBST_DISPLAY);
+				pstmt.setString(4, obj.SUBST_CODE);
+				pstmt.setString(5, obj.SUBST_SYSTEM);
+				pstmt.setString(6, obj.SENSITIVITY_TYPE);
+				if (obj.RECORDED_DATE != null) {
+					Timestamp ts = new Timestamp(obj.RECORDED_DATE.getTime());
+					pstmt.setTimestamp(6, ts);
+				} else {
+					pstmt.setTimestamp(6, null);
+				}
+				pstmt.setString(7, obj.REACTION);
+				pstmt.setString(8, obj.CRITICALITY);
+				pstmt.setString(9, obj.STATUS);
+
+				pstmt.executeUpdate();
+				pstmt.clearParameters();
+				pstmt.close();
 			}
 		} catch (NamingException | SQLException e) {
 			e.printStackTrace();
