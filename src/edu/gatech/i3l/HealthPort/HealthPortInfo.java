@@ -214,6 +214,39 @@ public class HealthPortInfo {
 		return retVal;
 	}
 
+	public List<String> getResourceIdsBySubstance (String tableName, String substanceId) {
+		List<String> retVal = new ArrayList<String>();
+
+		Connection connection = null;
+		Statement statement = null;
+
+		String SQL_STATEMENT = "SELECT ID FROM " + tableName
+				+ " WHERE SUBSTANCE = 'Substance/" + substanceId + "'";
+
+		System.out.println ("HealthPortInfo: getResourceIdsBySubstance: "+tableName+" for Substance "+substanceId);
+		connection = getConnection();
+		try {
+			statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery(SQL_STATEMENT);
+
+			while (rs.next()) {
+				retVal.add(rs.getString("ID"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace(); // TODO Auto-generated catch block
+			}
+		}
+
+		System.out.println ("HealthPortInfo: getResourceIdsBySubstance: Done");
+
+		return retVal;
+	}
+	
 	public List<String> getAllResourceIds(String tableName) {
 		List<String> retVal = new ArrayList<String>();
 

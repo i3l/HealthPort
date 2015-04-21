@@ -140,4 +140,48 @@ public class AllergyIntoleranceResourceProvider implements IResourceProvider {
 		};
 	}
 
+	/** 
+	 * Retrieve all available AllergyIntolerances associated with a Substance.
+	 * @param theSubstance a Substance object
+	 * @return a Bundle of AllergyIntolerance objects
+	 */
+	@Search()
+	public IBundleProvider getAllergyIntolerancesBySubstance(
+			@RequiredParam(name = AllergyIntolerance.SP_SUBSTANCE) ReferenceParam theSubstance) {
+
+		final InstantDt searchTime = InstantDt.withCurrentTime();
+		String substanceID = theSubstance.getIdPart();
+
+		final List<String> matchingResourceIds = healthPortUser
+				.getResourceIdsBySubstance(HealthPortInfo.ALLERGYINTOLERANCE, substanceID);
+
+		return new IBundleProvider() {
+
+			@Override
+			public int size() {
+				return matchingResourceIds.size();
+			}
+
+			@Override
+			public List<IResource> getResources(int theFromIndex, int theToIndex) {
+				int end = Math.min(theToIndex, matchingResourceIds.size());
+				// System.out.println("From:"+theFromIndex+" To:"+theToIndex+" Total:"+matchingResourceIds.size());
+				List<String> idsToReturn = matchingResourceIds.subList(theFromIndex, end);
+				
+				List<IResource> retVal = null;
+				try {
+					retVal = healthPortUser.getResourceList(HealthPortInfo.ALLERGYINTOLERANCE,idsToReturn);
+				} catch (SQLException e) {
+					e.printStackTrace(); // TODO Auto-generated catch block
+				}
+				return retVal;
+			}
+
+			@Override
+			public InstantDt getPublished() {
+				return searchTime;
+			}
+		};
+	}
+	
 }
