@@ -9,10 +9,12 @@ import javax.servlet.annotation.WebServlet;
 import ca.uhn.fhir.rest.server.FifoMemoryPagingProvider;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
+import edu.gatech.i3l.HealthPort.providers.AllergyIntoleranceResourceProvider;
 import edu.gatech.i3l.HealthPort.providers.ConditionResourceProvider;
 import edu.gatech.i3l.HealthPort.providers.MedicationPrescrResource;
 import edu.gatech.i3l.HealthPort.providers.ObservationResourceProvider;
 import edu.gatech.i3l.HealthPort.providers.PatientResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.SubstanceResourceProvider;
 
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +65,8 @@ public class RestfulServlet extends RestfulServer {
 		resourceProviders.add(new ObservationResourceProvider());
 		resourceProviders.add(new ConditionResourceProvider());
 		resourceProviders.add(new MedicationPrescrResource());
+		resourceProviders.add(new AllergyIntoleranceResourceProvider());
+		resourceProviders.add(new SubstanceResourceProvider());
 		setResourceProviders(resourceProviders);
 
 //		/*

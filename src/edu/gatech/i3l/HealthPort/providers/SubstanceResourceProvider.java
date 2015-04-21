@@ -35,7 +35,7 @@ public class SubstanceResourceProvider implements IResourceProvider {
 	}
 
 	/**
-	 * Given a single resource, retrieve that Substance resource.
+	 * Given a single resource ID, retrieve that Substance resource.
 	 * @param theId
 	 * @return an Substance object
 	 */

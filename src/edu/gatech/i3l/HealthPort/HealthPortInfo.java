@@ -24,26 +24,36 @@ import javax.sql.DataSource;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
+import ca.uhn.fhir.model.api.ExtensionDt;
 import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dstu.composite.CodingDt;
 import ca.uhn.fhir.model.dstu.composite.ContainedDt;
+import ca.uhn.fhir.model.dstu.composite.NarrativeDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
+import ca.uhn.fhir.model.dstu.resource.AdverseReaction;
+import ca.uhn.fhir.model.dstu.resource.AdverseReaction.Symptom;
+import ca.uhn.fhir.model.dstu.resource.AllergyIntolerance;
 import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
+import ca.uhn.fhir.model.dstu.resource.Substance;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.CriticalityEnum;
 import ca.uhn.fhir.model.dstu.valueset.MedicationPrescriptionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.SensitivityStatusEnum;
+import ca.uhn.fhir.model.dstu.valueset.SensitivityTypeEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.IdDt;
+import ca.uhn.fhir.model.primitive.StringDt;
 
 /**
  * @author Myung Choi Constructor requires UserID. - Connects to SQL database to
@@ -354,18 +364,17 @@ public class HealthPortInfo {
 			} else if (tableName.equals(ALLERGYINTOLERANCE)) {
 				AllergyIntoleranceSerializable obj = (AllergyIntoleranceSerializable) obj0;
 				SQL_STATEMENT = "REPLACE INTO " + tableName
-						+ " (ID, SUBJECT, SUBST_DISPLAY, SUBST_CODE, SUBST_SYSTEM, SENSITIVITY_TYPE,"
+						+ " (ID, DISPLAY, SUBSTANCE, SUBJECT, SENSITIVITY_TYPE,"
 						+ " RECORDED_DATE, REACTION, CRITICALITY, STATUS) VALUES"
-						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+						+ " (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 				PreparedStatement pstmt = connection.prepareStatement(SQL_STATEMENT);
 
 				// set input parameters
 				pstmt.setString(1, obj.ID);
-				pstmt.setString(2, obj.SUBJECT);
-				pstmt.setString(3, obj.SUBST_DISPLAY);
-				pstmt.setString(4, obj.SUBST_CODE);
-				pstmt.setString(5, obj.SUBST_SYSTEM);
-				pstmt.setString(6, obj.SENSITIVITY_TYPE);
+				pstmt.setString(2, obj.DISPLAY);
+				pstmt.setString(3, obj.SUBSTANCE);
+				pstmt.setString(4, "Patient/" + obj.SUBJECT);
+				pstmt.setString(5, obj.SENSITIVITY_TYPE);
 				if (obj.RECORDED_DATE != null) {
 					Timestamp ts = new Timestamp(obj.RECORDED_DATE.getTime());
 					pstmt.setTimestamp(6, ts);
@@ -753,6 +762,118 @@ public class HealthPortInfo {
 										NarrativeStatusEnum.EXTENSIONS);
 						}
 						retVal.add(medicationPrescript);
+					} else if (tableName.equals(ALLERGYINTOLERANCE)) {
+						String id = rs.getString("ID");
+						String display = rs.getString("DISPLAY");
+						String substId = rs.getString("SUBSTANCE");
+						String subject = rs.getString("SUBJECT");
+						String sensitivity = rs.getString("SENSITIVITY_TYPE");
+						Timestamp rdateTS = rs.getTimestamp("RECORDED_DATE");
+						String reactionText = rs.getString("REACTION");
+						String criticality = rs.getString("CRITICALITY");
+						String status = rs.getString("STATUS");
+
+						AllergyIntolerance allergy = new AllergyIntolerance();
+
+						// set ID
+						allergy.setId(id);
+
+						// set Text
+						NarrativeDt text = new NarrativeDt();
+						text.setDiv(display);
+						allergy.setText(text);
+						
+						// set Subject as reference to Patient
+						ResourceReferenceDt subj = new ResourceReferenceDt(subject);
+						allergy.setSubject(subj);
+
+						// set Substance - reference
+						allergy.setSubstance(new ResourceReferenceDt(substId));
+
+						// set Type - valueset http://www.hl7.org/implement/standards/fhir/sensitivitytype.html
+						if (sensitivity.matches("(?i:allergy|drug|immunization)"))
+							allergy.setSensitivityType(SensitivityTypeEnum.ALLERGY);
+						else if (sensitivity.matches("(?i:intolerance|sensitivity"))
+							allergy.setSensitivityType(SensitivityTypeEnum.INTOLERANCE);
+						else
+							allergy.setSensitivityType(SensitivityTypeEnum.UNKNOWN);
+						
+						// set Recoded Date
+						java.util.Date rDate = null;
+						if (rdateTS != null)
+							rDate = new Date(rdateTS.getTime());
+						if (rDate != null)
+							allergy.setRecordedDate(new DateTimeDt(rDate));
+						
+						// set Reaction - resource AdverseReaction.symptom
+						AdverseReaction reactionObj = new AdverseReaction();
+						reactionObj.setSubject(subj);
+						Symptom symptom = new Symptom();
+						CodeableConceptDt sympCode = new CodeableConceptDt();
+						sympCode.setText(reactionText); // not enough info to fill out code
+						symptom.setCode(sympCode);
+						ArrayList<Symptom> sympList = new ArrayList<Symptom>();
+						sympList.add(symptom);
+						reactionObj.setSymptom(sympList);					
+						
+						// set Criticality - valueset http://www.hl7.org/implement/standards/fhir/criticality.html
+						if (criticality.matches("(?i:mild|low)"))
+								allergy.setCriticality(CriticalityEnum.LOW);
+						else if (criticality.matches("(?i:moderate|medium)"))
+								allergy.setCriticality(CriticalityEnum.MEDIUM);
+						else if (criticality.matches("(?i:severe|high)"))
+								allergy.setCriticality(CriticalityEnum.HIGH);
+						else if (criticality.matches("(?i:critical|fatal)"))
+								allergy.setCriticality(CriticalityEnum.FATAL);
+						
+						// set Status - valueset http://www.hl7.org/implement/standards/fhir/sensitivitystatus.html
+						if (status.matches("(?i:suspected)"))
+							allergy.setStatus(SensitivityStatusEnum.SUSPECTED);
+						else if (status.matches("(?i:confirmed)"))
+							allergy.setStatus(SensitivityStatusEnum.CONFIRMED);
+						else if (status.matches("(?i:refuted)"))
+							allergy.setStatus(SensitivityStatusEnum.REFUTED);
+						else if (status.matches("(?i:resolved)"))
+							allergy.setStatus(SensitivityStatusEnum.RESOLVED);
+
+						retVal.add(allergy);
+					} else if (tableName.equals(SUBSTANCE)) {
+						String id = rs.getString("ID");
+						String name = rs.getString("NAME");
+						String typeSystem = rs.getString("TYPE_SYSTEM");
+						String typeCode = rs.getString("TYPE_CODE");
+						String typeDisp = rs.getString("TYPE_DISPLAY");
+						String extSystem = rs.getString("EXTENSION_SYSTEM");
+						String extCode = rs.getString("EXTENSION_CODE");
+						String extDisp = rs.getString("EXTENSION_DISPLAY");
+
+						Substance subst = new Substance();
+
+						// set ID
+						subst.setId(id);
+
+						// set Name
+						name = StringEscapeUtils.escapeHtml4(name);
+						subst.setDescription(name);
+
+						// set Type
+						//subst.setType(SubstanceTypeEnum.VALUESET_BINDER.fromCodeString(typeCode, typeSystem));
+						CodingDt typeCoding = new CodingDt();
+						typeCoding.setValueSet(new ResourceReferenceDt("http://hl7.org/fhir/vs/substance-type"));
+						typeCoding.setSystem(typeSystem);
+						typeCoding.setCode(typeCode);
+						typeCoding.setDisplay(typeDisp);
+						ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+						codingList.add(typeCoding);
+						subst.getType().setCoding(codingList);
+						
+						// add Extension
+						if (!extSystem.equals("") && !extCode.equals("")) {
+							ExtensionDt ext = new ExtensionDt(false, extSystem, new StringDt(extCode));
+							subst.addUndeclaredExtension(ext);
+						}
+
+						retVal.add(subst);
 					}
 				}
 			}

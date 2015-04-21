@@ -37,7 +37,7 @@ public class AllergyIntoleranceResourceProvider implements IResourceProvider {
 	}
 
 	/**
-	 * Given a single resource, retrieve that AllergyIntolerance resource.
+	 * Given a single resource ID, retrieve that AllergyIntolerance resource.
 	 * @param theId
 	 * @return an AllergyIntolerance object
 	 */
