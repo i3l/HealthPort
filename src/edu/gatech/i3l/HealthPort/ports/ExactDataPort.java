@@ -3,6 +3,8 @@
  */
 package edu.gatech.i3l.HealthPort.ports;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,6 +12,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import javax.naming.InitialContext;
@@ -38,11 +41,13 @@ import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.IdDt;
+import edu.gatech.i3l.HealthPort.AllergyIntoleranceSerializable;
 import edu.gatech.i3l.HealthPort.ConditionSerializable;
 import edu.gatech.i3l.HealthPort.HealthPortInfo;
 import edu.gatech.i3l.HealthPort.MedicationPrescriptionSerializable;
 import edu.gatech.i3l.HealthPort.ObservationSerializable;
 import edu.gatech.i3l.HealthPort.PortIf;
+import edu.gatech.i3l.HealthPort.SubstanceSerializable;
 
 /**
  * @author MC142
@@ -1448,7 +1453,145 @@ public class ExactDataPort implements PortIf {
 		}
 		return retVal;
 	}
+	
+	// get all available AllergyIntolerance ids, stored in HealthPort DB as a side-effect
+	public List<String> getAllergyIntolerances() {
+		List<String> retVal = new ArrayList<String>();
 
+		Connection conn = null;
+		Statement stmt = null;
+		try {
+			conn = dataSource.getConnection();
+			stmt = conn.createStatement();
+			String sql = "SELECT * FROM allergy";
+			ResultSet rs = stmt.executeQuery(sql);
+			List<String> allergyList = getAllergyIntoleranceIds(rs);
+			if (allergyList != null && !allergyList.isEmpty()) {
+				retVal.addAll(allergyList);
+			}
+			conn.close();
+		} catch (SQLException se) {
+			se.printStackTrace();
+		}
+		return retVal;
+	}
+	
+	// get AllergyIntolerances ids from a ResultSet, storing them in HealthPort DB as a side-effect
+	public List<String> getAllergyIntoleranceIds(ResultSet rs) {
+		List<String> retVal = new ArrayList<String>();
+		AllergyIntoleranceSerializable allergy = null;
+
+		try {
+			while (rs.next()) {
+				String memberID = rs.getString("Member_ID");
+				if (memberID.isEmpty())
+					continue;
+				
+				// 1) create Substance
+
+				/* SubstanceType is a SNOMED-CT code from concept is-a 105590001 or 373873005
+				 * see http://www.hl7.org/implement/standards/fhir/valueset-substance-type.html
+				 * 
+				 * ExactData allergy tables appear to include only drugs & immunization allergies
+				 */
+				
+				String substId = null;
+				if (rs.getString("Allergy_Type").equalsIgnoreCase("drug")) {
+
+					String name = rs.getString("Allergen");
+					
+					final String typeSystem = "http://snomed.info/sct";
+					final String typeCode = "410942007";
+					final String typeDisp = "Drug or medicament";
+
+					/* ExactData tables contain RxNorm (drug) or CVX (immunization) codes
+					 * Currently, FHIR Substance resources don't include these codeable concepts
+					 * ...but we can add them as a custom extension
+					 */
+					String extSystem = "";
+					String extCode = "";
+					String extDisp = "";
+					if (rs.getString("Drug_Vocab").equalsIgnoreCase("RxNorm")) {
+						// see http://hl7.org/implement/standards/fhir/2015Jan/rxnorm.html
+						extSystem = "http://www.nlm.nih.gov/research/umls/rxnorm";
+						extCode = rs.getString("Drug_Code");
+						extDisp = StringEscapeUtils.escapeHtml4(name);
+					} else if (rs.getString("Drug_Vocab").equalsIgnoreCase("CVX")) {
+						// see http://hl7.org/implement/standards/fhir/2015Jan/cvx.html
+						//extSystem = "http://hl7.org/fhir/v2/0292";
+						extSystem = "http://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx";
+						extCode = rs.getString("Drug_Code");
+						extDisp = StringEscapeUtils.escapeHtml4(name);
+					}
+										
+					/* prep substId as a composite
+					 * built from type sytem & code, extension system & code
+					 */
+					substId = "SCT." + typeCode + "." + rs.getString("Drug_Vocab") + "." + extCode;
+					try { substId = URLEncoder.encode(substId, "UTF-8"); }
+					catch (UnsupportedEncodingException uee) { };
+
+					SubstanceSerializable substSz = new SubstanceSerializable(
+							substId,
+							name,
+							typeSystem,
+							typeCode,
+							typeDisp,
+							extSystem,
+							extCode,
+							extDisp
+							);
+
+					// store this Substance in HealthPort DB
+					HealthPortInfo.storeResource(HealthPortInfo.SUBSTANCE, substSz);
+				}
+				
+				// 2) create Allergy
+				
+				// prep date
+				java.util.Date recDate = null;
+				Timestamp ts = rs.getTimestamp("Onset_Date");
+				if (ts != null) {
+					recDate = new java.util.Date(ts.getTime());
+				}
+				final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+				/* prep allergyId - ExactData's allergy tables do not have ids, so we must create our own
+				 * built from Member_ID + Allergen + Onset_Date
+				 */
+				String allergyId = rs.getString("Member_ID") + "." 
+						+ rs.getString("Allergen") + "."
+						+ sdf.format(recDate);
+				try { allergyId = URLEncoder.encode(allergyId, "UTF-8"); }
+				catch (UnsupportedEncodingException uee) { };
+						
+				// prep Status - set to "suspected" if ExactData's allergy.Information_Source is "patient" 
+				String status = rs.getString("Information_Source").equalsIgnoreCase("patient") ? "suspected" : null;
+				
+				allergy = new AllergyIntoleranceSerializable(
+						allergyId,
+						rs.getString("Allergen"),
+						"Substance/" + substId,
+						rs.getString("Member_ID"),
+						rs.getString("Allergy_Type"),
+						recDate,
+						rs.getString("Reaction"),
+						rs.getString("Severity_Description"),
+						status
+						);
+
+				// store this AllergyIntolerance in HealthPort DB
+				HealthPortInfo.storeResource(HealthPortInfo.ALLERGYINTOLERANCE, allergy);
+
+				retVal.add(allergyId);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return retVal;
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * 

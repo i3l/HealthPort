@@ -167,6 +167,10 @@ public class UpdateFHIRdB extends HttpServlet {
 					e.printStackTrace();
 				}
 			}
+		} else if (res.equalsIgnoreCase(HealthPortInfo.ALLERGYINTOLERANCE)) {
+			// only ExactDataPort implemented at this time
+			syntheticEHRPort.getAllergyIntolerances();
+			syntheticCancerPort.getAllergyIntolerances();
 		}
 	}
 
