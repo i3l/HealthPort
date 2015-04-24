@@ -28,12 +28,14 @@ import ca.uhn.fhir.model.api.IResource;
 import ca.uhn.fhir.model.dstu.composite.CodeableConceptDt;
 import ca.uhn.fhir.model.dstu.composite.CodingDt;
 import ca.uhn.fhir.model.dstu.composite.ContainedDt;
+import ca.uhn.fhir.model.dstu.composite.PeriodDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
+import ca.uhn.fhir.model.dstu.resource.Procedure;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
@@ -64,6 +66,7 @@ public class HealthPortInfo {
 	public static String OBSERVATION = "OBSERVATION";
 	public static String CONDITION = "CONDITIONS";
 	public static String MEDICATIONPRESCRIPTION = "MEDICATIONPRESCRIPTION";
+    public static String PROCEDURE = "PROCEDURES";
 
 	private DataSource dataSource;
 
@@ -643,7 +646,150 @@ public class HealthPortInfo {
 										NarrativeStatusEnum.EXTENSIONS);
 						}
 						retVal.add(medicationPrescript);
-					}
+					} else if (tableName.equals(PROCEDURE)) {
+                        String theId = rs.getString("ID");
+                        String patientId = rs.getString("SUBJECT");
+                        String typeUri = rs.getString("TYPEURI");
+                        String typeCode = rs.getString("TYPECODING");
+                        String typeDisp = rs.getString("TYPEDISPLAY");
+                        String indicationUri = rs.getString("INDICATIONURI");
+                        String indicationCode = rs.getString("INDICATIONCODING");
+                        String indicationText = rs.getString("INDICATIONTEXT");
+                        //String performerName = rs.getString("PERFORMER");
+                        String outcome = rs.getString("OUTCOME");
+                        String report = rs.getString("REPORT");
+                        String complicationUri = rs.getString("COMPLICATIONURI");
+                        String complicationCode = rs.getString("COMPLICATIONCODING");
+                        String complicationText = rs.getString("COMPLICATIONTEXT");
+                        String followup = rs.getString("FOLLOWUP");
+                        String notes = rs.getString("NOTES");
+
+                        Timestamp startDateTS = rs.getTimestamp("STARTDATE");
+                        java.util.Date startDate = null;
+                        if (startDateTS != null) {
+                            startDate = new Date(startDateTS.getTime());
+                        }
+
+                        Timestamp endDateTS = rs.getTimestamp("ENDDATE");
+                        java.util.Date endDate = null;
+                        if (endDateTS != null) {
+                            endDate = new Date(endDateTS.getTime());
+                        }
+
+                        Procedure proc = new Procedure();
+
+                        // Procedure ID
+                        proc.setId(new IdDt(theId));
+
+                        // Procedure Subject
+                        proc.setSubject(new ResourceReferenceDt(patientId));
+
+                        // Procedure Type
+                        CodingDt typeCoding = new CodingDt(typeUri, typeCode);
+                        if (typeDisp != null) {
+                            typeCoding.setDisplay(typeDisp);
+                        }
+
+                        ArrayList<CodingDt> codingList = new ArrayList<CodingDt>();
+                        codingList.add(typeCoding);
+
+                        CodeableConceptDt typeDt = new CodeableConceptDt();
+                        typeDt.setCoding(codingList);
+
+                        proc.setType(typeDt);
+
+                        // Procedure Indication
+                        if ((indicationUri != null && indicationCode != null) || indicationText != null) {
+                            CodeableConceptDt indicationDt = new CodeableConceptDt();
+                            
+                            if (indicationUri != null && indicationCode != null) {
+                                CodingDt indicationCoding = new CodingDt(indicationUri, indicationCode);
+
+                                ArrayList<CodingDt> indicationList = new ArrayList<CodingDt>();
+                                codingList.add(indicationCoding);
+                                indicationDt.setCoding(indicationList);
+                            }
+                            
+                            if (indicationText != null) {
+                                indicationDt.setText(indicationText);
+                            }
+
+                            ArrayList<CodeableConceptDt> indCodeableList = new ArrayList<CodeableConceptDt>();
+                            indCodeableList.add(indicationDt);
+                            
+                            proc.setIndication(indCodeableList);
+                        }
+
+                        //  Procedure Performer. We don't have Performer resource yet.
+                        //  Just display it.
+                        //  if (performerName != null) {
+                        //     ResourceReferenceDt performerRefDt = new ResourceReferenceDt();
+                        //     performerRefDt.setDisplay(performerName);
+                        //     proc.setPerformer(performerRefDt);
+                        // }
+
+                        // Procedure Date
+                        if (startDate != null) {
+                            PeriodDt period = new PeriodDt();
+                            period.setStart(new DateTimeDt(startDate));
+                            
+                            if (endDate != null) {
+                            period.setEnd(new DateTimeDt(endDate));
+                            }
+                            proc.setDate(period);
+                        }
+
+                        // Procedure Outcome
+                        if (outcome != null) {
+                            proc.setOutcome(outcome);
+                        }
+
+                        // Procedure Report. We don't have Report resource yet.
+                        // Just display it.
+                        if (report != null) {
+                            ResourceReferenceDt reportRefDt = new ResourceReferenceDt();
+                            reportRefDt.setDisplay(report);
+                            
+                            ArrayList<ResourceReferenceDt> referenceList = new ArrayList<ResourceReferenceDt>();
+                            referenceList.add(reportRefDt);
+                            
+                            proc.setReport(referenceList);
+                        }
+
+                        // Procedure Complications
+                        if ((complicationUri != null && complicationCode != null) || complicationText != null) {
+                            CodeableConceptDt complicationDt = new CodeableConceptDt();
+                            
+                            if (complicationUri != null && complicationCode != null) {
+                                CodingDt complicationCoding = new CodingDt(complicationUri, complicationCode);
+
+                                ArrayList<CodingDt> complicationList = new ArrayList<CodingDt>();
+                                codingList.add(complicationCoding);
+                                complicationDt.setCoding(complicationList);
+                            }
+                            
+                            if (complicationText != null) {
+                                complicationDt.setText(complicationText);
+                            }
+
+                            ArrayList<CodeableConceptDt> compCodeableList = new ArrayList<CodeableConceptDt>();
+                            compCodeableList.add(complicationDt);
+                            
+                            proc.setComplication(compCodeableList);
+                        }
+
+                        // Procedure Follow Up
+                        if (followup != null) {
+                            proc.setFollowUp(followup);
+                        }
+
+                        // Procedure Notes
+                        if (notes != null) {
+                            proc.setNotes(notes);
+                        }
+
+                        retVal.add(proc);
+                    }
 				}
 			}
 		} catch (NamingException | SQLException e) {
