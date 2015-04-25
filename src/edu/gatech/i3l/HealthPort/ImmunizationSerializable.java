@@ -25,14 +25,6 @@ public class ImmunizationSerializable implements Serializable {
 	public String Text;
 	public String VaccinationProtocol;
 	public String LotNumber;
-	
-	public Date Date;
-	public Date ExpirationDate;
-
+	public Date VaccineDate;
 	public double DoseQuantity;
-	
-
-	
-	
-	
 }

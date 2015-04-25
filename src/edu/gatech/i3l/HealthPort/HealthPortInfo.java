@@ -31,20 +31,17 @@ import ca.uhn.fhir.model.dstu.composite.ContainedDt;
 import ca.uhn.fhir.model.dstu.composite.QuantityDt;
 import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
-import ca.uhn.fhir.model.dstu.resource.Immunization.VaccinationProtocol;
+import ca.uhn.fhir.model.dstu.resource.Immunization;
 import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
 import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
-import ca.uhn.fhir.model.dstu.resource.Immunization;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
-import ca.uhn.fhir.model.dstu.valueset.ImmunizationRouteCodesEnum;
 import ca.uhn.fhir.model.dstu.valueset.MedicationPrescriptionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationReliabilityEnum;
 import ca.uhn.fhir.model.dstu.valueset.ObservationStatusEnum;
-import ca.uhn.fhir.model.primitive.BoundCodeableConceptDt;
 import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.IdDt;
@@ -69,7 +66,7 @@ public class HealthPortInfo {
 	public static String CONDITION = "CONDITIONS";
 	public static String MEDICATIONPRESCRIPTION = "MEDICATIONPRESCRIPTION";
 	public static String IMMUNIZATION = "IMMUNIZATION";
-	
+
 	private DataSource dataSource;
 
 	/**
@@ -708,82 +705,43 @@ public class HealthPortInfo {
 										NarrativeStatusEnum.EXTENSIONS);
 						}
 						retVal.add(medicationPrescript);
+					}  else if (tableName.equals(IMMUNIZATION)) {
+						String id = rs.getString("ID");
+						String subject = rs.getString("SUBJECT");						
+						String nameURI = rs.getString("NAMEURI");
+						String nameCoding = rs.getString("NAMECODING");
+						String vaccineType = rs.getString("VACCINETYPE");
+						
+						Timestamp timeStamp = rs.getTimestamp("VaccineDate");
+						
+						//VaccineDate
+						ResourceReferenceDt subjectResource = new ResourceReferenceDt(subject);						
+						java.util.Date date = new Date(timeStamp.getTime());
+						
+						
+						CodingDt orgCodingDt = new CodingDt("", "");
+						orgCodingDt.setDisplay(vaccineType);
+						ArrayList<CodingDt> orgCodingList = new ArrayList<CodingDt>();
+						orgCodingList.add(orgCodingDt);
+						CodeableConceptDt codeDt = new CodeableConceptDt();
+						codeDt.setCoding(orgCodingList);
+						//vaccine Type
+						vaccineType = StringEscapeUtils.escapeHtml4(vaccineType);
+						CodingDt vaccineNameCodingDt = new CodingDt(nameURI, nameCoding);
+						vaccineNameCodingDt.setDisplay(vaccineType);
+						ArrayList<CodingDt> vaccineCodingList = new ArrayList<CodingDt>();
+						vaccineCodingList.add(vaccineNameCodingDt);
+						CodeableConceptDt vaccineCodeDt = new CodeableConceptDt();
+						vaccineCodeDt.setCoding(vaccineCodingList);
+
+						Immunization immunization = new Immunization();
+						immunization.setId(id);
+						immunization.setDate(new DateTimeDt(date))
+									.setSite(codeDt)
+									.setVaccineType(vaccineCodeDt)
+									.setSubject(subjectResource);
+						retVal.add(immunization);
 					}
-				} else if (tableName.equals(IMMUNIZATION)) {		// 	IMMUNIZATION					
-				    String theId = rs.getString("ID");
-				    // subject has patient id
-				    String patientId = rs.getString("SUBJECT");
-				    
-				    String Vaccine_Name = rs.getString("Vaccine_Name");
-				
-					String Vaccine_CVX = rs.getString("Vaccine_CVX");
-					//Vaccination_Date
-					Timestamp dateWrittenTS = rs.getTimestamp("Vaccination_Date");
-					java.util.Date Vaccination_Date = null;
-					if (dateWrittenTS != null) {
-						Vaccination_Date = new Date(dateWrittenTS.getTime());
-					}
-					
-					String Series = rs.getString("Series");
-					
-					String Manufacturer = rs.getString("Manufacturer");
-					String lot_Number = rs.getString("Lot_Number");
-					double dose = rs.getDouble("Dose");
-					
-					String units = rs.getString("Units");
-					String site = rs.getString("Site");
-					String route = rs.getString("Route");
-					String patientRef = rs.getString("Subject");
-   					
-   					Immunization immunizationResource= new Immunization();
-   					// Immunization ID
-   					immunizationResource.setId(new IdDt(theId));
-   					
-                    // immunization Subject
-   					immunizationResource.setSubject(new ResourceReferenceDt(patientId));
-   					
-   				/*	immunizationResource.setDate(DateTimeDt);
-                    // Immunization  Date
-                    if (startDate != null) {
-                        PeriodDt period = new PeriodDt();
-                        period.setStart(new DateTimeDt(startDate));
-                        
-                        if (endDate != null) {
-                        period.setEnd(new DateTimeDt(endDate));
-                        }
-                        proc.setDate(period);
-                    } 				
-   					immunizationResource.setExpirationDate(DateDt)
-   					*/
-   					
-					immunizationResource.setDoseQuantity(dose);
-   					
-					
-					
-					immunizationResource.setLotNumber(lot_Number);
-   					
-   					// immunization name
-   					List<VaccinationProtocol> vprocolList =new ArrayList<VaccinationProtocol>();
-   					VaccinationProtocol vprocol= new VaccinationProtocol();
-   					vprocol.setDescription(Vaccine_Name);
-   					vprocolList.add(vprocol);
-					immunizationResource.setVaccinationProtocol(vprocolList);
-   					
-				
-   					
-   					CodeableConceptDt CodeableConceptDt= new CodeableConceptDt();
-   					CodeableConceptDt.setText(site);
-   					
-					immunizationResource.setSite(CodeableConceptDt);
-   					
-   					BoundCodeableConceptDt<ImmunizationRouteCodesEnum>  r= new BoundCodeableConceptDt<ImmunizationRouteCodesEnum>(null);
-   					r.setText(route);
-					immunizationResource.setRoute(r);
-				
-					CodeableConceptDt= new CodeableConceptDt();
-   					CodeableConceptDt.setText(Vaccine_CVX);
-					immunizationResource.setVaccineType(CodeableConceptDt);
-                     retVal.add(immunizationResource);
 				}
 			}
 		} catch (SQLException e) {
