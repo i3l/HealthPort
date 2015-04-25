@@ -13,6 +13,7 @@ import edu.gatech.i3l.HealthPort.providers.ConditionResourceProvider;
 import edu.gatech.i3l.HealthPort.providers.MedicationPrescrResource;
 import edu.gatech.i3l.HealthPort.providers.ObservationResourceProvider;
 import edu.gatech.i3l.HealthPort.providers.PatientResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.ImmunizationResourceProvider;
 
 import org.slf4j.LoggerFactory;
 
@@ -29,9 +30,9 @@ public class RestfulServlet extends RestfulServer {
 	private static final long serialVersionUID = 1L;
 	
 	public RestfulServlet () {
-//		Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-//		root.setLevel(Level.ERROR);
-
+		//Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+		//root.setLevel(Level.ERROR);
+		
 		org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RestfulServlet.class);
 		System.out.println("FHIR Servlet Debug Enabled?:"+logger.isDebugEnabled());
 		
@@ -63,6 +64,8 @@ public class RestfulServlet extends RestfulServer {
 		resourceProviders.add(new ObservationResourceProvider());
 		resourceProviders.add(new ConditionResourceProvider());
 		resourceProviders.add(new MedicationPrescrResource());
+		
+		resourceProviders.add(new ImmunizationResourceProvider());
 		setResourceProviders(resourceProviders);
 
 //		/*
