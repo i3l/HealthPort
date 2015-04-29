@@ -267,8 +267,6 @@ public class PractitionerResourceProvider implements IResourceProvider {
 				PreparedStatement pstmt = connection
 						.prepareStatement(SQL_STATEMENT_GET_PROVIDERS_BY_PATIENT);
 				pstmt.setString(1, patientID);
-				
-				System.out.println(pstmt.toString());
 
 				ResultSet resultSet = pstmt.executeQuery();
 				

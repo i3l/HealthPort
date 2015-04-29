@@ -100,7 +100,6 @@ public class PractitionerPortInfo {
 		String SQL_STATEMENT = "SELECT Provider_ID FROM " + tableName
 				+ " WHERE name = '" + practitionerName + "'";
 
-		System.out.println ("HealthPortInfo: getResourceIdsByProviders: "+tableName+" for Provider "+practitionerName);
 		connection = getConnection();
 		try {
 			statement = connection.createStatement();
@@ -119,7 +118,6 @@ public class PractitionerPortInfo {
 			}
 		}
 
-		System.out.println ("HealthPortInfo: getResourceIdsByProviders: Done");
 
 		return retVal;
 	}
@@ -176,21 +174,6 @@ public class PractitionerPortInfo {
 		personId                 = rs.getString("Person_ID");
 		primaryClinicLocation   = rs.getString("Primary_Clinic_Location");
 
-/*		System.out.println("Provider_Org="+ rs.getString("Provider_Org"));
-		System.out.println("Provider_ID=" + rs.getString("Provider_ID"));
-		System.out.println("Provider_NPI=" + rs.getString("Provider_NPI"));
-		System.out.println("Facility_Name=" + rs.getString("Facility_Name"));
-		System.out.println("Specialty=" + rs.getString("Specialty"));
-		System.out.println("Name=" + rs.getString("Name"));
-		System.out.println("Class=" + rs.getString("Class"));
-		System.out.println("Location=" + rs.getString("Location"));
-		System.out.println("Sex=" + rs.getString("Sex"));
-		System.out.println("Supervision_Required=" + rs.getString("Supervision_Required"));
-		System.out.println("Person_ID="+ rs.getString("Person_ID"));
-		System.out.println("Primary_Clinic_Location=" + rs.getString("Primary_Clinic_Location"));
-
-
-*/
 	}
 
 	public void setInformation(String providerId) {
@@ -236,8 +219,7 @@ public class PractitionerPortInfo {
 
 			if (resultSet.next()) {
 				orgID = resultSet.getString("ID");
-				// System.out.println("[HealthPortUserInfo]"+userId);
-				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
+				
 			}
 
 			
