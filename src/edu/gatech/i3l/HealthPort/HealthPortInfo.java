@@ -3,19 +3,14 @@
  */
 package edu.gatech.i3l.HealthPort;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.sql.Date;
 import java.util.List;
 
 import javax.naming.InitialContext;
@@ -33,9 +28,9 @@ import ca.uhn.fhir.model.dstu.composite.ResourceReferenceDt;
 import ca.uhn.fhir.model.dstu.resource.Condition;
 import ca.uhn.fhir.model.dstu.resource.Medication;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription;
-import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.Dispense;
 import ca.uhn.fhir.model.dstu.resource.MedicationPrescription.DosageInstruction;
+import ca.uhn.fhir.model.dstu.resource.Observation;
 import ca.uhn.fhir.model.dstu.valueset.ConditionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.MedicationPrescriptionStatusEnum;
 import ca.uhn.fhir.model.dstu.valueset.NarrativeStatusEnum;
@@ -59,6 +54,13 @@ public class HealthPortInfo {
 	public String gender = null;
 	public String contact = null;
 	public String address = null;
+	public Date dob = null;
+	public String ethnicity = null;
+	public String maritalStatus = null;
+	public String bloodType = null;
+	public String job = null;
+	public String advanceDirective = null;
+	public String organDonor = null;
 
 	// Database Paging Resource Names
 	public static String OBSERVATION = "OBSERVATION";
@@ -83,16 +85,18 @@ public class HealthPortInfo {
 		setInformation(userId);
 	}
 
-	public List<String> getResourceIdsByPatientCode (String tableName, String patientId, List<String> codes) {
+	public List<String> getResourceIdsByPatientCode(String tableName,
+			String patientId, List<String> codes) {
 		List<String> retVal = new ArrayList<String>();
 		Connection connection = null;
 		Statement statement = null;
 
 		if (codes.isEmpty()) {
-			// If list of code is empty, this is basically same as getResourceIdsByPatient
+			// If list of code is empty, this is basically same as
+			// getResourceIdsByPatient
 			return getResourceIdsByPatient(tableName, patientId);
 		}
-		
+
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName
 				+ " WHERE SUBJECT = 'Patient/" + patientId + "' AND (";
 		if (tableName.equals(OBSERVATION)) {
@@ -100,17 +104,18 @@ public class HealthPortInfo {
 			boolean start = true;
 			for (String code : codes) {
 				if (start) {
-					SQL_STATEMENT += "NAMECODING = '" + code +"'";
-					start = false; 
+					SQL_STATEMENT += "NAMECODING = '" + code + "'";
+					start = false;
 				} else {
-					SQL_STATEMENT += " OR NAMECODING = '" + code +"'";
+					SQL_STATEMENT += " OR NAMECODING = '" + code + "'";
 				}
 			}
 			SQL_STATEMENT += ")";
 		}
-		
-		System.out.println (SQL_STATEMENT);
-		System.out.println ("HealthPortInfo: getResourceIdsByPatientCode: "+tableName+" for Patient="+patientId+" and Codes");
+
+		System.out.println(SQL_STATEMENT);
+		System.out.println("HealthPortInfo: getResourceIdsByPatientCode: "
+				+ tableName + " for Patient=" + patientId + " and Codes");
 		connection = getConnection();
 		try {
 			statement = connection.createStatement();
@@ -124,17 +129,17 @@ public class HealthPortInfo {
 		} finally {
 			try {
 				connection.close();
-			} catch (SQLException e) {				// TODO Auto-generated catch block
+			} catch (SQLException e) { // TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 
-		System.out.println ("HealthPortInfo: getResourceIdsByPatientCode: Done");
-		
+		System.out.println("HealthPortInfo: getResourceIdsByPatientCode: Done");
+
 		return retVal;
 	}
-	
-	public List<String> getResourceIdsByPatient (String tableName,
+
+	public List<String> getResourceIdsByPatient(String tableName,
 			String patientId) {
 		List<String> retVal = new ArrayList<String>();
 
@@ -144,7 +149,8 @@ public class HealthPortInfo {
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName
 				+ " WHERE SUBJECT = 'Patient/" + patientId + "'";
 
-		System.out.println ("HealthPortInfo: getResourceIdsByPatient: "+tableName+" for Patient "+patientId);
+		System.out.println("HealthPortInfo: getResourceIdsByPatient: "
+				+ tableName + " for Patient " + patientId);
 		connection = getConnection();
 		try {
 			statement = connection.createStatement();
@@ -158,12 +164,12 @@ public class HealthPortInfo {
 		} finally {
 			try {
 				connection.close();
-			} catch (SQLException e) {				// TODO Auto-generated catch block
+			} catch (SQLException e) { // TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 
-		System.out.println ("HealthPortInfo: getResourceIdsByPatient: Done");
+		System.out.println("HealthPortInfo: getResourceIdsByPatient: Done");
 
 		return retVal;
 	}
@@ -178,7 +184,8 @@ public class HealthPortInfo {
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName
 				+ " WHERE NAMECODING = '" + code + "'";
 
-		System.out.println ("HealthPortInfo: getResourceIdsByCodeSystem: "+tableName+" for codesys/code "+codeSystem+"/"+code);
+		System.out.println("HealthPortInfo: getResourceIdsByCodeSystem: "
+				+ tableName + " for codesys/code " + codeSystem + "/" + code);
 		connection = getConnection();
 
 		try {
@@ -197,7 +204,7 @@ public class HealthPortInfo {
 				e.printStackTrace();
 			}
 		}
-		System.out.println ("HealthPortInfo: getResourceIdsByCodeSystem: done");
+		System.out.println("HealthPortInfo: getResourceIdsByCodeSystem: done");
 
 		return retVal;
 	}
@@ -210,7 +217,7 @@ public class HealthPortInfo {
 
 		String SQL_STATEMENT = "SELECT ID FROM " + tableName;
 
-		System.out.println ("HealthPortInfo: getAllResoureIds: "+tableName);
+		System.out.println("HealthPortInfo: getAllResoureIds: " + tableName);
 		connection = getConnection();
 		try {
 			statement = connection.createStatement();
@@ -229,7 +236,7 @@ public class HealthPortInfo {
 			}
 		}
 
-		System.out.println ("HealthPortInfo: getAllResoureIds: done");
+		System.out.println("HealthPortInfo: getAllResoureIds: done");
 		return retVal;
 	}
 
@@ -365,10 +372,10 @@ public class HealthPortInfo {
 		Statement getRes = null;
 
 		try {
-//			DataSource ds = (DataSource) new InitialContext()
-//					.lookup("java:/comp/env/jdbc/HealthPort");
-//
-//			connection = ds.getConnection();
+			// DataSource ds = (DataSource) new InitialContext()
+			// .lookup("java:/comp/env/jdbc/HealthPort");
+			//
+			// connection = ds.getConnection();
 			connection = getConnection();
 			getRes = connection.createStatement();
 			// System.out.println("reading from OBSERVATION: "+Ids.size());
@@ -762,13 +769,20 @@ public class HealthPortInfo {
 
 	public void resetInformation() {
 		userId = null;
-		name = null;
+		name = "";
 		recordId = null;
 		personId = null;
 		source = null;
 		gender = null;
 		contact = null;
 		address = null;
+		dob = null;
+		ethnicity = null;
+		maritalStatus = null;
+		bloodType = null;
+		job = null;
+		advanceDirective = null;
+		organDonor = null;
 	}
 
 	public void setRSInformation(ResultSet rs) throws SQLException {
@@ -781,27 +795,34 @@ public class HealthPortInfo {
 		gender = rs.getString("GENDER");
 		contact = rs.getString("CONTACT");
 		address = rs.getString("ADDRESS");
+		dob = rs.getDate("DOB");
+		ethnicity = rs.getString("ETHNICITY");
+		maritalStatus = rs.getString("MARITAL_STATUS");
+		bloodType = rs.getString("BLOOD_TYPE");
+		job = rs.getString("JOB");
+		advanceDirective = rs.getString("ADVANCE_DIRECTIVE");
+		organDonor = rs.getString("ORGAN_DONOR");
 	}
 
-	public void setInformation(String userId) {
+	public void setInformation(String qPersonId) {
 		Connection connection = null;
-		Statement statement = null;
-		// Context context = null;
-		// DataSource datasource = null;
 
-		this.userId = userId;
+		this.personId = qPersonId;
 
 		try {
 			connection = getConnection();
-			statement = connection.createStatement();
-			String SQL_STATEMENT = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) WHERE U1.ID="
-					+ userId;
-			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
+			final String SQL_STATEMENT = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS, U1.DOB, U1.ETHNICITY, U1.MARITAL_STATUS, U1.BLOOD_TYPE, U1.JOB, U1.ADVANCE_DIRECTIVE, U1.ORGAN_DONOR FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) "
+					+ " WHERE U1.ID=?;";
+			PreparedStatement psPatientId = connection
+					.prepareStatement(SQL_STATEMENT);
+			psPatientId.setString(1, qPersonId);
+			ResultSet resultSet = psPatientId.executeQuery();
 
 			if (resultSet.next()) {
 				setRSInformation(resultSet);
-				// System.out.println("[HealthPortUserInfo]"+userId);
-				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
+			} else {
+				// No record found, reset the record
+				resetInformation();
 			}
 
 		} catch (Exception e) {
@@ -816,25 +837,25 @@ public class HealthPortInfo {
 		}
 	}
 
-	public void setInformationPersonID(String Id, String OrgID) {
+	public void setInformationPersonID(String qPersonId, String qOrgId) {
 		Connection connection = null;
-		Statement statement = null;
-		// Context context = null;
-		// DataSource datasource = null;
-
-		this.personId = Id;
 
 		try {
 			connection = getConnection();
-			statement = connection.createStatement();
-			String SQL_STATEMENT = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) WHERE U1.PERSONID='"
-					+ Id + "' AND U1.ORGANIZATIONID='" + OrgID + "'";
-			ResultSet resultSet = statement.executeQuery(SQL_STATEMENT);
+
+			final String SQL_STATEMENT = "SELECT U1.ID, U1.ORGANIZATIONID, U1.NAME, ORG.TAG, U1.RECORDID, U1.PERSONID, U1.GENDER, U1.CONTACT, U1.ADDRESS, U1.DOB, U1.ETHNICITY, U1.MARITAL_STATUS, U1.BLOOD_TYPE, U1.JOB, U1.ADVANCE_DIRECTIVE, U1.ORGAN_DONOR FROM USER AS U1 LEFT JOIN ORGANIZATION AS ORG ON (ORG.ID=U1.ORGANIZATIONID) "
+					+ " WHERE U1.PERSONID=? AND U1.ORGANIZATIONID=?;";
+			PreparedStatement psPatient = connection
+					.prepareStatement(SQL_STATEMENT);
+			psPatient.setString(1, qPersonId);
+			psPatient.setString(2, qOrgId);
+			ResultSet resultSet = psPatient.executeQuery();
 
 			if (resultSet.next()) {
 				setRSInformation(resultSet);
-				// System.out.println("[HealthPortUserInfo]"+userId);
-				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
+			} else {
+				// No record found, reset the record
+				resetInformation();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -863,7 +884,6 @@ public class HealthPortInfo {
 				// System.out.println("[HealthPortUserInfo]"+name+":"+dataSource);
 			}
 
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 			resetInformation();
