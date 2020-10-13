@@ -10,6 +10,7 @@ import ca.uhn.fhir.rest.server.FifoMemoryPagingProvider;
 import ca.uhn.fhir.rest.server.IResourceProvider;
 import ca.uhn.fhir.rest.server.RestfulServer;
 import edu.gatech.i3l.HealthPort.providers.ConditionResourceProvider;
+import edu.gatech.i3l.HealthPort.providers.ImmunizationResourceProvider;
 import edu.gatech.i3l.HealthPort.providers.MedicationPrescrResource;
 import edu.gatech.i3l.HealthPort.providers.ObservationResourceProvider;
 import edu.gatech.i3l.HealthPort.providers.PatientResourceProvider;
@@ -62,6 +63,7 @@ public class RestfulServlet extends RestfulServer {
 		resourceProviders.add(new PatientResourceProvider());
 		resourceProviders.add(new ObservationResourceProvider());
 		resourceProviders.add(new ConditionResourceProvider());
+		resourceProviders.add(new ImmunizationResourceProvider());
 		resourceProviders.add(new MedicationPrescrResource());
 		setResourceProviders(resourceProviders);
 
