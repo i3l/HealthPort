@@ -21,7 +21,7 @@
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-base</artifactId>
-			<version>0.8</version>
+			<version>3.8.0</version>
 			<scope>runtime</scope>
 		</dependency>
 		<!-- At least one "structures" JAR must also be included -->
