@@ -179,7 +179,7 @@ public class MedicationPrescrResource implements IResourceProvider {
 
 	@Search()
 	public IBundleProvider getMedicationPrescriptionsByPatient(
-			@RequiredParam(name = Condition.SP_SUBJECT) ReferenceParam theSubject) {
+			@RequiredParam(name = MedicationPrescription.SP_PATIENT) ReferenceParam theSubject) {
 		final InstantDt searchTime = InstantDt.withCurrentTime();
 		String patientID = theSubject.getIdPart();
 
